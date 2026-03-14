@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree view -->
+    <record id="view_kb_sync_log_tree" model="ir.ui.view">
+        <field name="name">kb.sync.log.tree</field>
+        <field name="model">kb.sync.log</field>
+        <field name="arch" type="xml">
+            <tree decoration-danger="status == 'failed'"
+                  decoration-warning="status == 'retrying'"
+                  decoration-muted="status == 'pending'"
+                  decoration-success="status == 'success'">
+                <field name="name"/>
+                <field name="operation"/>
+                <field name="direction"/>
+                <field name="status"/>
+                <field name="kb_object_id"/>
+                <field name="odoo_object"/>
+                <field name="retry_count"/>
+                <field name="create_date"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form view -->
+    <record id="view_kb_sync_log_form" model="ir.ui.view">
+        <field name="name">kb.sync.log.form</field>
+        <field name="model">kb.sync.log</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="status" widget="statusbar"
+                           statusbar_visible="pending,success,failed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="operation"/>
+                            <field name="direction"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="kb_object_id"/>
+                            <field name="odoo_object"/>
+                            <field name="event_id"/>
+                            <field name="retry_count"/>
+                            <field name="catalog_hash"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Request">
+                            <field name="request_payload"/>
+                        </page>
+                        <page string="Response">
+                            <field name="response_payload"/>
+                        </page>
+                        <page string="Error" invisible="not error_message">
+                            <field name="error_message"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search view -->
+    <record id="view_kb_sync_log_search" model="ir.ui.view">
+        <field name="name">kb.sync.log.search</field>
+        <field name="model">kb.sync.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="kb_object_id"/>
+                <field name="odoo_object"/>
+                <separator/>
+                <filter name="pending" string="Pending" domain="[('status','=','pending')]"/>
+                <filter name="failed" string="Failed" domain="[('status','=','failed')]"/>
+                <filter name="success" string="Success" domain="[('status','=','success')]"/>
+                <separator/>
+                <filter name="odoo_to_kb" string="Odoo → KB" domain="[('direction','=','odoo_to_kb')]"/>
+                <filter name="kb_to_odoo" string="KB → Odoo" domain="[('direction','=','kb_to_odoo')]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter name="group_operation" string="Operation" context="{'group_by': 'operation'}"/>
+                    <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                    <filter name="group_direction" string="Direction" context="{'group_by': 'direction'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_kb_sync_log" model="ir.actions.act_window">
+        <field name="name">Sync Log</field>
+        <field name="res_model">kb.sync.log</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_kb_sync_log_search"/>
+        <field name="context">{'search_default_pending': 0}</field>
+    </record>
+
+    <!-- Top-level menu -->
+    <menuitem id="menu_kb_root"
+              name="Kill Bill"
+              sequence="90"
+              web_icon="kb_integration,static/description/icon.png"/>
+    <menuitem id="menu_kb_sync_log"
+              name="Sync Log"
+              parent="menu_kb_root"
+              action="action_kb_sync_log"
+              sequence="10"/>
+</odoo>

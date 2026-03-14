@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Product Template form -->
+    <record id="view_product_template_form_kb" model="ir.ui.view">
+        <field name="name">product.template.form.kb</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[last()]" position="after">
+                <page string="Kill Bill" name="killbill">
+                    <group>
+                        <group>
+                            <field name="x_kb_product_name"/>
+                            <field name="x_kb_category"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Product Variant form -->
+    <record id="view_product_product_form_kb" model="ir.ui.view">
+        <field name="name">product.product.form.kb</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[last()]" position="after">
+                <page string="Kill Bill" name="killbill_variant">
+                    <group>
+                        <group string="Plan Mapping">
+                            <field name="x_kb_plan_name"/>
+                            <field name="x_kb_billing_period"/>
+                        </group>
+                        <group string="Trial">
+                            <field name="x_kb_has_trial"/>
+                            <field name="x_kb_trial_days"
+                                   invisible="not x_kb_has_trial"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
