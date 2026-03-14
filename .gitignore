@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+venv/
+
+# Odoo
+odoo-src/
+data/
+*.log
+*.pyc
+
+# Kill Bill server source (large, cloned separately)
+killbill-billing/killbill-server/
+
+# Build artifacts
+target/
+*.class
+*.jar
+*.war
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.local

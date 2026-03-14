@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="CatalogSchema.xsd ">
+
+    <effectiveDate>2026-03-12T00:00:00+00:00</effectiveDate>
+    <catalogName>TelcobrightISP</catalogName>
+
+    <recurringBillingMode>IN_ADVANCE</recurringBillingMode>
+
+    <currencies>
+        <currency>BDT</currency>
+    </currencies>
+
+    <products>
+        <product name="Internet-100Mbps">
+            <category>BASE</category>
+        </product>
+        <product name="Internet-50Mbps">
+            <category>BASE</category>
+        </product>
+        <product name="Internet-200Mbps">
+            <category>BASE</category>
+        </product>
+        <product name="HostedPBX">
+            <category>BASE</category>
+        </product>
+        <product name="VoiceBroadcast">
+            <category>BASE</category>
+        </product>
+        <product name="ContactCenter">
+            <category>BASE</category>
+        </product>
+        <product name="BulkSMS">
+            <category>BASE</category>
+        </product>
+        <product name="StaticIP">
+            <category>ADD_ON</category>
+        </product>
+    </products>
+
+    <rules>
+        <changePolicy>
+            <changePolicyCase>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+        </changePolicy>
+        <changeAlignment>
+            <changeAlignmentCase>
+                <alignment>START_OF_SUBSCRIPTION</alignment>
+            </changeAlignmentCase>
+        </changeAlignment>
+        <cancelPolicy>
+            <cancelPolicyCase>
+                <policy>END_OF_TERM</policy>
+            </cancelPolicyCase>
+        </cancelPolicy>
+        <createAlignment>
+            <createAlignmentCase>
+                <alignment>START_OF_BUNDLE</alignment>
+            </createAlignmentCase>
+        </createAlignment>
+    </rules>
+
+    <plans>
+        <plan name="internet-100mbps-monthly">
+            <product>Internet-100Mbps</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>BDT</currency>
+                            <value>1200.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+
+        <plan name="internet-50mbps-monthly">
+            <product>Internet-50Mbps</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>BDT</currency>
+                            <value>800.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+
+        <plan name="internet-200mbps-monthly">
+            <product>Internet-200Mbps</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>BDT</currency>
+                            <value>1800.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+
+        <plan name="hosted-pbx-monthly">
+            <product>HostedPBX</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>BDT</currency>
+                            <value>1200.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+
+        <plan name="voice-broadcast-monthly">
+            <product>VoiceBroadcast</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>BDT</currency>
+                            <value>1800.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+
+        <plan name="contact-center-monthly">
+            <product>ContactCenter</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>BDT</currency>
+                            <value>850.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+
+        <plan name="bulk-sms-monthly">
+            <product>BulkSMS</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>BDT</currency>
+                            <value>500.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+
+        <plan name="static-ip-monthly">
+            <product>StaticIP</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>BDT</currency>
+                            <value>300.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+    </plans>
+
+    <priceLists>
+        <defaultPriceList name="DEFAULT">
+            <plans>
+                <plan>internet-100mbps-monthly</plan>
+                <plan>internet-50mbps-monthly</plan>
+                <plan>internet-200mbps-monthly</plan>
+                <plan>hosted-pbx-monthly</plan>
+                <plan>voice-broadcast-monthly</plan>
+                <plan>contact-center-monthly</plan>
+                <plan>bulk-sms-monthly</plan>
+                <plan>static-ip-monthly</plan>
+            </plans>
+        </defaultPriceList>
+    </priceLists>
+
+</catalog>
