@@ -26,6 +26,7 @@ Sync architecture:
         'views/account_payment_views.xml',
         'views/sale_order_views.xml',
         'views/kb_sync_log_views.xml',
+        'views/product_rate_history_views.xml',
     ],
     'installable': True,
     'application': True,

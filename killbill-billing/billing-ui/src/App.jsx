@@ -11,6 +11,10 @@ import CustomerDetail from './pages/CustomerDetail';
 import Subscriptions from './pages/Subscriptions';
 import Invoices from './pages/Invoices';
 import Catalog from './pages/Catalog';
+import Products from './pages/Products';
+import ProductDetail from './pages/ProductDetail';
+import Pricing from './pages/Pricing';
+import RateHistory from './pages/RateHistory';
 import Tenants from './pages/Tenants';
 import ARReport from './pages/ARReport';
 import Payments from './pages/Payments';
@@ -30,6 +34,10 @@ function ProtectedRoutes() {
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/catalog" element={<Catalog />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/products/:id" element={<ProductDetail />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/rate-history" element={<RateHistory />} />
         <Route path="/reports/ar" element={<ARReport />} />
         {isSuper && <Route path="/tenants" element={<Tenants />} />}
         <Route path="*" element={<Navigate to="/" replace />} />

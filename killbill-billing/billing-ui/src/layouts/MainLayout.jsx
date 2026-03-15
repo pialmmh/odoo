@@ -6,6 +6,7 @@ import TenantGuard from '../components/TenantGuard';
 
 // Pages that need a tenant selected
 const TENANT_REQUIRED_PATHS = ['/', '/customers', '/subscriptions', '/invoices', '/payments', '/catalog', '/reports'];
+// Note: /products and /pricing use Odoo backend, not KB tenant — no tenant required
 
 export default function MainLayout() {
   const location = useLocation();

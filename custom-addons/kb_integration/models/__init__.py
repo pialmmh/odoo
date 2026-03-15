@@ -6,3 +6,4 @@ from . import account_move
 from . import account_payment
 from . import sale_order_line
 from . import kb_sync_log
+from . import product_rate_history

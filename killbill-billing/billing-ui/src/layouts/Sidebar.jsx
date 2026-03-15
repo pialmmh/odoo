@@ -12,6 +12,9 @@ import {
   Business as TenantIcon,
   Assessment as ARIcon,
   Payments as PaymentsIcon,
+  ShoppingCart as ProductsIcon,
+  PriceChange as PricingIcon,
+  History as HistoryIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -29,6 +32,9 @@ export default function Sidebar() {
     { text: 'Invoices', icon: <InvoiceIcon />, path: '/invoices' },
     { text: 'Payments', icon: <PaymentsIcon />, path: '/payments' },
     { text: 'Catalog', icon: <CatalogIcon />, path: '/catalog' },
+    { text: 'Products', icon: <ProductsIcon />, path: '/products' },
+    { text: 'Pricing', icon: <PricingIcon />, path: '/pricing' },
+    { text: 'Rate History', icon: <HistoryIcon />, path: '/rate-history' },
     { text: 'AR Report', icon: <ARIcon />, path: '/reports/ar' },
   ];
 
