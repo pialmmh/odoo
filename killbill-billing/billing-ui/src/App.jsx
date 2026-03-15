@@ -15,6 +15,7 @@ import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import Pricing from './pages/Pricing';
 import RateHistory from './pages/RateHistory';
+import Settings from './pages/Settings';
 import Tenants from './pages/Tenants';
 import ARReport from './pages/ARReport';
 import Payments from './pages/Payments';
@@ -39,6 +40,7 @@ function ProtectedRoutes() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/rate-history" element={<RateHistory />} />
         <Route path="/reports/ar" element={<ARReport />} />
+        <Route path="/settings" element={<Settings />} />
         {isSuper && <Route path="/tenants" element={<Tenants />} />}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

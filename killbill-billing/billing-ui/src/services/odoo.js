@@ -165,6 +165,52 @@ export async function updateRateEntry(id, vals) {
   return call('product.rate.history', 'write', [[id], vals]);
 }
 
+// ── Tax Rates (product.tax.rate) ──
+
+export async function getTaxRates(domain = [], limit = 200) {
+  return call('product.tax.rate', 'search_read', [domain], {
+    fields: [
+      'id', 'name', 'tax_type', 'rate', 'is_deduction',
+      'categ_id', 'product_tmpl_id',
+      'effective_date', 'end_date', 'is_active',
+      'gazette_ref', 'reason', 'changed_by', 'notes',
+      'odoo_tax_id', 'create_date',
+    ],
+    limit,
+    order: 'effective_date desc, id desc',
+  });
+}
+
+export async function createTaxRate(vals) {
+  return call('product.tax.rate', 'create', [vals]);
+}
+
+export async function updateTaxRate(id, vals) {
+  return call('product.tax.rate', 'write', [[id], vals]);
+}
+
+// ── Odoo Taxes (account.tax) ──
+
+export async function getOdooTaxes() {
+  return call('account.tax', 'search_read',
+    [[['type_tax_use', '=', 'sale']]],
+    { fields: ['id', 'name', 'amount', 'amount_type', 'description'] });
+}
+
+// ── Journals ──
+
+export async function getJournals() {
+  return call('account.journal', 'search_read', [[['company_id', '=', 1]]],
+    { fields: ['id', 'name', 'code', 'type'], order: 'code' });
+}
+
+// ── Accounts ──
+
+export async function getAccounts(domain = []) {
+  return call('account.account', 'search_read', [domain],
+    { fields: ['id', 'code', 'name', 'account_type'], order: 'code' });
+}
+
 // ── Write operations ──
 
 export async function updateProductTemplate(id, vals) {

@@ -15,6 +15,7 @@ import {
   ShoppingCart as ProductsIcon,
   PriceChange as PricingIcon,
   History as HistoryIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -36,6 +37,7 @@ export default function Sidebar() {
     { text: 'Pricing', icon: <PricingIcon />, path: '/pricing' },
     { text: 'Rate History', icon: <HistoryIcon />, path: '/rate-history' },
     { text: 'AR Report', icon: <ARIcon />, path: '/reports/ar' },
+    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
   // Super admin gets tenant management
