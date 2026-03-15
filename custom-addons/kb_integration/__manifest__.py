@@ -28,6 +28,7 @@ Sync architecture:
         'views/kb_sync_log_views.xml',
         'views/product_rate_history_views.xml',
         'views/product_tax_rate_views.xml',
+        'views/doc_document_views.xml',
     ],
     'installable': True,
     'application': True,

@@ -14,6 +14,7 @@ import {
 import {
   getTaxRates, createTaxRate, updateTaxRate, getOdooTaxes,
   getJournals, getAccounts, getProductTemplates, getProductCategories,
+  createDocument, createDocMapping, getDocMappings, deleteDocMapping,
 } from '../services/odoo';
 
 function TabPanel({ children, value, index }) {
@@ -25,6 +26,8 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
   const [tab, setTab] = useState(0);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
+  const [docs, setDocs] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (rate) {
@@ -50,7 +53,57 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
       });
     }
     setTab(0);
+    setDocs([]);
+    if (rate?.id) loadDocs(rate.id);
   }, [rate, open]);
+
+  const loadDocs = async (rateId) => {
+    try {
+      const mappings = await getDocMappings('product.tax.rate', rateId);
+      setDocs(mappings);
+    } catch (e) {
+      console.error('Failed to load docs', e);
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !rate?.id) return;
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result.split(',')[1];
+        const docId = await createDocument({
+          name: file.name.replace(/\.[^.]+$/, ''),
+          filename: file.name,
+          file_upload: base64,
+          doc_type: 'sro',
+        });
+        await createDocMapping({
+          document_id: docId,
+          res_model: 'product.tax.rate',
+          res_id: rate.id,
+          link_type: 'sro',
+        });
+        loadDocs(rate.id);
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      alert('Upload failed: ' + err.message);
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveDoc = async (mappingId) => {
+    try {
+      await deleteDocMapping(mappingId);
+      if (rate?.id) loadDocs(rate.id);
+    } catch (e) {
+      alert('Remove failed: ' + e.message);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -92,6 +145,7 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
       <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
           <Tab label="Tax Details" />
+          <Tab label={`Documents (${docs.length})`} />
           <Tab label="Legal / Notes" />
         </Tabs>
       </Box>
@@ -178,6 +232,67 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
           </Grid>
         )}
         {tab === 1 && (
+          <Box>
+            {rate?.id ? (
+              <>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Attached SRO/gazette documents
+                  </Typography>
+                  <Button variant="outlined" size="small" component="label" startIcon={<AttachIcon />}
+                    disabled={uploading}>
+                    {uploading ? 'Uploading...' : 'Upload Document'}
+                    <input type="file" hidden onChange={handleFileUpload}
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" />
+                  </Button>
+                </Box>
+                {docs.length > 0 ? (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600 }}>Document</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Uploaded</TableCell>
+                        <TableCell align="center">Remove</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {docs.map(d => (
+                        <TableRow key={d.id} hover>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              {d.document_id?.[1]}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip label={d.link_type} size="small" variant="outlined" sx={{ fontSize: 11 }} />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="caption" color="text.secondary">linked</Typography>
+                          </TableCell>
+                          <TableCell align="center">
+                            <IconButton size="small" onClick={() => handleRemoveDoc(d.id)} color="error">
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                    No documents attached. Upload SRO/gazette PDFs above.
+                  </Typography>
+                )}
+              </>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+                Save the tax rate first, then attach documents.
+              </Typography>
+            )}
+          </Box>
+        )}
+        {tab === 2 && (
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField fullWidth size="small" label="Gazette / SRO Reference"
@@ -319,12 +434,10 @@ function TaxRatesTab({ taxRates, categories, products, odooTaxes, onRefresh }) {
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      {(rate.sro_document || rate.supporting_doc) ? (
-                        <Tooltip title={[rate.sro_document_filename, rate.supporting_doc_filename].filter(Boolean).join(', ')}>
-                          <Chip icon={<AttachIcon sx={{ fontSize: 14 }} />}
-                            label={[rate.sro_document, rate.supporting_doc].filter(Boolean).length}
-                            size="small" variant="outlined" sx={{ fontSize: 11 }} />
-                        </Tooltip>
+                      {rate.document_count > 0 ? (
+                        <Chip icon={<AttachIcon sx={{ fontSize: 14 }} />}
+                          label={rate.document_count}
+                          size="small" variant="outlined" sx={{ fontSize: 11 }} />
                       ) : (
                         <Typography variant="caption" color="text.disabled">-</Typography>
                       )}

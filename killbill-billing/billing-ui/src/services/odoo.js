@@ -174,9 +174,7 @@ export async function getTaxRates(domain = [], limit = 200) {
       'categ_id', 'product_tmpl_id',
       'effective_date', 'end_date', 'is_active',
       'gazette_ref', 'reason', 'changed_by', 'notes',
-      'odoo_tax_id', 'sro_document', 'sro_document_filename',
-      'supporting_doc', 'supporting_doc_filename',
-      'attachment_count', 'create_date',
+      'odoo_tax_id', 'document_count', 'create_date',
     ],
     limit,
     order: 'effective_date desc, id desc',
@@ -211,6 +209,42 @@ export async function getJournals() {
 export async function getAccounts(domain = []) {
   return call('account.account', 'search_read', [domain],
     { fields: ['id', 'code', 'name', 'account_type'], order: 'code' });
+}
+
+// ── Documents (doc.document + doc.mapping) ──
+
+export async function getDocuments(domain = [], limit = 100) {
+  return call('doc.document', 'search_read', [domain], {
+    fields: [
+      'id', 'name', 'filename', 'mimetype', 'file_size', 'file_size_display',
+      'checksum', 'storage_ref', 'doc_type', 'description', 'tags',
+      'uploaded_by', 'upload_date', 'mapping_count',
+    ],
+    limit,
+    order: 'upload_date desc',
+  });
+}
+
+export async function createDocument(vals) {
+  return call('doc.document', 'create', [vals]);
+}
+
+export async function getDocMappings(resModel, resId) {
+  return call('doc.mapping', 'search_read',
+    [[['res_model', '=', resModel], ['res_id', '=', resId]]],
+    { fields: ['id', 'document_id', 'link_type', 'notes'] });
+}
+
+export async function createDocMapping(vals) {
+  return call('doc.mapping', 'create', [vals]);
+}
+
+export async function deleteDocMapping(id) {
+  return call('doc.mapping', 'unlink', [[id]]);
+}
+
+export async function getDocumentBinary(docId) {
+  return call('doc.document', 'get_binary', [[docId]]);
 }
 
 // ── Write operations ──

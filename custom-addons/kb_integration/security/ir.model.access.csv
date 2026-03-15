@@ -5,3 +5,7 @@ access_product_rate_history_admin,product.rate.history admin,model_product_rate_
 access_product_rate_history_user,product.rate.history user,model_product_rate_history,base.group_user,1,1,1,0
 access_product_tax_rate_admin,product.tax.rate admin,model_product_tax_rate,base.group_system,1,1,1,1
 access_product_tax_rate_user,product.tax.rate user,model_product_tax_rate,base.group_user,1,0,0,0
+access_doc_document_admin,doc.document admin,model_doc_document,base.group_system,1,1,1,1
+access_doc_document_user,doc.document user,model_doc_document,base.group_user,1,1,1,0
+access_doc_mapping_admin,doc.mapping admin,model_doc_mapping,base.group_system,1,1,1,1
+access_doc_mapping_user,doc.mapping user,model_doc_mapping,base.group_user,1,1,1,0

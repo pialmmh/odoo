@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Document tree view -->
+    <record id="view_doc_document_tree" model="ir.ui.view">
+        <field name="name">doc.document.tree</field>
+        <field name="model">doc.document</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="filename"/>
+                <field name="doc_type"/>
+                <field name="file_size_display" string="Size"/>
+                <field name="mapping_count" string="Links"/>
+                <field name="tags" optional="show"/>
+                <field name="uploaded_by"/>
+                <field name="upload_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Document form view -->
+    <record id="view_doc_document_form" model="ir.ui.view">
+        <field name="name">doc.document.form</field>
+        <field name="model">doc.document</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Document name"/></h1>
+                    </div>
+                    <group>
+                        <group string="File">
+                            <field name="file_upload" filename="filename"/>
+                            <field name="filename"/>
+                            <field name="mimetype" readonly="1"/>
+                            <field name="file_size_display" string="Size" readonly="1"/>
+                            <field name="checksum" readonly="1"/>
+                        </group>
+                        <group string="Classification">
+                            <field name="doc_type"/>
+                            <field name="tags"/>
+                            <field name="storage_ref" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Audit">
+                            <field name="uploaded_by"/>
+                            <field name="upload_date"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Description..."/>
+                    <notebook>
+                        <page string="Linked Records">
+                            <field name="mapping_ids">
+                                <tree editable="bottom">
+                                    <field name="res_model"/>
+                                    <field name="res_id"/>
+                                    <field name="res_name" readonly="1"/>
+                                    <field name="link_type"/>
+                                    <field name="notes"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Document search view -->
+    <record id="view_doc_document_search" model="ir.ui.view">
+        <field name="name">doc.document.search</field>
+        <field name="model">doc.document</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="filename"/>
+                <field name="tags"/>
+                <separator/>
+                <filter name="sro" string="SRO/Gazette" domain="[('doc_type', '=', 'sro')]"/>
+                <filter name="contract" string="Contracts" domain="[('doc_type', '=', 'contract')]"/>
+                <filter name="certificate" string="Certificates" domain="[('doc_type', '=', 'certificate')]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter name="group_type" string="Type" context="{'group_by': 'doc_type'}"/>
+                    <filter name="group_uploader" string="Uploaded By" context="{'group_by': 'uploaded_by'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Document mapping tree -->
+    <record id="view_doc_mapping_tree" model="ir.ui.view">
+        <field name="name">doc.mapping.tree</field>
+        <field name="model">doc.mapping</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="document_id"/>
+                <field name="res_model"/>
+                <field name="res_id"/>
+                <field name="res_name"/>
+                <field name="link_type"/>
+                <field name="notes"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_doc_document" model="ir.actions.act_window">
+        <field name="name">Documents</field>
+        <field name="res_model">doc.document</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_doc_document_search"/>
+    </record>
+
+    <!-- Menu under Kill Bill -->
+    <menuitem id="menu_kb_documents"
+              name="Documents"
+              parent="menu_kb_root"
+              action="action_doc_document"
+              sequence="30"/>
+</odoo>

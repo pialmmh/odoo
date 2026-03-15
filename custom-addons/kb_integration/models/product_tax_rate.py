@@ -57,28 +57,25 @@ class ProductTaxRate(models.Model):
         default=lambda self: self.env.company, index=True)
     notes = fields.Text(string='Notes')
 
-    # Attachments — SRO docs, gazette notifications, legal references
-    sro_document = fields.Binary(
-        string='SRO / Gazette Document',
-        help='Upload the official SRO or gazette notification PDF')
-    sro_document_filename = fields.Char(string='SRO Filename')
-    supporting_doc = fields.Binary(
-        string='Supporting Document',
-        help='Additional supporting document (circular, letter, etc.)')
-    supporting_doc_filename = fields.Char(string='Supporting Doc Filename')
-    attachment_count = fields.Integer(
-        string='Attachments', compute='_compute_attachment_count')
+    # Documents — linked via doc.mapping (binaries stored in separate DB)
+    document_ids = fields.Many2many(
+        'doc.document', string='Documents',
+        compute='_compute_document_ids')
+    document_count = fields.Integer(
+        string='Documents', compute='_compute_document_ids')
 
     odoo_tax_id = fields.Many2one(
         'account.tax', string='Odoo Tax Record',
         help='Linked Odoo tax record for invoice computation')
 
-    def _compute_attachment_count(self):
+    def _compute_document_ids(self):
         for rec in self:
-            rec.attachment_count = self.env['ir.attachment'].search_count([
+            mappings = self.env['doc.mapping'].search([
                 ('res_model', '=', 'product.tax.rate'),
                 ('res_id', '=', rec.id),
             ])
+            rec.document_ids = mappings.mapped('document_id')
+            rec.document_count = len(rec.document_ids)
 
     _sql_constraints = [
         ('date_range_check',
