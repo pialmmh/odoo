@@ -15,7 +15,7 @@ Sync architecture:
 - KB webhook relay inserts KB events into kb.sync.log
 - Odoo consumer processes them via XML-RPC
     """,
-    'depends': ['base', 'contacts', 'account', 'sale_management', 'product'],
+    'depends': ['base', 'contacts', 'account', 'sale_management', 'product', 'mail'],
     'data': [
         'security/ir.model.access.csv',
         'data/ir_sequence_data.xml',

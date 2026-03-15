@@ -9,7 +9,7 @@ import {
 import {
   Add as AddIcon, Edit as EditIcon, Refresh as RefreshIcon,
   Close as CloseIcon, Search as SearchIcon,
-  Settings as SettingsIcon,
+  Settings as SettingsIcon, AttachFile as AttachIcon,
 } from '@mui/icons-material';
 import {
   getTaxRates, createTaxRate, updateTaxRate, getOdooTaxes,
@@ -276,6 +276,7 @@ function TaxRatesTab({ taxRates, categories, products, odooTaxes, onRefresh }) {
                 <TableCell sx={{ fontWeight: 600 }}>End</TableCell>
                 <TableCell sx={{ fontWeight: 600 }} align="center">Status</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Gazette/SRO</TableCell>
+                <TableCell sx={{ fontWeight: 600 }} align="center">Docs</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Reason</TableCell>
                 <TableCell sx={{ fontWeight: 600 }} align="center">Actions</TableCell>
               </TableRow>
@@ -317,6 +318,17 @@ function TaxRatesTab({ taxRates, categories, products, odooTaxes, onRefresh }) {
                         {rate.gazette_ref || '-'}
                       </Typography>
                     </TableCell>
+                    <TableCell align="center">
+                      {(rate.sro_document || rate.supporting_doc) ? (
+                        <Tooltip title={[rate.sro_document_filename, rate.supporting_doc_filename].filter(Boolean).join(', ')}>
+                          <Chip icon={<AttachIcon sx={{ fontSize: 14 }} />}
+                            label={[rate.sro_document, rate.supporting_doc].filter(Boolean).length}
+                            size="small" variant="outlined" sx={{ fontSize: 11 }} />
+                        </Tooltip>
+                      ) : (
+                        <Typography variant="caption" color="text.disabled">-</Typography>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 160 }} noWrap component="div">
                         {rate.reason || '-'}
@@ -333,7 +345,7 @@ function TaxRatesTab({ taxRates, categories, products, odooTaxes, onRefresh }) {
                 );
               })}
               {paged.length === 0 && (
-                <TableRow><TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                <TableRow><TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">No tax rates found</Typography>
                 </TableCell></TableRow>
               )}

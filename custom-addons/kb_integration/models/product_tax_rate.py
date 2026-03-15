@@ -8,6 +8,7 @@ _logger = logging.getLogger(__name__)
 
 class ProductTaxRate(models.Model):
     _name = 'product.tax.rate'
+    _inherit = ['mail.thread']
     _description = 'Product Tax Rate History (VAT/AIT by category with effective dates)'
     _order = 'effective_date desc, id desc'
 
@@ -56,9 +57,28 @@ class ProductTaxRate(models.Model):
         default=lambda self: self.env.company, index=True)
     notes = fields.Text(string='Notes')
 
+    # Attachments — SRO docs, gazette notifications, legal references
+    sro_document = fields.Binary(
+        string='SRO / Gazette Document',
+        help='Upload the official SRO or gazette notification PDF')
+    sro_document_filename = fields.Char(string='SRO Filename')
+    supporting_doc = fields.Binary(
+        string='Supporting Document',
+        help='Additional supporting document (circular, letter, etc.)')
+    supporting_doc_filename = fields.Char(string='Supporting Doc Filename')
+    attachment_count = fields.Integer(
+        string='Attachments', compute='_compute_attachment_count')
+
     odoo_tax_id = fields.Many2one(
         'account.tax', string='Odoo Tax Record',
         help='Linked Odoo tax record for invoice computation')
+
+    def _compute_attachment_count(self):
+        for rec in self:
+            rec.attachment_count = self.env['ir.attachment'].search_count([
+                ('res_model', '=', 'product.tax.rate'),
+                ('res_id', '=', rec.id),
+            ])
 
     _sql_constraints = [
         ('date_range_check',
