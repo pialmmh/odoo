@@ -38,3 +38,4 @@ class InfraCompute(models.Model):
 
     container_ids = fields.One2many('infra.container', 'compute_id', string='Containers')
     ip_address_ids = fields.One2many('infra.ip.address', 'compute_id', string='IP Addresses')
+    ssh_credential_ids = fields.One2many('infra.ssh.credential', 'compute_id', string='SSH Credentials')

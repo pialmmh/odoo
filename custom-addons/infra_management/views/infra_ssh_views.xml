@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- SSH Key Tree -->
+    <record id="view_infra_ssh_key_tree" model="ir.ui.view">
+        <field name="name">infra.ssh.key.tree</field>
+        <field name="model">infra.ssh.key</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="algorithm"/>
+                <field name="fingerprint"/>
+                <field name="comment"/>
+                <field name="has_passphrase"/>
+                <field name="credential_count"/>
+                <field name="created_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- SSH Key Form -->
+    <record id="view_infra_ssh_key_form" model="ir.ui.view">
+        <field name="name">infra.ssh.key.form</field>
+        <field name="model">infra.ssh.key</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Key Name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="algorithm"/>
+                            <field name="comment"/>
+                            <field name="has_passphrase"/>
+                        </group>
+                        <group>
+                            <field name="fingerprint"/>
+                            <field name="created_date"/>
+                            <field name="credential_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Public Key">
+                            <field name="public_key" readonly="1"/>
+                        </page>
+                        <page string="Used By" invisible="credential_count == 0">
+                            <field name="credential_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="host"/>
+                                    <field name="port"/>
+                                    <field name="username"/>
+                                    <field name="server_type"/>
+                                    <field name="deploy_status"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- SSH Key Action -->
+    <record id="action_infra_ssh_key" model="ir.actions.act_window">
+        <field name="name">SSH Keys</field>
+        <field name="res_model">infra.ssh.key</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- SSH Credential Tree -->
+    <record id="view_infra_ssh_credential_tree" model="ir.ui.view">
+        <field name="name">infra.ssh.credential.tree</field>
+        <field name="model">infra.ssh.credential</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="deploy_status == 'verified'"
+                  decoration-warning="deploy_status == 'deployed'"
+                  decoration-danger="deploy_status == 'failed'"
+                  decoration-muted="deploy_status == 'pending'">
+                <field name="name"/>
+                <field name="host"/>
+                <field name="port"/>
+                <field name="username"/>
+                <field name="server_type"/>
+                <field name="key_id"/>
+                <field name="deploy_status"/>
+                <field name="linked_entity"/>
+                <field name="tags" optional="show"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- SSH Credential Form -->
+    <record id="view_infra_ssh_credential_form" model="ir.ui.view">
+        <field name="name">infra.ssh.credential.form</field>
+        <field name="model">infra.ssh.credential</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Credential Name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Connection">
+                            <field name="host"/>
+                            <field name="port"/>
+                            <field name="username"/>
+                            <field name="server_type"/>
+                            <field name="sudo_enabled"/>
+                        </group>
+                        <group string="Key &amp; Status">
+                            <field name="key_id"/>
+                            <field name="deploy_status"/>
+                            <field name="last_deploy_date"/>
+                            <field name="last_verified_date"/>
+                            <field name="tags"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Link">
+                            <field name="compute_id"/>
+                            <field name="network_device_id"/>
+                        </group>
+                        <group>
+                            <field name="description" placeholder="Description..."/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Deploy Log" invisible="not deploy_log">
+                            <field name="deploy_log" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- SSH Credential Search -->
+    <record id="view_infra_ssh_credential_search" model="ir.ui.view">
+        <field name="name">infra.ssh.credential.search</field>
+        <field name="model">infra.ssh.credential</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="host"/>
+                <field name="username"/>
+                <field name="tags"/>
+                <separator/>
+                <filter name="verified" string="Verified" domain="[('deploy_status','=','verified')]"/>
+                <filter name="pending" string="Pending" domain="[('deploy_status','=','pending')]"/>
+                <filter name="failed" string="Failed" domain="[('deploy_status','=','failed')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_type" string="Server Type" context="{'group_by': 'server_type'}"/>
+                    <filter name="group_key" string="SSH Key" context="{'group_by': 'key_id'}"/>
+                    <filter name="group_status" string="Status" context="{'group_by': 'deploy_status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- SSH Credential Action -->
+    <record id="action_infra_ssh_credential" model="ir.actions.act_window">
+        <field name="name">SSH Credentials</field>
+        <field name="res_model">infra.ssh.credential</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_infra_ssh_credential_search"/>
+    </record>
+
+    <!-- Menu: SSH section under Infrastructure -->
+    <menuitem id="menu_infra_ssh"
+              name="SSH"
+              parent="menu_infra_root"
+              sequence="50"/>
+
+    <menuitem id="menu_infra_ssh_keys"
+              name="SSH Keys"
+              parent="menu_infra_ssh"
+              action="action_infra_ssh_key"
+              sequence="10"/>
+
+    <menuitem id="menu_infra_ssh_credentials"
+              name="Credentials"
+              parent="menu_infra_ssh"
+              action="action_infra_ssh_credential"
+              sequence="20"/>
+</odoo>

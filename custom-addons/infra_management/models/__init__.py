@@ -10,3 +10,5 @@ from . import infra_networking
 from . import infra_ip_address
 from . import infra_device_attribute
 from . import infra_device_model
+from . import infra_ssh_key
+from . import infra_ssh_credential

@@ -21,6 +21,7 @@ import ARReport from './pages/ARReport';
 import Payments from './pages/Payments';
 import InfraMain from './pages/infra/InfraMain';
 import InfraDeviceCatalog from './pages/infra/InfraDeviceCatalog';
+import InfraSSH from './pages/infra/InfraSSH';
 
 function ProtectedRoutes() {
   const { isLoggedIn, isSuper } = useAuth();
@@ -45,6 +46,7 @@ function ProtectedRoutes() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/infra" element={<InfraMain />} />
         <Route path="/infra/catalog" element={<InfraDeviceCatalog />} />
+        <Route path="/infra/ssh" element={<InfraSSH />} />
         {isSuper && <Route path="/tenants" element={<Tenants />} />}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

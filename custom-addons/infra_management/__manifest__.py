@@ -25,6 +25,7 @@ Infrastructure Management for ISP/Telecom
         'views/infra_network_device_views.xml',
         'views/infra_ip_address_views.xml',
         'views/infra_device_model_views.xml',
+        'views/infra_ssh_views.xml',
     ],
     'installable': True,
     'application': True,

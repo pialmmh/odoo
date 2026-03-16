@@ -23,3 +23,7 @@ access_infra_device_attribute_admin,infra.device.attribute admin,model_infra_dev
 access_infra_device_attribute_user,infra.device.attribute user,model_infra_device_attribute,base.group_user,1,1,0,0
 access_infra_device_model_admin,infra.device.model admin,model_infra_device_model,base.group_system,1,1,1,1
 access_infra_device_model_user,infra.device.model user,model_infra_device_model,base.group_user,1,1,1,0
+access_infra_ssh_key_admin,infra.ssh.key admin,model_infra_ssh_key,base.group_system,1,1,1,1
+access_infra_ssh_key_user,infra.ssh.key user,model_infra_ssh_key,base.group_user,1,1,1,0
+access_infra_ssh_credential_admin,infra.ssh.credential admin,model_infra_ssh_credential,base.group_system,1,1,1,1
+access_infra_ssh_credential_user,infra.ssh.credential user,model_infra_ssh_credential,base.group_user,1,1,1,0

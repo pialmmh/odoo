@@ -18,15 +18,29 @@ import {
 import { getRegions, getAvailabilityZones, getDatacenters } from '../../services/infra';
 import { useAppTheme } from '../../context/ThemeContext';
 
-const TYPE_BADGE = { fontSize: 9, height: 16, ml: 0.5, fontWeight: 700, letterSpacing: 0.4 };
+const BADGE_BASE = { fontSize: 9, height: 16, ml: 0.5, fontWeight: 700, letterSpacing: 0.4, '& .MuiChip-label': { px: 0.7 } };
 
-function TreeLabel({ icon, name, type, color }) {
+// solid fill — strongest emphasis
+function SolidBadge({ label, color }) {
+  return <Chip label={label} size="small" sx={{ ...BADGE_BASE, bgcolor: color, color: '#fff' }} />;
+}
+
+// outlined — medium emphasis
+function OutlinedBadge({ label, color }) {
+  return <Chip label={label} size="small" variant="outlined" sx={{ ...BADGE_BASE, borderColor: color, color, borderWidth: 1.5 }} />;
+}
+
+// soft tint — lightest emphasis
+function TintedBadge({ label, color }) {
+  return <Chip label={label} size="small" sx={{ ...BADGE_BASE, bgcolor: `${color}18`, color, border: 'none' }} />;
+}
+
+function TreeLabel({ icon, name, badge }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', py: 0.2 }}>
       {icon}
       <Typography fontSize={13} sx={{ flexGrow: 1 }}>{name}</Typography>
-      <Chip label={type} size="small"
-        sx={{ ...TYPE_BADGE, bgcolor: color, color: '#fff' }} />
+      {badge}
     </Box>
   );
 }
@@ -103,21 +117,21 @@ export default function InfraTree({ onSelect }) {
             <TreeItem
               key={`r-${region.id}`}
               itemId={`r-${region.id}`}
-              label={<TreeLabel icon={<RegionIcon fontSize="small" sx={{ mr: 0.5, color: ic.region }} />} name={region.name} type="Region" color={ic.region} />}
+              label={<TreeLabel icon={<RegionIcon fontSize="small" sx={{ mr: 0.5, color: ic.region }} />} name={region.name} badge={<SolidBadge label="Region" color={ic.region} />} />}
               onClick={() => handleSelect('region', { region })}
             >
               {zones.filter(z => z.region_id?.[0] === region.id && filterMatch(z.name)).map(zone => (
                 <TreeItem
                   key={`z-${zone.id}`}
                   itemId={`z-${zone.id}`}
-                  label={<TreeLabel icon={<ZoneIcon fontSize="small" sx={{ mr: 0.5, color: ic.zone }} />} name={zone.name} type="Zone" color={ic.zone} />}
+                  label={<TreeLabel icon={<ZoneIcon fontSize="small" sx={{ mr: 0.5, color: ic.zone }} />} name={zone.name} badge={<OutlinedBadge label="Zone" color={ic.zone} />} />}
                   onClick={() => handleSelect('zone', { region, zone })}
                 >
                   {datacenters.filter(dc => dc.zone_id?.[0] === zone.id).map(dc => (
                     <TreeItem
                       key={`dc-${dc.id}`}
                       itemId={`dc-${dc.id}`}
-                      label={<TreeLabel icon={<DcIcon fontSize="small" sx={{ mr: 0.5, color: ic.dc }} />} name={dc.name} type="DC" color={ic.dc} />}
+                      label={<TreeLabel icon={<DcIcon fontSize="small" sx={{ mr: 0.5, color: ic.dc }} />} name={dc.name} badge={<TintedBadge label="DC" color={ic.dc} />} />}
                       onClick={() => handleSelect('datacenter', { region, zone, datacenter: dc })}
                     >
                       {ENTITY_TYPES.map(et => (

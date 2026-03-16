@@ -46,6 +46,7 @@ class InfraNetworkDevice(models.Model):
     notes = fields.Text(string='Notes')
 
     ip_address_ids = fields.One2many('infra.ip.address', 'network_device_id', string='IP Addresses')
+    ssh_credential_ids = fields.One2many('infra.ssh.credential', 'network_device_id', string='SSH Credentials')
 
     # Related fields from device model
     vendor_display = fields.Char(string='Vendor', related='device_model_id.vendor', readonly=True)

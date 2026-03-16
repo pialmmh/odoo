@@ -239,3 +239,69 @@ export async function updateDeviceModel(id, vals) {
 export async function deleteDeviceModel(id) {
   return call('infra.device.model', 'unlink', [[id]]);
 }
+
+// ── SSH Keys ──
+
+export async function getSSHKeys(domain = []) {
+  return call('infra.ssh.key', 'search_read', [domain], {
+    fields: [
+      'id', 'name', 'algorithm', 'comment', 'has_passphrase',
+      'public_key', 'fingerprint', 'created_date', 'credential_count',
+    ],
+    order: 'name',
+  });
+}
+
+export async function generateSSHKey(name, algorithm = 'ed25519', comment = '', passphrase = '') {
+  return call('infra.ssh.key', 'action_generate_key', [name, algorithm, comment, passphrase]);
+}
+
+export async function deleteSSHKey(id) {
+  return call('infra.ssh.key', 'unlink', [[id]]);
+}
+
+export async function getSSHKeyPublicKey(id) {
+  return call('infra.ssh.key', 'action_get_public_key', [[id]]);
+}
+
+export async function getSSHKeyPrivateKey(id) {
+  return call('infra.ssh.key', 'action_get_private_key_pem', [[id]]);
+}
+
+// ── SSH Credentials ──
+
+export async function getSSHCredentials(domain = []) {
+  return call('infra.ssh.credential', 'search_read', [domain], {
+    fields: [
+      'id', 'name', 'host', 'port', 'username', 'server_type',
+      'sudo_enabled', 'description', 'tags',
+      'key_id', 'deploy_status', 'last_deploy_date', 'last_verified_date',
+      'deploy_log', 'compute_id', 'network_device_id', 'linked_entity',
+    ],
+    order: 'name',
+  });
+}
+
+export async function createSSHCredential(vals) {
+  return call('infra.ssh.credential', 'create', [vals]);
+}
+
+export async function updateSSHCredential(id, vals) {
+  return call('infra.ssh.credential', 'write', [[id], vals]);
+}
+
+export async function deleteSSHCredential(id) {
+  return call('infra.ssh.credential', 'unlink', [[id]]);
+}
+
+export async function deploySSHKey(credId, password) {
+  return call('infra.ssh.credential', 'action_deploy_key', [[credId]], { context: { ssh_password: password } });
+}
+
+export async function verifySSHKey(credId) {
+  return call('infra.ssh.credential', 'action_verify_key', [[credId]]);
+}
+
+export async function execSSHCommand(credId, command) {
+  return call('infra.ssh.credential', 'action_exec_command', [[credId], command]);
+}
