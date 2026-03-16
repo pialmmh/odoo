@@ -22,6 +22,7 @@ import Payments from './pages/Payments';
 import InfraMain from './pages/infra/InfraMain';
 import InfraDeviceCatalog from './pages/infra/InfraDeviceCatalog';
 import InfraSSH from './pages/infra/InfraSSH';
+import ArtifactsMain from './pages/artifacts/ArtifactsMain';
 
 function ProtectedRoutes() {
   const { isLoggedIn, isSuper } = useAuth();
@@ -47,6 +48,7 @@ function ProtectedRoutes() {
         <Route path="/infra" element={<InfraMain />} />
         <Route path="/infra/catalog" element={<InfraDeviceCatalog />} />
         <Route path="/infra/ssh" element={<InfraSSH />} />
+        <Route path="/artifacts" element={<ArtifactsMain />} />
         {isSuper && <Route path="/tenants" element={<Tenants />} />}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

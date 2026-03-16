@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ── Project ── -->
+    <record id="view_artifact_project_tree" model="ir.ui.view">
+        <field name="name">artifact.project.tree</field>
+        <field name="model">artifact.project</field>
+        <field name="arch" type="xml">
+            <tree><field name="name"/><field name="project_type"/><field name="repo_url"/><field name="deploy_base_path"/><field name="version_count"/><field name="deployment_count"/></tree>
+        </field>
+    </record>
+    <record id="view_artifact_project_form" model="ir.ui.view">
+        <field name="name">artifact.project.form</field>
+        <field name="model">artifact.project</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group><group><field name="project_type"/><field name="repo_url"/><field name="artifact_path"/></group>
+                    <group><field name="deploy_base_path"/><field name="deploy_template_id"/><field name="build_command"/></group></group>
+                    <field name="description"/>
+                    <notebook><page string="Versions"><field name="version_ids"><tree><field name="git_tag"/><field name="git_commit"/><field name="git_branch"/><field name="file_size_display"/><field name="status"/><field name="build_date"/></tree></field></page></notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_artifact_project" model="ir.actions.act_window">
+        <field name="name">Projects</field><field name="res_model">artifact.project</field><field name="view_mode">tree,form</field>
+    </record>
+    <menuitem id="menu_artifact_projects" name="Projects" parent="menu_artifact_registry" action="action_artifact_project" sequence="10"/>
+
+    <!-- ── Version ── -->
+    <record id="view_artifact_version_tree" model="ir.ui.view">
+        <field name="name">artifact.version.tree</field>
+        <field name="model">artifact.version</field>
+        <field name="arch" type="xml">
+            <tree><field name="project_id"/><field name="git_tag"/><field name="git_commit"/><field name="git_branch"/><field name="file_size_display"/><field name="status"/><field name="build_date"/><field name="deployment_count"/></tree>
+        </field>
+    </record>
+    <record id="action_artifact_version" model="ir.actions.act_window">
+        <field name="name">Versions</field><field name="res_model">artifact.version</field><field name="view_mode">tree,form</field>
+    </record>
+    <menuitem id="menu_artifact_versions" name="Versions" parent="menu_artifact_registry" action="action_artifact_version" sequence="20"/>
+
+    <!-- ── Deployment ── -->
+    <record id="view_artifact_deployment_tree" model="ir.ui.view">
+        <field name="name">artifact.deployment.tree</field>
+        <field name="model">artifact.deployment</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="status == 'success'" decoration-danger="status == 'failed'" decoration-warning="status == 'running'">
+                <field name="name"/><field name="project_id"/><field name="version_id"/><field name="compute_id"/><field name="status"/><field name="deployed_by"/><field name="started_at"/><field name="finished_at"/>
+            </tree>
+        </field>
+    </record>
+    <record id="action_artifact_deployment" model="ir.actions.act_window">
+        <field name="name">Deployments</field><field name="res_model">artifact.deployment</field><field name="view_mode">tree,form</field>
+    </record>
+    <menuitem id="menu_artifact_deployments" name="Deployments" parent="menu_artifact_deploy" action="action_artifact_deployment" sequence="10"/>
+
+    <!-- ── Pipeline ── -->
+    <record id="view_artifact_pipeline_tree" model="ir.ui.view">
+        <field name="name">artifact.deploy.pipeline.tree</field>
+        <field name="model">artifact.deploy.pipeline</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="status == 'success'" decoration-danger="status == 'failed'" decoration-warning="status == 'running'">
+                <field name="name"/><field name="status"/><field name="current_step"/><field name="total_steps"/><field name="started_at"/><field name="finished_at"/>
+            </tree>
+        </field>
+    </record>
+    <record id="action_artifact_pipeline" model="ir.actions.act_window">
+        <field name="name">Pipelines</field><field name="res_model">artifact.deploy.pipeline</field><field name="view_mode">tree,form</field>
+    </record>
+    <menuitem id="menu_artifact_pipelines" name="Pipelines" parent="menu_artifact_deploy" action="action_artifact_pipeline" sequence="20"/>
+
+    <!-- ── Template ── -->
+    <record id="view_artifact_template_tree" model="ir.ui.view">
+        <field name="name">artifact.deploy.template.tree</field>
+        <field name="model">artifact.deploy.template</field>
+        <field name="arch" type="xml">
+            <tree><field name="name"/><field name="project_type"/><field name="step_count"/><field name="variable_names"/></tree>
+        </field>
+    </record>
+    <record id="view_artifact_template_form" model="ir.ui.view">
+        <field name="name">artifact.deploy.template.form</field>
+        <field name="model">artifact.deploy.template</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group><group><field name="project_type"/><field name="variable_names"/></group></group>
+                    <field name="description"/>
+                    <notebook><page string="Steps">
+                        <field name="step_ids"><tree editable="bottom">
+                            <field name="sequence" widget="handle"/><field name="name"/><field name="step_type"/><field name="command"/><field name="timeout"/><field name="continue_on_error"/>
+                        </tree></field>
+                    </page></notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_artifact_template" model="ir.actions.act_window">
+        <field name="name">Deploy Templates</field><field name="res_model">artifact.deploy.template</field><field name="view_mode">tree,form</field>
+    </record>
+    <menuitem id="menu_artifact_templates" name="Deploy Templates" parent="menu_artifact_config" action="action_artifact_template" sequence="10"/>
+</odoo>

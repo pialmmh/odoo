@@ -19,6 +19,7 @@ import {
   Lan as InfraIcon,
   DeviceHub as CatalogDeviceIcon,
   VpnKey as SSHIcon,
+  Inventory2 as ArtifactIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -45,6 +46,7 @@ export default function Sidebar() {
     { text: 'Infra', icon: <InfraIcon />, path: '/infra' },
     { text: 'Device Catalog', icon: <CatalogDeviceIcon />, path: '/infra/catalog' },
     { text: 'SSH', icon: <SSHIcon />, path: '/infra/ssh' },
+    { text: 'Artifacts', icon: <ArtifactIcon />, path: '/artifacts' },
     { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
