@@ -16,8 +16,8 @@ Infrastructure Management for ISP/Telecom
     'depends': ['base', 'contacts'],
     'data': [
         'security/ir.model.access.csv',
-        'data/infra_device_attribute_data.xml',
-        'data/infra_device_model_data.xml',
+        'seed/infra_device_attribute_data.xml',
+        'seed/infra_device_model_data.xml',
         'views/infra_menus.xml',
         'views/infra_region_views.xml',
         'views/infra_datacenter_views.xml',
