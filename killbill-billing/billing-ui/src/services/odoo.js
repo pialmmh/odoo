@@ -35,7 +35,7 @@ async function getUid() {
   return _uid;
 }
 
-async function call(model, method, args = [], kwargs = {}) {
+export async function call(model, method, args = [], kwargs = {}) {
   await getUid();
   return jsonrpc(`/web/dataset/call_kw/${model}/${method}`, 'call', {
     model,

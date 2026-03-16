@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import theme from './theme/theme';
+import { ThemeRegistryProvider, useAppTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './components/ErrorNotification';
 import MainLayout from './layouts/MainLayout';
@@ -19,6 +19,8 @@ import Settings from './pages/Settings';
 import Tenants from './pages/Tenants';
 import ARReport from './pages/ARReport';
 import Payments from './pages/Payments';
+import InfraMain from './pages/infra/InfraMain';
+import InfraDeviceCatalog from './pages/infra/InfraDeviceCatalog';
 
 function ProtectedRoutes() {
   const { isLoggedIn, isSuper } = useAuth();
@@ -41,6 +43,8 @@ function ProtectedRoutes() {
         <Route path="/rate-history" element={<RateHistory />} />
         <Route path="/reports/ar" element={<ARReport />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/infra" element={<InfraMain />} />
+        <Route path="/infra/catalog" element={<InfraDeviceCatalog />} />
         {isSuper && <Route path="/tenants" element={<Tenants />} />}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
@@ -59,9 +63,10 @@ function AppRoutes() {
   );
 }
 
-export default function App() {
+function ThemedApp() {
+  const { muiTheme } = useAppTheme();
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={muiTheme}>
       <CssBaseline />
       <NotificationProvider>
         <AuthProvider>
@@ -71,5 +76,13 @@ export default function App() {
         </AuthProvider>
       </NotificationProvider>
     </ThemeProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeRegistryProvider>
+      <ThemedApp />
+    </ThemeRegistryProvider>
   );
 }

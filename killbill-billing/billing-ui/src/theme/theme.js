@@ -12,11 +12,14 @@ const theme = createTheme({
     text: { primary: '#2c2c2c', secondary: '#626262' },
   },
   typography: {
+    fontSize: 12.5,
+    htmlFontSize: 16,
     fontFamily: "'Inter', 'Segoe UI', sans-serif",
     h5: { fontWeight: 600 },
     h6: { fontWeight: 600 },
     subtitle1: { fontWeight: 500 },
   },
+  spacing: 7,
   shape: { borderRadius: 8 },
   components: {
     MuiButton: {

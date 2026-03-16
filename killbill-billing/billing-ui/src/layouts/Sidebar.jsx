@@ -16,8 +16,11 @@ import {
   PriceChange as PricingIcon,
   History as HistoryIcon,
   Settings as SettingsIcon,
+  Lan as InfraIcon,
+  DeviceHub as CatalogDeviceIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
 
 const DRAWER_WIDTH = 240;
 
@@ -25,6 +28,7 @@ export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isSuper } = useAuth();
+  const { brand } = useAppTheme();
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
@@ -37,6 +41,8 @@ export default function Sidebar() {
     { text: 'Pricing', icon: <PricingIcon />, path: '/pricing' },
     { text: 'Rate History', icon: <HistoryIcon />, path: '/rate-history' },
     { text: 'AR Report', icon: <ARIcon />, path: '/reports/ar' },
+    { text: 'Infra', icon: <InfraIcon />, path: '/infra' },
+    { text: 'Device Catalog', icon: <CatalogDeviceIcon />, path: '/infra/catalog' },
     { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
@@ -47,6 +53,7 @@ export default function Sidebar() {
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
+    if (path === '/infra') return location.pathname === '/infra';
     return location.pathname.startsWith(path);
   };
 
@@ -93,11 +100,11 @@ export default function Sidebar() {
             sx={{
               borderRadius: '6px', mb: 0.5,
               '&.Mui-selected': {
-                bgcolor: 'rgba(0,166,81,0.08)',
+                bgcolor: brand.sidebar.activeBg,
                 color: 'primary.main',
                 '& .MuiListItemIcon-root': { color: 'primary.main' },
               },
-              '&:hover': { bgcolor: 'rgba(0,166,81,0.04)' },
+              '&:hover': { bgcolor: brand.sidebar.hoverBg },
             }}
           >
             <ListItemIcon sx={{ minWidth: 36, color: isActive(item.path) ? 'primary.main' : '#6b7280' }}>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Network Device Tree -->
+    <record id="view_infra_network_device_tree" model="ir.ui.view">
+        <field name="name">infra.network.device.tree</field>
+        <field name="model">infra.network.device</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="operational_status == 'up'"
+                  decoration-danger="operational_status == 'down'"
+                  decoration-warning="operational_status == 'degraded'">
+                <field name="name"/>
+                <field name="device_model_id"/>
+                <field name="device_attribute_ids" widget="many2many_tags"/>
+                <field name="serial_number" optional="show"/>
+                <field name="management_ip"/>
+                <field name="datacenter_id"/>
+                <field name="rack_position" optional="show"/>
+                <field name="operational_status"/>
+                <field name="criticality"/>
+                <field name="status"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Network Device Form -->
+    <record id="view_infra_network_device_form" model="ir.ui.view">
+        <field name="name">infra.network.device.form</field>
+        <field name="model">infra.network.device</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Device Name"/></h1>
+                    </div>
+                    <group>
+                        <group string="General">
+                            <field name="device_model_id"/>
+                            <field name="device_attribute_ids" widget="many2many_tags"/>
+                            <field name="serial_number"/>
+                            <field name="status"/>
+                            <field name="operational_status"/>
+                            <field name="criticality"/>
+                        </group>
+                        <group string="Network">
+                            <field name="management_ip"/>
+                            <field name="management_port"/>
+                            <field name="management_protocol"/>
+                            <field name="datacenter_id"/>
+                            <field name="rack_position"/>
+                            <field name="firmware"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="IP Addresses">
+                            <field name="ip_address_ids">
+                                <tree editable="bottom">
+                                    <field name="ip_address"/>
+                                    <field name="subnet_mask"/>
+                                    <field name="ip_type"/>
+                                    <field name="assignment_method"/>
+                                    <field name="vlan_id"/>
+                                    <field name="is_primary"/>
+                                    <field name="is_active"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes" placeholder="Additional notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Network Device Search -->
+    <record id="view_infra_network_device_search" model="ir.ui.view">
+        <field name="name">infra.network.device.search</field>
+        <field name="model">infra.network.device</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="management_ip"/>
+                <field name="serial_number"/>
+                <field name="device_model_id"/>
+                <separator/>
+                <filter name="active" string="Active" domain="[('status','=','active')]"/>
+                <filter name="up" string="UP" domain="[('operational_status','=','up')]"/>
+                <filter name="down" string="DOWN" domain="[('operational_status','=','down')]"/>
+                <filter name="critical" string="Critical" domain="[('criticality','=','critical')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_dc" string="Datacenter" context="{'group_by': 'datacenter_id'}"/>
+                    <filter name="group_model" string="Model" context="{'group_by': 'device_model_id'}"/>
+                    <filter name="group_criticality" string="Criticality" context="{'group_by': 'criticality'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Network Device Action -->
+    <record id="action_infra_network_device" model="ir.actions.act_window">
+        <field name="name">Network Devices</field>
+        <field name="res_model">infra.network.device</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_infra_network_device_search"/>
+        <field name="context">{'search_default_active': 1}</field>
+    </record>
+
+    <menuitem id="menu_infra_network_devices"
+              name="Network Devices"
+              parent="menu_infra_equipment"
+              action="action_infra_network_device"
+              sequence="5"/>
+</odoo>

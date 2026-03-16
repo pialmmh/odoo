@@ -2,12 +2,14 @@ import {
   AppBar, Toolbar, Typography, Chip, Box, MenuItem,
   Select, Button, Divider,
 } from '@mui/material';
-import { Logout, Warning } from '@mui/icons-material';
+import { Logout, Warning, Palette } from '@mui/icons-material';
 import { DRAWER_WIDTH } from './Sidebar';
 import { useAuth } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function TopBar() {
   const { auth, activeTenant, isSuper, availableTenants, switchTenant, logout } = useAuth();
+  const { themeKey, switchTheme, available } = useAppTheme();
 
   return (
     <AppBar
@@ -59,6 +61,21 @@ export default function TopBar() {
               ))}
             </Select>
           )}
+
+          <Divider orientation="vertical" flexItem />
+
+          {/* Theme switcher */}
+          <Select
+            size="small"
+            value={themeKey}
+            onChange={(e) => switchTheme(e.target.value)}
+            sx={{ minWidth: 110, fontSize: 12, height: 30 }}
+            startAdornment={<Palette sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />}
+          >
+            {available.map((t) => (
+              <MenuItem key={t.key} value={t.key} sx={{ fontSize: 12 }}>{t.label}</MenuItem>
+            ))}
+          </Select>
 
           <Divider orientation="vertical" flexItem />
 

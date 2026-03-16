@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Compute Tree -->
+    <record id="view_infra_compute_tree" model="ir.ui.view">
+        <field name="name">infra.compute.tree</field>
+        <field name="model">infra.compute</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="hostname"/>
+                <field name="node_type"/>
+                <field name="datacenter_id"/>
+                <field name="cpu_cores"/>
+                <field name="memory_gb"/>
+                <field name="disk_gb"/>
+                <field name="management_ip"/>
+                <field name="status"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Compute Form -->
+    <record id="view_infra_compute_form" model="ir.ui.view">
+        <field name="name">infra.compute.form</field>
+        <field name="model">infra.compute</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Compute Name"/></h1>
+                    </div>
+                    <group>
+                        <group string="General">
+                            <field name="hostname"/>
+                            <field name="node_type"/>
+                            <field name="datacenter_id"/>
+                            <field name="pool_id"/>
+                            <field name="os_type"/>
+                            <field name="management_ip"/>
+                            <field name="status"/>
+                        </group>
+                        <group string="Hardware">
+                            <field name="cpu_cores"/>
+                            <field name="memory_gb"/>
+                            <field name="disk_gb"/>
+                            <field name="brand"/>
+                            <field name="model"/>
+                            <field name="serial_number"/>
+                            <field name="rack_location"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Containers">
+                            <field name="container_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="container_type"/>
+                                    <field name="image"/>
+                                    <field name="cpu_limit"/>
+                                    <field name="memory_limit"/>
+                                    <field name="status"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="IP Addresses">
+                            <field name="ip_address_ids">
+                                <tree>
+                                    <field name="ip_address"/>
+                                    <field name="subnet_mask"/>
+                                    <field name="ip_type"/>
+                                    <field name="is_primary"/>
+                                    <field name="is_active"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Compute Search -->
+    <record id="view_infra_compute_search" model="ir.ui.view">
+        <field name="name">infra.compute.search</field>
+        <field name="model">infra.compute</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="hostname"/>
+                <field name="management_ip"/>
+                <separator/>
+                <filter name="active" string="Active" domain="[('status','=','active')]"/>
+                <filter name="servers" string="Servers" domain="[('node_type','=','dedicated_server')]"/>
+                <filter name="vms" string="VMs" domain="[('node_type','=','vm')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_dc" string="Datacenter" context="{'group_by': 'datacenter_id'}"/>
+                    <filter name="group_type" string="Type" context="{'group_by': 'node_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Compute Action -->
+    <record id="action_infra_compute" model="ir.actions.act_window">
+        <field name="name">Compute Nodes</field>
+        <field name="res_model">infra.compute</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_infra_compute_search"/>
+        <field name="context">{'search_default_active': 1}</field>
+    </record>
+
+    <menuitem id="menu_infra_computes"
+              name="Compute Nodes"
+              parent="menu_infra_equipment"
+              action="action_infra_compute"
+              sequence="10"/>
+
+    <!-- Container Action -->
+    <record id="action_infra_container" model="ir.actions.act_window">
+        <field name="name">Containers</field>
+        <field name="res_model">infra.container</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_infra_containers"
+              name="Containers"
+              parent="menu_infra_equipment"
+              action="action_infra_container"
+              sequence="20"/>
+
+    <!-- Storage Action -->
+    <record id="action_infra_storage" model="ir.actions.act_window">
+        <field name="name">Storage</field>
+        <field name="res_model">infra.storage</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_infra_storage"
+              name="Storage"
+              parent="menu_infra_equipment"
+              action="action_infra_storage"
+              sequence="30"/>
+</odoo>

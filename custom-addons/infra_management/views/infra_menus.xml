@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top-level menu -->
+    <menuitem id="menu_infra_root"
+              name="Infrastructure"
+              sequence="95"/>
+
+    <!-- Sub-menus -->
+    <menuitem id="menu_infra_topology"
+              name="Topology"
+              parent="menu_infra_root"
+              sequence="10"/>
+
+    <menuitem id="menu_infra_equipment"
+              name="Equipment"
+              parent="menu_infra_root"
+              sequence="20"/>
+
+    <menuitem id="menu_infra_network"
+              name="Network"
+              parent="menu_infra_root"
+              sequence="30"/>
+
+    <menuitem id="menu_infra_catalog"
+              name="Catalog"
+              parent="menu_infra_root"
+              sequence="40"/>
+</odoo>

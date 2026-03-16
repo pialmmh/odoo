@@ -1,0 +1,25 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_infra_region_admin,infra.region admin,model_infra_region,base.group_system,1,1,1,1
+access_infra_region_user,infra.region user,model_infra_region,base.group_user,1,1,1,0
+access_infra_availability_zone_admin,infra.availability.zone admin,model_infra_availability_zone,base.group_system,1,1,1,1
+access_infra_availability_zone_user,infra.availability.zone user,model_infra_availability_zone,base.group_user,1,1,1,0
+access_infra_datacenter_admin,infra.datacenter admin,model_infra_datacenter,base.group_system,1,1,1,1
+access_infra_datacenter_user,infra.datacenter user,model_infra_datacenter,base.group_user,1,1,1,0
+access_infra_resource_pool_admin,infra.resource.pool admin,model_infra_resource_pool,base.group_system,1,1,1,1
+access_infra_resource_pool_user,infra.resource.pool user,model_infra_resource_pool,base.group_user,1,1,1,0
+access_infra_compute_admin,infra.compute admin,model_infra_compute,base.group_system,1,1,1,1
+access_infra_compute_user,infra.compute user,model_infra_compute,base.group_user,1,1,1,0
+access_infra_container_admin,infra.container admin,model_infra_container,base.group_system,1,1,1,1
+access_infra_container_user,infra.container user,model_infra_container,base.group_user,1,1,1,0
+access_infra_network_device_admin,infra.network.device admin,model_infra_network_device,base.group_system,1,1,1,1
+access_infra_network_device_user,infra.network.device user,model_infra_network_device,base.group_user,1,1,1,0
+access_infra_storage_admin,infra.storage admin,model_infra_storage,base.group_system,1,1,1,1
+access_infra_storage_user,infra.storage user,model_infra_storage,base.group_user,1,1,1,0
+access_infra_networking_admin,infra.networking admin,model_infra_networking,base.group_system,1,1,1,1
+access_infra_networking_user,infra.networking user,model_infra_networking,base.group_user,1,1,1,0
+access_infra_ip_address_admin,infra.ip.address admin,model_infra_ip_address,base.group_system,1,1,1,1
+access_infra_ip_address_user,infra.ip.address user,model_infra_ip_address,base.group_user,1,1,1,0
+access_infra_device_attribute_admin,infra.device.attribute admin,model_infra_device_attribute,base.group_system,1,1,1,1
+access_infra_device_attribute_user,infra.device.attribute user,model_infra_device_attribute,base.group_user,1,1,0,0
+access_infra_device_model_admin,infra.device.model admin,model_infra_device_model,base.group_system,1,1,1,1
+access_infra_device_model_user,infra.device.model user,model_infra_device_model,base.group_user,1,1,1,0
