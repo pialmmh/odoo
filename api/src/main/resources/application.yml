@@ -1,0 +1,17 @@
+server:
+  port: 8180
+
+odoo:
+  url: http://127.0.0.1:7169
+  db: odoo_billing
+  username: admin
+  password: admin
+
+killbill:
+  url: http://127.0.0.1:18080
+  username: admin
+  password: password
+
+spring:
+  application:
+    name: telcobright-platform-api

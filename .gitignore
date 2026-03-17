@@ -3,22 +3,24 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 *.egg
-venv/
 
 # Odoo
-odoo-src/
-data/
+odoo-backend/odoo-src/
+odoo-backend/venv/
+odoo-backend/data/
 *.log
 *.pyc
 
 # Kill Bill server source (large, cloned separately)
-killbill-billing/killbill-server/
+killbill/killbill-server/
 
-# Build artifacts
+# Java build artifacts
 target/
 *.class
 *.jar
 *.war
+.mvn/
+!.mvn/wrapper/
 
 # Node
 node_modules/
