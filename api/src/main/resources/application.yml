@@ -15,3 +15,8 @@ killbill:
 spring:
   application:
     name: telcobright-platform-api
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:7104/realms/telcobright

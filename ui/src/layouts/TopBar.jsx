@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 
 export default function TopBar() {
-  const { auth, activeTenant, isSuper, availableTenants, switchTenant, logout } = useAuth();
+  const { auth, activeTenant, isSuper, availableTenants, switchTenant, logout, authMode, switchAuthMode } = useAuth();
   const { themeKey, switchTheme, available } = useAppTheme();
 
   return (
@@ -81,6 +81,17 @@ export default function TopBar() {
 
           {/* User info */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              label={authMode === 'keycloak' ? 'KC' : 'Local'}
+              size="small"
+              sx={{ height: 20, fontSize: 9, fontWeight: 700,
+                bgcolor: authMode === 'keycloak' ? '#e3f2fd' : '#fff3e0',
+                color: authMode === 'keycloak' ? '#1565c0' : '#e65100',
+                cursor: 'pointer',
+              }}
+              onClick={() => switchAuthMode(authMode === 'keycloak' ? 'legacy' : 'keycloak')}
+              title="Click to switch auth mode"
+            />
             <Chip
               label={isSuper ? 'Super Admin' : 'Tenant Admin'}
               size="small"
