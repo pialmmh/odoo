@@ -1,48 +1,29 @@
 import axios from 'axios';
+import { getToken } from './keycloak';
 
-const ODOO_DB = 'odoo_billing';
-const ODOO_USER = 'admin';
-const ODOO_PASS = 'admin';
+// ── API client: routes through Spring Boot gateway ──
 
-let _uid = null;
-
-const rpc = axios.create({
-  baseURL: '/odoo',
+const api = axios.create({
+  baseURL: '/api/odoo',
   headers: { 'Content-Type': 'application/json' },
 });
 
-async function jsonrpc(url, method, params) {
-  const resp = await rpc.post(url, {
-    jsonrpc: '2.0',
-    id: Date.now(),
-    method: 'call',
-    params,
-  });
-  if (resp.data.error) {
-    throw new Error(resp.data.error.data?.message || resp.data.error.message || 'Odoo RPC error');
+// Inject JWT token on every request
+api.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return resp.data.result;
-}
+  return config;
+});
 
-async function getUid() {
-  if (_uid) return _uid;
-  _uid = await jsonrpc('/web/session/authenticate', 'call', {
-    db: ODOO_DB,
-    login: ODOO_USER,
-    password: ODOO_PASS,
-  });
-  _uid = _uid.uid;
-  return _uid;
-}
-
+/**
+ * Generic Odoo model call via Spring Boot proxy.
+ * POST /api/odoo/{model}/{method}  { args, kwargs }
+ */
 export async function call(model, method, args = [], kwargs = {}) {
-  await getUid();
-  return jsonrpc(`/web/dataset/call_kw/${model}/${method}`, 'call', {
-    model,
-    method,
-    args,
-    kwargs,
-  });
+  const resp = await api.post(`/${model}/${method}`, { args, kwargs });
+  return resp.data;
 }
 
 // ── Products ──

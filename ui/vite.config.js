@@ -9,14 +9,10 @@ export default defineConfig({
   server: {
     port: 5180,
     proxy: {
-      '/1.0/kb': {
-        target: 'http://127.0.0.1:18080',
+      // All API calls route through Spring Boot gateway
+      '/api': {
+        target: 'http://127.0.0.1:8180',
         changeOrigin: true,
-      },
-      '/odoo': {
-        target: 'http://127.0.0.1:7169',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/odoo/, ''),
       },
     },
   },

@@ -1,35 +1,46 @@
 import axios from 'axios';
 import { getActiveTenant, getAuth } from './auth';
+import { getToken } from './keycloak';
 
-// Create axios instance — headers are set dynamically per request
+// ── Routes through Spring Boot API gateway ──
+// Spring Boot forwards /api/kb/** → Kill Bill :18080/1.0/kb/**
+// and injects KB auth headers server-side
+
 const api = axios.create({
-  baseURL: '/1.0/kb',
+  baseURL: '/api/kb',
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Interceptor: inject tenant + auth headers from current session
+// Inject JWT + tenant headers
 api.interceptors.request.use((config) => {
-  const auth = getAuth();
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   const tenant = getActiveTenant();
-
-  // Basic auth — always admin:password for Kill Bill API
-  config.auth = { username: 'admin', password: 'password' };
-
-  // Tenant headers — from active tenant selection
   if (tenant) {
     config.headers['X-Killbill-ApiKey'] = tenant.apiKey;
     config.headers['X-Killbill-ApiSecret'] = tenant.apiSecret;
   }
 
+  const auth = getAuth();
   config.headers['X-Killbill-CreatedBy'] = auth?.username || 'billing-ui';
   return config;
 });
 
-// System-level requests (no tenant headers needed)
+// System-level requests (no tenant headers)
 const systemApi = axios.create({
-  baseURL: '/1.0/kb',
-  auth: { username: 'admin', password: 'password' },
+  baseURL: '/api/kb',
   headers: { 'Content-Type': 'application/json' },
+});
+
+systemApi.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // ==================== TENANT MANAGEMENT ====================
@@ -81,15 +92,9 @@ export const getAccountPaymentsWithAttempts = (accountId) =>
   api.get(`/accounts/${accountId}/payments?withAttempts=true`);
 export const createPayment = (accountId, data) =>
   api.post(`/accounts/${accountId}/payments`, data);
-// Get a single payment by ID
 export const getPayment = (paymentId) =>
   api.get(`/payments/${paymentId}?withAttempts=true`);
 
-// Pay an invoice — external (manual) or gateway-initiated
-// transactionExternalKey: external reference (bank ref, bKash TrxID, gateway order ID)
-// This same endpoint is used for both manual admin payments and gateway callbacks.
-// For gateway integration: call this from your gateway callback handler with the
-// gateway's transaction reference as transactionExternalKey.
 export const payInvoice = (invoiceId, accountId, amount, {
   currency = 'BDT',
   transactionExternalKey = null,
@@ -101,7 +106,6 @@ export const payInvoice = (invoiceId, accountId, amount, {
     currency,
   };
   const params = {};
-  // External payment (manual / no gateway plugin)
   if (!paymentMethodId) {
     params.externalPayment = true;
   } else {
@@ -113,11 +117,9 @@ export const payInvoice = (invoiceId, accountId, amount, {
   return api.post(`/invoices/${invoiceId}/payments`, body, { params });
 };
 
-// Get payments for a specific invoice
 export const getInvoicePayments = (invoiceId) =>
   api.get(`/invoices/${invoiceId}/payments`);
 
-// Search payments (all tenants — system level for cross-customer reports)
 export const searchPayments = (searchKey, offset = 0, limit = 100) =>
   api.get('/payments/search/' + encodeURIComponent(searchKey), { params: { offset, limit } });
 
