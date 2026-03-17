@@ -307,6 +307,14 @@ export async function execSSHCommand(credId, command) {
   return call('infra.ssh.credential', 'action_exec_command', [[credId], command]);
 }
 
+export async function setupSSHForCompute(computeId, keyId, tempUsername, tempPassword) {
+  return call('infra.ssh.credential', 'action_setup_ssh_for_compute', [computeId, keyId, tempUsername, tempPassword]);
+}
+
+export async function generateSetupScript(credId) {
+  return call('infra.ssh.credential', 'action_generate_setup_script', [[credId]]);
+}
+
 // ── Vault ──
 
 export async function getVaultConfigs(domain = []) {

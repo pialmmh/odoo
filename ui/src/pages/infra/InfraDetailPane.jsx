@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, Card, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, Button, Chip, IconButton,
-  TextField, InputAdornment, Grid,
+  TextField, InputAdornment, Grid, Dialog, DialogTitle, DialogContent,
+  DialogActions, FormControl, InputLabel, Select, MenuItem, Alert,
 } from '@mui/material';
 import {
   Add as AddIcon, Search as SearchIcon, Edit as EditIcon,
-  Delete as DeleteIcon, ArrowBack as BackIcon,
+  Delete as DeleteIcon, ArrowBack as BackIcon, VpnKey as KeyIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useNotification } from '../../components/ErrorNotification';
 import {
@@ -17,7 +19,7 @@ import {
   getContainers, createContainer, updateContainer,
   createRegion, updateRegion, createAvailabilityZone, updateAvailabilityZone,
   createDatacenter, updateDatacenter,
-  getRegions, getAvailabilityZones,
+  getRegions, getAvailabilityZones, getSSHKeys, setupSSHForCompute,
 } from '../../services/infra';
 import {
   RegionModal, ZoneModal, DatacenterModal,
@@ -25,6 +27,123 @@ import {
 } from './InfraEntityModal';
 
 const STATUS_COLORS = { active: 'success', inactive: 'default', maintenance: 'warning', running: 'success', stopped: 'default', up: 'success', down: 'error', degraded: 'warning' };
+
+// ── Setup SSH Access Dialog ──
+function SetupSSHDialog({ open, onClose, compute, onDone }) {
+  const [keys, setKeys] = useState([]);
+  const [form, setForm] = useState({ key_id: '', username: 'root', password: '' });
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState(null);
+  const { success: notify, error: notifyErr } = useNotification();
+
+  useEffect(() => {
+    if (open) {
+      setForm({ key_id: '', username: 'root', password: '' });
+      setResult(null);
+      getSSHKeys().then(setKeys).catch(() => {});
+    }
+  }, [open]);
+
+  const handleSetup = async () => {
+    if (!form.key_id || !form.username || !form.password) return;
+    setRunning(true);
+    try {
+      const res = await setupSSHForCompute(compute.id, form.key_id, form.username, form.password);
+      setResult(res);
+      if (res.deploy_success) notify('SSH key deployed successfully');
+      else notifyErr('Key deployment failed', res.deploy_log);
+    } catch (e) {
+      setResult({ deploy_success: false, deploy_log: e.message, script: '' });
+      notifyErr('Setup failed', e.message);
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const handleDownloadScript = () => {
+    if (!result?.script) return;
+    const blob = new Blob([result.script], { type: 'text/x-shellscript' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = result.filename || 'ssh-setup.sh'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Setup SSH Access — {compute?.name}</DialogTitle>
+      <DialogContent>
+        {!result ? (
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            <Grid size={{ xs: 12 }}>
+              <Alert severity="info" sx={{ fontSize: 12 }}>
+                This will deploy an SSH public key to the server using a temporary password,
+                then generate a setup script for developer machines.
+              </Alert>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>SSH Key</InputLabel>
+                <Select label="SSH Key" required value={form.key_id}
+                  onChange={e => setForm({ ...form, key_id: e.target.value })}>
+                  {keys.map(k => (
+                    <MenuItem key={k.id} value={k.id}>{k.name} ({k.algorithm}) — {k.key_storage}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 6 }}>
+              <TextField fullWidth size="small" label="Temp Username" required
+                value={form.username} onChange={e => setForm({ ...form, username: e.target.value })}
+                helperText="Root or sudo user for initial key push" />
+            </Grid>
+            <Grid size={{ xs: 6 }}>
+              <TextField fullWidth size="small" label="Temp Password" type="password" required
+                value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
+                helperText="Used once, not stored" />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <Typography fontSize={12} color="text.secondary">
+                Target: {compute?.management_ip || 'No IP configured'}
+              </Typography>
+            </Grid>
+          </Grid>
+        ) : (
+          <Box>
+            <Alert severity={result.deploy_success ? 'success' : 'error'} sx={{ mb: 2 }}>
+              {result.deploy_success ? 'Key deployed successfully' : 'Key deployment failed'}
+            </Alert>
+            {result.deploy_log && (
+              <TextField fullWidth multiline rows={4} value={result.deploy_log} size="small" sx={{ mb: 2 }}
+                label="Deploy Log" InputProps={{ readOnly: true, sx: { fontFamily: 'monospace', fontSize: 11 } }} />
+            )}
+            {result.deploy_success && result.script && (
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Developer Setup Script</Typography>
+                <TextField fullWidth multiline rows={6} value={result.script} size="small" sx={{ mb: 1 }}
+                  InputProps={{ readOnly: true, sx: { fontFamily: 'monospace', fontSize: 10 } }} />
+                <Button variant="contained" size="small" startIcon={<DownloadIcon />} onClick={handleDownloadScript}>
+                  Download {result.filename}
+                </Button>
+              </Box>
+            )}
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => { onClose(); if (result?.deploy_success) onDone?.(); }}>
+          {result ? 'Close' : 'Cancel'}
+        </Button>
+        {!result && (
+          <Button variant="contained" startIcon={<KeyIcon />} onClick={handleSetup}
+            disabled={running || !form.key_id || !form.username || !form.password}>
+            {running ? 'Setting up...' : 'Deploy Key & Generate Script'}
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 // ── Generic detail card renderer ──
 function DetailField({ label, value, mono, bold, xs = 4 }) {
@@ -58,6 +177,7 @@ export default function InfraDetailPane({ selection, onNavigate }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(15);
   const [modalOpen, setModalOpen] = useState(false);
+  const [sshSetupOpen, setSSHSetupOpen] = useState(false);
   const [editRecord, setEditRecord] = useState(null);
   const [deviceModels, setDeviceModels] = useState([]);
   const [attributes, setAttributes] = useState([]);
@@ -238,13 +358,21 @@ export default function InfraDetailPane({ selection, onNavigate }) {
     const c = selection.compute;
     return (
       <>
-        <DetailHeader title={c.name} subtitle={c.hostname || ''}
-          chips={[
-            { label: c.node_type === 'dedicated_server' ? 'Server' : 'VM', variant: 'outlined' },
-            { label: c.status, color: STATUS_COLORS[c.status] || 'default', variant: 'outlined' },
-          ]}
-          onBack={() => onNavigate?.({ ...selection, type: 'computes' })}
-          onEdit={() => { setEditRecord(c); setModalOpen(true); }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <IconButton size="small" onClick={() => onNavigate?.({ ...selection, type: 'computes' })}><BackIcon fontSize="small" /></IconButton>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" fontWeight={700}>{c.name}</Typography>
+            {c.hostname && <Typography variant="body2" color="text.secondary">{c.hostname}</Typography>}
+          </Box>
+          <Chip label={c.node_type === 'dedicated_server' ? 'Server' : 'VM'} size="small" variant="outlined" />
+          <Chip label={c.status} size="small" color={STATUS_COLORS[c.status] || 'default'} variant="outlined" />
+          <Button size="small" variant="outlined" startIcon={<KeyIcon />} onClick={() => setSSHSetupOpen(true)}>
+            Setup SSH
+          </Button>
+          <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={() => { setEditRecord(c); setModalOpen(true); }}>
+            Edit
+          </Button>
+        </Box>
         <Card sx={{ p: 2 }}>
           <Grid container spacing={2}>
             <DetailField label="Hostname" value={c.hostname} xs={6} />
@@ -261,6 +389,7 @@ export default function InfraDetailPane({ selection, onNavigate }) {
           </Grid>
         </Card>
         <ComputeModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSaveCompute} record={editRecord} />
+        <SetupSSHDialog open={sshSetupOpen} onClose={() => setSSHSetupOpen(false)} compute={c} onDone={() => {}} />
       </>
     );
   }
