@@ -339,3 +339,50 @@ export function ComputeModal({ open, onClose, onSave, record }) {
     </Dialog>
   );
 }
+
+// ── Container Modal ──
+export function ContainerModal({ open, onClose, onSave, record }) {
+  const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (record) {
+      setForm({
+        name: record.name, container_type: record.container_type, image: record.image || '',
+        cpu_limit: record.cpu_limit || 0, memory_limit: record.memory_limit || 0, status: record.status,
+      });
+    } else {
+      setForm({ name: '', container_type: 'lxc', image: 'debian-12', cpu_limit: 2, memory_limit: 4, status: 'stopped' });
+    }
+  }, [record, open]);
+  const handleSave = async () => {
+    if (!form.name) return;
+    setSaving(true);
+    try { await onSave(form); onClose(); } catch (e) { alert(e.message); } finally { setSaving(false); }
+  };
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>{record ? 'Edit Container' : 'Add Container'}</DialogTitle>
+      <DialogContent>
+        <Grid container spacing={2} sx={{ mt: 0.5 }}>
+          <Grid size={{ xs: 8 }}><TextField fullWidth size="small" label="Name" required value={form.name || ''} onChange={e => setForm({ ...form, name: e.target.value })} /></Grid>
+          <Grid size={{ xs: 4 }}>
+            <FormControl fullWidth size="small"><InputLabel>Type</InputLabel>
+              <Select label="Type" value={form.container_type || 'lxc'} onChange={e => setForm({ ...form, container_type: e.target.value })}>
+                <MenuItem value="lxc">LXC</MenuItem><MenuItem value="lxd">LXD</MenuItem><MenuItem value="docker">Docker</MenuItem><MenuItem value="podman">Podman</MenuItem><MenuItem value="kubernetes">K8s</MenuItem>
+              </Select></FormControl>
+          </Grid>
+          <Grid size={{ xs: 8 }}><TextField fullWidth size="small" label="Image" value={form.image || ''} onChange={e => setForm({ ...form, image: e.target.value })} /></Grid>
+          <Grid size={{ xs: 4 }}>
+            <FormControl fullWidth size="small"><InputLabel>Status</InputLabel>
+              <Select label="Status" value={form.status || 'stopped'} onChange={e => setForm({ ...form, status: e.target.value })}>
+                <MenuItem value="running">Running</MenuItem><MenuItem value="stopped">Stopped</MenuItem><MenuItem value="paused">Paused</MenuItem><MenuItem value="error">Error</MenuItem>
+              </Select></FormControl>
+          </Grid>
+          <Grid size={{ xs: 6 }}><TextField fullWidth size="small" label="CPU Limit (cores)" type="number" value={form.cpu_limit || 0} onChange={e => setForm({ ...form, cpu_limit: +e.target.value })} /></Grid>
+          <Grid size={{ xs: 6 }}><TextField fullWidth size="small" label="Memory Limit (GB)" type="number" value={form.memory_limit || 0} onChange={e => setForm({ ...form, memory_limit: +e.target.value })} /></Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions><Button onClick={onClose}>Cancel</Button><Button variant="contained" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button></DialogActions>
+    </Dialog>
+  );
+}

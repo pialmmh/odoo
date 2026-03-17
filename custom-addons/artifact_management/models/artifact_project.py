@@ -1,4 +1,23 @@
-from odoo import models, fields
+from odoo import models, fields, api
+
+
+# Artifact type → allowed deploy target types
+# Keys: project_type values. Values: list of (target_model, node_type_or_container_type) tuples.
+# 'infra.compute' targets use node_type field; 'infra.container' targets use container_type field.
+ALLOWED_TARGETS = {
+    'jar': {
+        'compute': ['dedicated_server', 'vm'],              # JARs run on servers and VMs
+        'container': ['lxc', 'lxd', 'docker', 'podman'],   # JARs can run inside containers
+    },
+    'docker': {
+        'compute': ['dedicated_server', 'vm'],              # Docker images deploy to hosts
+        'container': [],                                     # Cannot nest docker in a container
+    },
+    'lxc': {
+        'compute': ['dedicated_server', 'vm'],              # LXC containers deploy to hosts
+        'container': [],                                     # Cannot nest LXC in a container
+    },
+}
 
 
 class ArtifactProject(models.Model):
@@ -12,6 +31,11 @@ class ArtifactProject(models.Model):
         ('docker', 'Docker Image'),
         ('lxc', 'LXC Container'),
     ], string='Type', default='jar', required=True)
+
+    @api.model
+    def get_allowed_targets(self):
+        """Return the target compatibility matrix for the UI."""
+        return ALLOWED_TARGETS
     repo_url = fields.Char(string='Repository URL')
     build_command = fields.Text(string='Build Command')
     artifact_path = fields.Char(string='Artifact Path', help='Relative path to built artifact, e.g. target/app-runner.jar')

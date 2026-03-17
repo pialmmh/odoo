@@ -38,7 +38,7 @@ export async function updateVersion(id, vals) {
 
 export async function getDeployments(domain = []) {
   return call('artifact.deployment', 'search_read', [domain], {
-    fields: ['id', 'name', 'project_id', 'version_id', 'compute_id', 'ssh_credential_id', 'deploy_template_id', 'pipeline_id', 'status', 'variables', 'started_at', 'finished_at', 'deployed_by', 'notes'],
+    fields: ['id', 'name', 'project_id', 'version_id', 'target_type', 'compute_id', 'container_id', 'target_display', 'ssh_credential_id', 'deploy_template_id', 'pipeline_id', 'status', 'variables', 'started_at', 'finished_at', 'deployed_by', 'notes'],
     order: 'started_at desc, id desc',
   });
 }
@@ -85,6 +85,21 @@ export async function getPipelineSteps(pipelineId) {
 
 export async function cancelPipeline(id) {
   return call('artifact.deploy.pipeline', 'action_cancel', [[id]]);
+}
+
+// ── Target Compatibility ──
+
+export async function getAllowedTargets() {
+  return call('artifact.project', 'get_allowed_targets', []);
+}
+
+// ── Containers (from infra) ──
+
+export async function getContainers(domain = []) {
+  return call('infra.container', 'search_read', [domain], {
+    fields: ['id', 'name', 'container_type', 'image', 'compute_id', 'cpu_limit', 'memory_limit', 'status'],
+    order: 'compute_id, name',
+  });
 }
 
 // ── SSH Credentials (from infra) ──
