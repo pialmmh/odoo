@@ -61,14 +61,15 @@ class InfraSSHCredential(models.Model):
                 rec.linked_entity = 'Standalone'
 
     def _get_private_key_path(self):
-        """Write private key to a temp file and return path. Caller must clean up."""
+        """Write private key to a temp file and return path. Caller must clean up.
+        Works with both local and vault-stored keys."""
         self.ensure_one()
-        if not self.key_id or not self.key_id.private_key:
-            raise UserError('No SSH key assigned or private key missing.')
-        key_data = base64.b64decode(self.key_id.private_key)
+        if not self.key_id:
+            raise UserError('No SSH key assigned.')
+        key_pem = self.key_id._get_private_key_pem()
         fd, path = tempfile.mkstemp(prefix='ssh_key_', suffix='.pem')
         with os.fdopen(fd, 'wb') as f:
-            f.write(key_data)
+            f.write(key_pem.encode('utf-8'))
         os.chmod(path, 0o600)
         return path
 

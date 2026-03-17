@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_infra_vault_config_form" model="ir.ui.view">
+        <field name="name">infra.vault.config.form</field>
+        <field name="model">infra.vault.config</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group string="Connection">
+                            <field name="vault_url" placeholder="http://10.10.199.50:8200"/>
+                            <field name="vault_token" password="True"/>
+                            <field name="vault_mount"/>
+                            <field name="vault_namespace"/>
+                            <field name="is_active"/>
+                        </group>
+                        <group string="Paths">
+                            <field name="vault_ssh_key_prefix"/>
+                        </group>
+                    </group>
+                    <group string="Health Check">
+                        <field name="last_health_check" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_infra_vault_config_tree" model="ir.ui.view">
+        <field name="name">infra.vault.config.tree</field>
+        <field name="model">infra.vault.config</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="vault_url"/>
+                <field name="vault_mount"/>
+                <field name="is_active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_infra_vault_config" model="ir.actions.act_window">
+        <field name="name">Vault Configuration</field>
+        <field name="res_model">infra.vault.config</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_infra_vault"
+              name="Vault Config"
+              parent="menu_infra_ssh"
+              action="action_infra_vault_config"
+              sequence="30"/>
+</odoo>

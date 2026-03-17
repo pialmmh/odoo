@@ -431,6 +431,7 @@ export default function InfraSSH() {
                 <TableRow>
                   <TableCell>Name</TableCell>
                   <TableCell>Algorithm</TableCell>
+                  <TableCell>Storage</TableCell>
                   <TableCell>Fingerprint</TableCell>
                   <TableCell>Comment</TableCell>
                   <TableCell align="right">Used By</TableCell>
@@ -440,14 +441,15 @@ export default function InfraSSH() {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4 }}>Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} align="center" sx={{ py: 4 }}>Loading...</TableCell></TableRow>
                 ) : filteredKeys.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4 }}>No SSH keys. Click "Generate Key" to create one.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} align="center" sx={{ py: 4 }}>No SSH keys. Click "Generate Key" to create one.</TableCell></TableRow>
                 ) : (
                   filteredKeys.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(k => (
                     <TableRow key={k.id} hover>
                       <TableCell><Typography fontWeight={600} fontSize={13}>{k.name}</Typography></TableCell>
                       <TableCell><Chip label={k.algorithm} size="small" variant="outlined" /></TableCell>
+                      <TableCell><Chip label={k.key_storage === 'vault' ? 'Vault' : 'Local'} size="small" color={k.key_storage === 'vault' ? 'success' : 'default'} variant="outlined" sx={{ fontSize: 10 }} /></TableCell>
                       <TableCell><Typography fontSize={11} fontFamily="monospace" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.fingerprint}</Typography></TableCell>
                       <TableCell>{k.comment}</TableCell>
                       <TableCell align="right">{k.credential_count}</TableCell>

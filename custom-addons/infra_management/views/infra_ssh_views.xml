@@ -8,6 +8,7 @@
             <tree>
                 <field name="name"/>
                 <field name="algorithm"/>
+                <field name="key_storage"/>
                 <field name="fingerprint"/>
                 <field name="comment"/>
                 <field name="has_passphrase"/>
@@ -34,6 +35,8 @@
                             <field name="has_passphrase"/>
                         </group>
                         <group>
+                            <field name="key_storage"/>
+                            <field name="vault_path" invisible="key_storage != 'vault'"/>
                             <field name="fingerprint"/>
                             <field name="created_date"/>
                             <field name="credential_count"/>

@@ -246,6 +246,7 @@ export async function getSSHKeys(domain = []) {
   return call('infra.ssh.key', 'search_read', [domain], {
     fields: [
       'id', 'name', 'algorithm', 'comment', 'has_passphrase',
+      'key_storage', 'vault_path',
       'public_key', 'fingerprint', 'created_date', 'credential_count',
     ],
     order: 'name',
@@ -304,4 +305,25 @@ export async function verifySSHKey(credId) {
 
 export async function execSSHCommand(credId, command) {
   return call('infra.ssh.credential', 'action_exec_command', [[credId], command]);
+}
+
+// ── Vault ──
+
+export async function getVaultConfigs(domain = []) {
+  return call('infra.vault.config', 'search_read', [domain], {
+    fields: ['id', 'name', 'vault_url', 'vault_mount', 'vault_namespace', 'vault_ssh_key_prefix', 'is_active', 'last_health_check'],
+    order: 'id',
+  });
+}
+
+export async function testVaultConnection(configId) {
+  return call('infra.vault.config', 'action_test_connection', [[configId]]);
+}
+
+export async function migrateKeysToVault(configId) {
+  return call('infra.vault.config', 'action_migrate_keys_to_vault', [[configId]]);
+}
+
+export async function migrateKeyToVault(keyId) {
+  return call('infra.ssh.key', 'action_migrate_to_vault', [[keyId]]);
 }
