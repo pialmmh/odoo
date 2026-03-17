@@ -6,34 +6,37 @@ const keycloak = new Keycloak({
   clientId: 'platform-ui',
 });
 
-let _initialized = false;
+let _initPromise = null;
 
 /**
- * Initialize Keycloak. Call once at app startup.
+ * Initialize Keycloak. Safe to call multiple times — deduplicates via promise.
  * Returns true if user is authenticated (has valid token).
  */
 export async function initKeycloak() {
-  if (_initialized) return keycloak.authenticated;
-  try {
-    const authenticated = await keycloak.init({
-      onLoad: 'login-required',
-      checkLoginIframe: false,
-      pkceMethod: 'S256',
-    });
-    _initialized = true;
-    // Auto-refresh token before expiry
-    setInterval(async () => {
-      try {
-        await keycloak.updateToken(30); // refresh if expires in <30s
-      } catch {
-        keycloak.login();
-      }
-    }, 10000);
-    return authenticated;
-  } catch (e) {
-    console.error('Keycloak init failed:', e);
-    return false;
-  }
+  if (_initPromise) return _initPromise;
+  _initPromise = (async () => {
+    try {
+      const authenticated = await keycloak.init({
+        onLoad: 'login-required',
+        checkLoginIframe: false,
+        pkceMethod: 'S256',
+      });
+      // Auto-refresh token before expiry
+      setInterval(async () => {
+        try {
+          await keycloak.updateToken(30);
+        } catch {
+          keycloak.login();
+        }
+      }, 10000);
+      return authenticated;
+    } catch (e) {
+      console.error('Keycloak init failed:', e);
+      _initPromise = null; // Allow retry on failure
+      return false;
+    }
+  })();
+  return _initPromise;
 }
 
 export function getToken() {
