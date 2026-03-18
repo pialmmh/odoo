@@ -45,10 +45,9 @@ public class KillBillProxyController {
                 }
             });
 
-            // Add KB auth if not present
-            if (!headers.containsKey("Authorization")) {
-                headers.setBasicAuth(props.getUsername(), props.getPassword());
-            }
+            // Replace JWT with KB basic auth — KB doesn't understand JWT
+            headers.remove("authorization");
+            headers.setBasicAuth(props.getUsername(), props.getPassword());
 
             HttpEntity<byte[]> entity = new HttpEntity<>(body, headers);
             HttpMethod method = HttpMethod.valueOf(request.getMethod());
