@@ -29,16 +29,25 @@ import {
 const STATUS_COLORS = { active: 'success', inactive: 'default', maintenance: 'warning', running: 'success', stopped: 'default', up: 'success', down: 'error', degraded: 'warning' };
 
 // ── Setup SSH Access Dialog ──
+const CLIENT_OS_OPTIONS = [
+  { value: 'ubuntu', label: 'Ubuntu / Mint' },
+  { value: 'debian', label: 'Debian' },
+  { value: 'redhat', label: 'RHEL / Fedora / Rocky' },
+  { value: 'centos', label: 'CentOS' },
+  { value: 'macos', label: 'macOS' },
+  { value: 'windows', label: 'Windows (PowerShell)' },
+];
+
 function SetupSSHDialog({ open, onClose, compute, onDone }) {
   const [keys, setKeys] = useState([]);
-  const [form, setForm] = useState({ key_id: '', username: 'root', password: '' });
+  const [form, setForm] = useState({ key_id: '', username: 'root', password: '', client_os: 'ubuntu' });
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState(null);
   const { success: notify, error: notifyErr } = useNotification();
 
   useEffect(() => {
     if (open) {
-      setForm({ key_id: '', username: 'root', password: '' });
+      setForm({ key_id: '', username: 'root', password: '', client_os: 'ubuntu' });
       setResult(null);
       getSSHKeys().then(setKeys).catch(() => {});
     }
@@ -48,7 +57,7 @@ function SetupSSHDialog({ open, onClose, compute, onDone }) {
     if (!form.key_id || !form.username || !form.password) return;
     setRunning(true);
     try {
-      const res = await setupSSHForCompute(compute.id, form.key_id, form.username, form.password);
+      const res = await setupSSHForCompute(compute.id, form.key_id, form.username, form.password, form.client_os);
       setResult(res);
       if (res.deploy_success) notify('SSH key deployed successfully');
       else notifyErr('Key deployment failed', res.deploy_log);
@@ -62,7 +71,8 @@ function SetupSSHDialog({ open, onClose, compute, onDone }) {
 
   const handleDownloadScript = () => {
     if (!result?.script) return;
-    const blob = new Blob([result.script], { type: 'text/x-shellscript' });
+    const isPS = form.client_os === 'windows';
+    const blob = new Blob([result.script], { type: isPS ? 'text/plain' : 'text/x-shellscript' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = result.filename || 'ssh-setup.sh'; a.click();
@@ -77,11 +87,10 @@ function SetupSSHDialog({ open, onClose, compute, onDone }) {
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={{ xs: 12 }}>
               <Alert severity="info" sx={{ fontSize: 12 }}>
-                This will deploy an SSH public key to the server using a temporary password,
-                then generate a setup script for developer machines.
+                Deploy an SSH key to the server, then generate a setup script for the developer's machine.
               </Alert>
             </Grid>
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 7 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>SSH Key</InputLabel>
                 <Select label="SSH Key" required value={form.key_id}
@@ -92,10 +101,21 @@ function SetupSSHDialog({ open, onClose, compute, onDone }) {
                 </Select>
               </FormControl>
             </Grid>
+            <Grid size={{ xs: 5 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Developer OS</InputLabel>
+                <Select label="Developer OS" value={form.client_os}
+                  onChange={e => setForm({ ...form, client_os: e.target.value })}>
+                  {CLIENT_OS_OPTIONS.map(o => (
+                    <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
             <Grid size={{ xs: 6 }}>
               <TextField fullWidth size="small" label="Temp Username" required
                 value={form.username} onChange={e => setForm({ ...form, username: e.target.value })}
-                helperText="Root or sudo user for initial key push" />
+                helperText="Root or sudo user for key push" />
             </Grid>
             <Grid size={{ xs: 6 }}>
               <TextField fullWidth size="small" label="Temp Password" type="password" required
@@ -105,6 +125,7 @@ function SetupSSHDialog({ open, onClose, compute, onDone }) {
             <Grid size={{ xs: 12 }}>
               <Typography fontSize={12} color="text.secondary">
                 Target: {compute?.management_ip || 'No IP configured'}
+                {form.client_os === 'windows' && ' — will generate PowerShell script (.ps1)'}
               </Typography>
             </Grid>
           </Grid>
@@ -119,12 +140,19 @@ function SetupSSHDialog({ open, onClose, compute, onDone }) {
             )}
             {result.deploy_success && result.script && (
               <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Developer Setup Script</Typography>
-                <TextField fullWidth multiline rows={6} value={result.script} size="small" sx={{ mb: 1 }}
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Developer Setup Script ({CLIENT_OS_OPTIONS.find(o => o.value === form.client_os)?.label})
+                </Typography>
+                <TextField fullWidth multiline rows={8} value={result.script} size="small" sx={{ mb: 1 }}
                   InputProps={{ readOnly: true, sx: { fontFamily: 'monospace', fontSize: 10 } }} />
                 <Button variant="contained" size="small" startIcon={<DownloadIcon />} onClick={handleDownloadScript}>
                   Download {result.filename}
                 </Button>
+                <Typography fontSize={11} color="text.secondary" sx={{ mt: 1 }}>
+                  {form.client_os === 'windows'
+                    ? 'Run: powershell -ExecutionPolicy Bypass -File ' + result.filename
+                    : 'Run: bash ' + result.filename}
+                </Typography>
               </Box>
             )}
           </Box>
