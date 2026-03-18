@@ -4,6 +4,7 @@ import {
   TableHead, TableRow, TablePagination, Button, Chip, IconButton,
   TextField, InputAdornment, Grid, Dialog, DialogTitle, DialogContent,
   DialogActions, FormControl, InputLabel, Select, MenuItem, Alert,
+  Tabs, Tab,
 } from '@mui/material';
 import {
   Add as AddIcon, Search as SearchIcon, Edit as EditIcon,
@@ -173,27 +174,51 @@ function SetupSSHDialog({ open, onClose, compute, onDone }) {
   );
 }
 
-// ── Generic detail card renderer ──
-function DetailField({ label, value, mono, bold, xs = 4 }) {
+// ── Form-style detail components ──
+function FormField({ label, value, mono, bold, xs = 6 }) {
   return (
     <Grid size={{ xs }}>
-      <Typography variant="caption" color="text.secondary">{label}</Typography>
-      <Typography fontSize={13} fontWeight={bold ? 600 : 400} fontFamily={mono ? 'monospace' : 'inherit'}>{value || '-'}</Typography>
+      <TextField
+        fullWidth size="small" label={label} variant="outlined"
+        value={value ?? '-'} slotProps={{ input: { readOnly: true, sx: { fontFamily: mono ? 'monospace' : 'inherit', fontWeight: bold ? 600 : 400, fontSize: 13 } } }}
+      />
     </Grid>
   );
 }
 
-function DetailHeader({ title, subtitle, chips = [], onEdit, onBack }) {
+function FormSection({ title, children }) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+    <Box sx={{ mb: 2 }}>
+      <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: 1 }}>{title}</Typography>
+      <Grid container spacing={1.5}>{children}</Grid>
+    </Box>
+  );
+}
+
+function DetailHeader({ title, subtitle, chips = [], onEdit, onBack, extra }) {
+  return (
+    <Card sx={{ p: 1.5, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
       {onBack && <IconButton size="small" onClick={onBack}><BackIcon fontSize="small" /></IconButton>}
       <Box sx={{ flexGrow: 1 }}>
-        <Typography variant="h6" fontWeight={700}>{title}</Typography>
-        {subtitle && <Typography variant="body2" color="text.secondary">{subtitle}</Typography>}
+        <Typography variant="h6" fontWeight={700} fontSize={16}>{title}</Typography>
+        {subtitle && <Typography variant="body2" color="text.secondary" fontSize={12}>{subtitle}</Typography>}
       </Box>
       {chips.map((ch, i) => <Chip key={i} label={ch.label} size="small" color={ch.color || 'default'} variant={ch.variant || 'filled'} />)}
+      {extra}
       {onEdit && <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={onEdit}>Edit</Button>}
-    </Box>
+    </Card>
+  );
+}
+
+function DetailTabs({ tabs, children }) {
+  const [tab, setTab] = useState(0);
+  return (
+    <Card sx={{ overflow: 'visible' }}>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 36, '& .MuiTab-root': { minHeight: 36, py: 0, fontSize: 12 } }}>
+        {tabs.map((t, i) => <Tab key={i} label={t} />)}
+      </Tabs>
+      <Box sx={{ p: 2 }}>{children[tab]}</Box>
+    </Card>
   );
 }
 
@@ -315,12 +340,13 @@ export default function InfraDetailPane({ selection, onNavigate }) {
           chips={[{ label: r.status, color: STATUS_COLORS[r.status] || 'default', variant: 'outlined' }]}
           onEdit={() => { setEditRecord(r); setModalOpen(true); }} />
         <Card sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <DetailField label="Code" value={r.code} xs={4} />
-            <DetailField label="Geographic Area" value={r.geographic_area} xs={4} />
-            <DetailField label="Status" value={r.status} xs={4} />
-            <DetailField label="Zones" value={r.zone_count} xs={4} bold />
-          </Grid>
+          <FormSection title="General">
+            <FormField label="Name" value={r.name} xs={4} />
+            <FormField label="Code" value={r.code} xs={4} />
+            <FormField label="Status" value={r.status} xs={4} />
+            <FormField label="Geographic Area" value={r.geographic_area} xs={8} />
+            <FormField label="Availability Zones" value={r.zone_count} xs={4} bold />
+          </FormSection>
         </Card>
         <RegionModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSaveRegion} record={editRecord} />
       </>
@@ -332,7 +358,7 @@ export default function InfraDetailPane({ selection, onNavigate }) {
     const z = selection.zone;
     return (
       <>
-        <DetailHeader title={z.name} subtitle={`Code: ${z.code} — Region: ${selection.region?.name || ''}`}
+        <DetailHeader title={z.name} subtitle={`Region: ${selection.region?.name || ''}`}
           chips={[
             { label: z.zone_type, variant: 'outlined' },
             { label: z.status, color: STATUS_COLORS[z.status] || 'default', variant: 'outlined' },
@@ -340,12 +366,14 @@ export default function InfraDetailPane({ selection, onNavigate }) {
           onBack={() => onNavigate?.({ type: 'region_detail', region: selection.region })}
           onEdit={() => { setEditRecord(z); setModalOpen(true); }} />
         <Card sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <DetailField label="Code" value={z.code} xs={3} />
-            <DetailField label="Zone Type" value={z.zone_type} xs={3} />
-            <DetailField label="Default" value={z.is_default ? 'Yes' : 'No'} xs={3} />
-            <DetailField label="Datacenters" value={z.datacenter_count} xs={3} bold />
-          </Grid>
+          <FormSection title="General">
+            <FormField label="Name" value={z.name} xs={4} />
+            <FormField label="Code" value={z.code} xs={4} />
+            <FormField label="Status" value={z.status} xs={4} />
+            <FormField label="Zone Type" value={z.zone_type} xs={4} />
+            <FormField label="Default Zone" value={z.is_default ? 'Yes' : 'No'} xs={4} />
+            <FormField label="Datacenters" value={z.datacenter_count} xs={4} bold />
+          </FormSection>
         </Card>
         <ZoneModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSaveZone} record={editRecord} regions={regions.length ? regions : [selection.region]} />
       </>
@@ -366,16 +394,23 @@ export default function InfraDetailPane({ selection, onNavigate }) {
           ].filter(Boolean)}
           onBack={() => onNavigate?.({ type: 'zone_detail', region: selection.region, zone: selection.zone })}
           onEdit={() => { setEditRecord(dc); setModalOpen(true); }} />
-        <Card sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <DetailField label="Location" value={dc.location_address} xs={6} />
-            <DetailField label="DC Type" value={dc.dc_type} xs={3} />
-            <DetailField label="Tier" value={dc.tier ? `Tier ${dc.tier}` : ''} xs={3} />
-            <DetailField label="Partner" value={dc.partner_id?.[1]} xs={4} />
-            <DetailField label="Latitude" value={dc.latitude} xs={4} />
-            <DetailField label="Longitude" value={dc.longitude} xs={4} />
-          </Grid>
-        </Card>
+        <DetailTabs tabs={['General', 'Location']}>
+          {/* Tab: General */}
+          <FormSection title="">
+            <FormField label="Name" value={dc.name} xs={6} />
+            <FormField label="DC Type" value={dc.dc_type} xs={3} />
+            <FormField label="Tier" value={dc.tier ? `Tier ${dc.tier}` : '-'} xs={3} />
+            <FormField label="Partner" value={dc.partner_id?.[1]} xs={6} />
+            <FormField label="Status" value={dc.status} xs={3} />
+            <FormField label="DR Site" value={dc.is_dr_site ? 'Yes' : 'No'} xs={3} />
+          </FormSection>
+          {/* Tab: Location */}
+          <FormSection title="">
+            <FormField label="Address" value={dc.location_address} xs={12} />
+            <FormField label="Latitude" value={dc.latitude} xs={6} />
+            <FormField label="Longitude" value={dc.longitude} xs={6} />
+          </FormSection>
+        </DetailTabs>
         <DatacenterModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSaveDC} record={editRecord} zones={zones.length ? zones : [selection.zone]} />
       </>
     );
@@ -386,36 +421,41 @@ export default function InfraDetailPane({ selection, onNavigate }) {
     const c = selection.compute;
     return (
       <>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <IconButton size="small" onClick={() => onNavigate?.({ ...selection, type: 'computes' })}><BackIcon fontSize="small" /></IconButton>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6" fontWeight={700}>{c.name}</Typography>
-            {c.hostname && <Typography variant="body2" color="text.secondary">{c.hostname}</Typography>}
-          </Box>
-          <Chip label={c.node_type === 'dedicated_server' ? 'Server' : 'VM'} size="small" variant="outlined" />
-          <Chip label={c.status} size="small" color={STATUS_COLORS[c.status] || 'default'} variant="outlined" />
-          <Button size="small" variant="outlined" startIcon={<KeyIcon />} onClick={() => setSSHSetupOpen(true)}>
-            Setup SSH
-          </Button>
-          <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={() => { setEditRecord(c); setModalOpen(true); }}>
-            Edit
-          </Button>
-        </Box>
-        <Card sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <DetailField label="Hostname" value={c.hostname} xs={6} />
-            <DetailField label="Management IP" value={c.management_ip} xs={6} mono />
-            <DetailField label="CPU Cores" value={c.cpu_cores} xs={3} bold />
-            <DetailField label="Memory (GB)" value={c.memory_gb} xs={3} bold />
-            <DetailField label="Disk (GB)" value={c.disk_gb} xs={3} bold />
-            <DetailField label="OS" value={c.os_type} xs={3} />
-            <DetailField label="Brand" value={c.brand} xs={4} />
-            <DetailField label="Model" value={c.model} xs={4} />
-            <DetailField label="Serial" value={c.serial_number} xs={4} />
-            <DetailField label="Rack Location" value={c.rack_location} xs={6} />
-            <DetailField label="Datacenter" value={c.datacenter_id?.[1]} xs={6} />
-          </Grid>
-        </Card>
+        <DetailHeader title={c.name} subtitle={c.hostname || ''}
+          chips={[
+            { label: c.node_type === 'dedicated_server' ? 'Server' : 'VM', variant: 'outlined' },
+            { label: c.status, color: STATUS_COLORS[c.status] || 'default', variant: 'outlined' },
+          ]}
+          onBack={() => onNavigate?.({ ...selection, type: 'computes' })}
+          onEdit={() => { setEditRecord(c); setModalOpen(true); }}
+          extra={<Button size="small" variant="outlined" startIcon={<KeyIcon />} onClick={() => setSSHSetupOpen(true)}>Setup SSH</Button>}
+        />
+        <DetailTabs tabs={['General', 'Hardware', 'Location']}>
+          {/* Tab: General */}
+          <FormSection title="">
+            <FormField label="Name" value={c.name} xs={6} />
+            <FormField label="Hostname" value={c.hostname} xs={6} />
+            <FormField label="Management IP" value={c.management_ip} xs={6} mono />
+            <FormField label="Node Type" value={c.node_type === 'dedicated_server' ? 'Dedicated Server' : 'Virtual Machine'} xs={3} />
+            <FormField label="OS" value={c.os_type} xs={3} />
+            <FormField label="Status" value={c.status} xs={6} />
+            <FormField label="Datacenter" value={c.datacenter_id?.[1]} xs={6} />
+          </FormSection>
+          {/* Tab: Hardware */}
+          <FormSection title="">
+            <FormField label="CPU Cores" value={c.cpu_cores || '-'} xs={4} bold />
+            <FormField label="Memory (GB)" value={c.memory_gb || '-'} xs={4} bold />
+            <FormField label="Disk (GB)" value={c.disk_gb || '-'} xs={4} bold />
+            <FormField label="Brand" value={c.brand} xs={4} />
+            <FormField label="Model" value={c.model} xs={4} />
+            <FormField label="Serial Number" value={c.serial_number} xs={4} />
+          </FormSection>
+          {/* Tab: Location */}
+          <FormSection title="">
+            <FormField label="Rack Location" value={c.rack_location} xs={6} />
+            <FormField label="Resource Pool" value={c.pool_id?.[1]} xs={6} />
+          </FormSection>
+        </DetailTabs>
         <ComputeModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSaveCompute} record={editRecord} />
         <SetupSSHDialog open={sshSetupOpen} onClose={() => setSSHSetupOpen(false)} compute={c} onDone={() => {}} />
       </>
@@ -435,14 +475,17 @@ export default function InfraDetailPane({ selection, onNavigate }) {
           onBack={() => onNavigate?.({ ...selection, type: 'compute_detail' })}
           onEdit={() => { setEditRecord(ct); setModalOpen(true); }} />
         <Card sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <DetailField label="Container Type" value={ct.container_type} xs={4} />
-            <DetailField label="Image" value={ct.image} xs={4} mono />
-            <DetailField label="Host" value={ct.compute_id?.[1]} xs={4} />
-            <DetailField label="CPU Limit" value={`${ct.cpu_limit || '-'} cores`} xs={4} bold />
-            <DetailField label="Memory Limit" value={`${ct.memory_limit || '-'} GB`} xs={4} bold />
-            <DetailField label="Status" value={ct.status} xs={4} />
-          </Grid>
+          <FormSection title="Container">
+            <FormField label="Name" value={ct.name} xs={6} />
+            <FormField label="Type" value={ct.container_type} xs={3} />
+            <FormField label="Status" value={ct.status} xs={3} />
+            <FormField label="Image" value={ct.image} xs={12} mono />
+          </FormSection>
+          <FormSection title="Resources">
+            <FormField label="CPU Limit (cores)" value={ct.cpu_limit || '-'} xs={4} bold />
+            <FormField label="Memory Limit (GB)" value={ct.memory_limit || '-'} xs={4} bold />
+            <FormField label="Host Compute" value={ct.compute_id?.[1]} xs={4} />
+          </FormSection>
         </Card>
         <ContainerModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSaveContainer} record={editRecord} />
       </>
@@ -462,25 +505,38 @@ export default function InfraDetailPane({ selection, onNavigate }) {
           ]}
           onBack={() => onNavigate?.({ ...selection, type: 'network_devices' })}
           onEdit={() => { setEditRecord(d); setModalOpen(true); }} />
-        <Card sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <DetailField label="Management IP" value={d.management_ip} xs={4} mono />
-            <DetailField label="Port" value={d.management_port} xs={2} />
-            <DetailField label="Protocol" value={d.management_protocol} xs={2} />
-            <DetailField label="Criticality" value={d.criticality} xs={4} />
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="caption" color="text.secondary">Roles</Typography>
-              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.3 }}>
+        <DetailTabs tabs={['General', 'Network', 'Details']}>
+          {/* Tab: General */}
+          <Box>
+            <FormSection title="">
+              <FormField label="Device Name" value={d.name} xs={6} />
+              <FormField label="Device Model" value={d.device_model_id?.[1]} xs={6} />
+              <FormField label="Serial Number" value={d.serial_number} xs={6} />
+              <FormField label="Criticality" value={d.criticality} xs={3} />
+              <FormField label="Status" value={d.status} xs={3} />
+            </FormSection>
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 1 }}>Roles</Typography>
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
                 {(d.device_attribute_ids || []).map(aid => <Chip key={aid} label={attrMap[aid]?.name || aid} size="small" />)}
-                {(!d.device_attribute_ids || d.device_attribute_ids.length === 0) && <Typography fontSize={13}>-</Typography>}
+                {(!d.device_attribute_ids || d.device_attribute_ids.length === 0) && <Typography fontSize={13} color="text.secondary">None assigned</Typography>}
               </Box>
-            </Grid>
-            <DetailField label="Serial" value={d.serial_number} xs={3} />
-            <DetailField label="Firmware" value={d.firmware} xs={3} />
-            <DetailField label="Rack" value={d.rack_position} xs={3} />
-            <DetailField label="Datacenter" value={d.datacenter_id?.[1]} xs={3} />
-          </Grid>
-        </Card>
+            </Box>
+          </Box>
+          {/* Tab: Network */}
+          <FormSection title="">
+            <FormField label="Management IP" value={d.management_ip} xs={6} mono />
+            <FormField label="Port" value={d.management_port} xs={3} />
+            <FormField label="Protocol" value={d.management_protocol} xs={3} />
+          </FormSection>
+          {/* Tab: Details */}
+          <FormSection title="">
+            <FormField label="Firmware" value={d.firmware} xs={6} />
+            <FormField label="Rack Position" value={d.rack_position} xs={6} />
+            <FormField label="Datacenter" value={d.datacenter_id?.[1]} xs={6} />
+            <FormField label="Operational Status" value={d.operational_status} xs={6} />
+          </FormSection>
+        </DetailTabs>
         <NetworkDeviceModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSaveDevice} record={editRecord} deviceModels={deviceModels} attributes={attributes} ipAddresses={ipAddresses} />
       </>
     );
