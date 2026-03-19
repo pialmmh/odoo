@@ -9,9 +9,9 @@ export default defineConfig({
   server: {
     port: 5180,
     proxy: {
-      // All API calls route through Spring Boot gateway
+      // All API calls route through the API Gateway → PLATFORM-API service
       '/api': {
-        target: 'http://127.0.0.1:8180',
+        target: 'http://127.0.0.1:8001/PLATFORM-API',
         changeOrigin: true,
       },
     },

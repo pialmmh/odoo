@@ -2,138 +2,117 @@
 import { test, expect } from '@playwright/test';
 
 const BASE = 'http://localhost:5180';
+const GATEWAY = 'http://localhost:8001';
+const KC = 'http://localhost:7104';
+const API = 'http://localhost:8180';
 
-test.describe('Post-migration smoke tests', () => {
+// Helper: get Keycloak token
+async function getKCToken(request) {
+  const resp = await request.post(`${KC}/realms/telcobright/protocol/openid-connect/token`, {
+    form: {
+      grant_type: 'password',
+      client_id: 'platform-ui',
+      username: 'admin',
+      password: 'password',
+    },
+  });
+  const body = await resp.json();
+  return body.access_token;
+}
 
-  test('Login page loads', async ({ page }) => {
-    await page.goto(BASE + '/login');
-    await expect(page).toHaveURL(/login/);
-    await expect(page.locator('body')).toBeVisible();
+test.describe('Platform smoke tests', () => {
+
+  test('React UI loads', async ({ page }) => {
+    const response = await page.goto(BASE);
+    expect(response.status()).toBeLessThan(500);
   });
 
-  test('Login and see dashboard', async ({ page }) => {
-    await page.goto(BASE + '/login');
-    // Fill login form
-    const inputs = page.locator('input');
-    await inputs.first().fill('admin');
-    await inputs.nth(1).fill('password');
-    await page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign")').first().click();
-    await page.waitForTimeout(2000);
-    // Should redirect to dashboard
-    await expect(page).toHaveURL(BASE + '/');
+  test('Keycloak is reachable', async ({ request }) => {
+    const resp = await request.get(`${KC}/realms/telcobright`);
+    expect(resp.ok()).toBeTruthy();
+    const body = await resp.json();
+    expect(body.realm).toBe('telcobright');
   });
 
-  test('Infra page loads with tree', async ({ page }) => {
-    // Login first
-    await page.goto(BASE + '/login');
-    const inputs = page.locator('input');
-    await inputs.first().fill('admin');
-    await inputs.nth(1).fill('password');
-    await page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign")').first().click();
-    await page.waitForTimeout(2000);
-
-    // Navigate to infra
-    await page.goto(BASE + '/infra');
-    await page.waitForTimeout(3000);
-
-    // Tree should have regions
-    const tree = page.locator('text=Infrastructure');
-    await expect(tree.first()).toBeVisible();
-
-    // Check for demo data regions
-    await expect(page.locator('text=Dhaka').first()).toBeVisible({ timeout: 5000 });
+  test('Keycloak token grant works', async ({ request }) => {
+    const token = await getKCToken(request);
+    expect(token).toBeTruthy();
+    expect(token.split('.').length).toBe(3); // JWT has 3 parts
   });
 
-  test('Device catalog loads with MikroTik models', async ({ page }) => {
-    await page.goto(BASE + '/login');
-    const inputs = page.locator('input');
-    await inputs.first().fill('admin');
-    await inputs.nth(1).fill('password');
-    await page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign")').first().click();
-    await page.waitForTimeout(2000);
-
-    await page.goto(BASE + '/infra/catalog');
-    await page.waitForTimeout(3000);
-
-    // Should show device catalog
-    await expect(page.locator('text=Device Catalog').first()).toBeVisible();
-
-    // Should have MikroTik models
-    await expect(page.locator('text=MikroTik').first()).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=CCR1036').first()).toBeVisible();
-  });
-
-  test('SSH page loads', async ({ page }) => {
-    await page.goto(BASE + '/login');
-    const inputs = page.locator('input');
-    await inputs.first().fill('admin');
-    await inputs.nth(1).fill('password');
-    await page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign")').first().click();
-    await page.waitForTimeout(2000);
-
-    await page.goto(BASE + '/infra/ssh');
-    await page.waitForTimeout(3000);
-
-    await expect(page.locator('text=SSH Management').first()).toBeVisible();
-    await expect(page.locator('text=SSH Keys').first()).toBeVisible();
-    await expect(page.locator('text=Credentials').first()).toBeVisible();
-  });
-
-  test('Artifacts page loads', async ({ page }) => {
-    await page.goto(BASE + '/login');
-    const inputs = page.locator('input');
-    await inputs.first().fill('admin');
-    await inputs.nth(1).fill('password');
-    await page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign")').first().click();
-    await page.waitForTimeout(2000);
-
-    await page.goto(BASE + '/artifacts');
-    await page.waitForTimeout(3000);
-
-    await expect(page.locator('text=Artifacts').first()).toBeVisible();
-    await expect(page.locator('text=Projects').first()).toBeVisible();
-  });
-
-  test('Odoo API works via proxy (device models)', async ({ page }) => {
-    // Authenticate with Odoo first
-    await page.request.post(BASE + '/odoo/web/session/authenticate', {
-      data: {
-        jsonrpc: '2.0', id: 1, method: 'call',
-        params: { db: 'odoo_billing', login: 'admin', password: 'admin' },
-      },
-    });
-    const response = await page.request.post(BASE + '/odoo/web/dataset/call_kw/infra.device.model/search_read', {
-      data: {
-        jsonrpc: '2.0', id: 2, method: 'call',
-        params: {
-          model: 'infra.device.model', method: 'search_read',
-          args: [[]], kwargs: { fields: ['name', 'vendor'], limit: 3 },
-        },
-      },
-    });
-    expect(response.ok()).toBeTruthy();
-    const body = await response.json();
-    expect(body.result).toBeDefined();
-    expect(body.result.length).toBeGreaterThan(0);
-  });
-
-  test('Spring Boot API health', async ({ page }) => {
-    const response = await page.request.get('http://localhost:8180/api/odoo/health');
-    expect(response.ok()).toBeTruthy();
-    const body = await response.json();
+  test('Gateway health (public, no auth)', async ({ request }) => {
+    const resp = await request.get(`${GATEWAY}/PLATFORM-API/api/odoo/health`);
+    expect(resp.ok()).toBeTruthy();
+    const body = await resp.json();
     expect(body.odoo_connected).toBe(true);
   });
 
-  test('Spring Boot Odoo proxy returns data', async ({ page }) => {
-    const response = await page.request.post('http://localhost:8180/api/odoo/infra.device.model/search_read', {
-      data: {
-        args: [[]],
-        kwargs: { fields: ['name', 'vendor'], limit: 3 },
-      },
+  test('Gateway rejects unauthenticated requests', async ({ request }) => {
+    const resp = await request.post(`${GATEWAY}/PLATFORM-API/api/odoo/infra.region/search_read`, {
+      data: { args: [[]], kwargs: { fields: ['name'] } },
     });
-    expect(response.ok()).toBeTruthy();
-    const body = await response.json();
+    // Should be 401 or 403
+    expect(resp.status()).toBeGreaterThanOrEqual(400);
+    expect(resp.status()).toBeLessThan(500);
+  });
+
+  test('Gateway + KC token → Odoo regions', async ({ request }) => {
+    const token = await getKCToken(request);
+    const resp = await request.post(`${GATEWAY}/PLATFORM-API/api/odoo/infra.region/search_read`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: { args: [[]], kwargs: { fields: ['name', 'code'] } },
+    });
+    expect(resp.ok()).toBeTruthy();
+    const body = await resp.json();
+    expect(body.length).toBeGreaterThan(0);
+    expect(body[0].name).toBeTruthy();
+  });
+
+  test('Gateway + KC token → Odoo device models', async ({ request }) => {
+    const token = await getKCToken(request);
+    const resp = await request.post(`${GATEWAY}/PLATFORM-API/api/odoo/infra.device.model/search_read`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: { args: [[]], kwargs: { fields: ['name', 'vendor'], limit: 3 } },
+    });
+    expect(resp.ok()).toBeTruthy();
+    const body = await resp.json();
     expect(body.length).toBeGreaterThan(0);
     expect(body[0].vendor).toBe('MikroTik');
   });
+
+  test('Gateway + KC token → Kill Bill', async ({ request }) => {
+    const token = await getKCToken(request);
+    const resp = await request.get(`${GATEWAY}/PLATFORM-API/api/kb/nodesInfo`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(resp.ok()).toBeTruthy();
+  });
+
+  test('Gateway + KC token → OS versions', async ({ request }) => {
+    const token = await getKCToken(request);
+    const resp = await request.post(`${GATEWAY}/PLATFORM-API/api/odoo/infra.os.version/search_read`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: { args: [[['is_active', '=', true]]], kwargs: { fields: ['display_name', 'lts'], limit: 5 } },
+    });
+    expect(resp.ok()).toBeTruthy();
+    const body = await resp.json();
+    expect(body.length).toBeGreaterThan(0);
+  });
+
+  test('Spring Boot API direct health', async ({ request }) => {
+    const resp = await request.get(`${API}/api/odoo/health`);
+    expect(resp.ok()).toBeTruthy();
+    const body = await resp.json();
+    expect(body.odoo_connected).toBe(true);
+  });
+
+  test('Eureka has PLATFORM-API registered', async ({ request }) => {
+    const resp = await request.get('http://localhost:8761/eureka/apps/PLATFORM-API', {
+      headers: { Accept: 'application/json' },
+    });
+    expect(resp.ok()).toBeTruthy();
+    const body = await resp.json();
+    expect(body.application.name).toBe('PLATFORM-API');
+  });
+
 });

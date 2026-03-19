@@ -40,3 +40,7 @@ Thumbs.db
 # Secrets
 .env
 .env.local
+.vite/
+logs/
+Eureka-Server/
+test-results/
