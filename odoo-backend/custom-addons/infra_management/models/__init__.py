@@ -15,3 +15,4 @@ from . import vault_client
 from . import infra_vault_config
 from . import infra_ssh_key
 from . import infra_ssh_credential
+from . import infra_seed_manager

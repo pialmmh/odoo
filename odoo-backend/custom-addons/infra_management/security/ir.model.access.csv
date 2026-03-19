@@ -33,3 +33,4 @@ access_infra_os_family_admin,infra.os.family admin,model_infra_os_family,base.gr
 access_infra_os_family_user,infra.os.family user,model_infra_os_family,base.group_user,1,1,0,0
 access_infra_os_version_admin,infra.os.version admin,model_infra_os_version,base.group_system,1,1,1,1
 access_infra_os_version_user,infra.os.version user,model_infra_os_version,base.group_user,1,1,0,0
+access_infra_seed_manager_admin,infra.seed.manager admin,model_infra_seed_manager,base.group_system,1,1,1,1

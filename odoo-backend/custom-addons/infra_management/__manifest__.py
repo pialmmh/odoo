@@ -29,6 +29,7 @@ Infrastructure Management for ISP/Telecom
         'views/infra_ssh_views.xml',
         'views/infra_vault_views.xml',
         'views/infra_os_views.xml',
+        'views/infra_seed_manager_views.xml',
     ],
     'installable': True,
     'application': True,

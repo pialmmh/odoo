@@ -336,6 +336,16 @@ export async function updateOSFamily(id, vals) { return call('infra.os.family', 
 export async function createOSVersion(vals) { return call('infra.os.version', 'create', [vals]); }
 export async function updateOSVersion(id, vals) { return call('infra.os.version', 'write', [[id], vals]); }
 
+// ── Seed Data Management ──
+
+export async function getSeedStatus() {
+  return call('infra.seed.manager', 'action_get_seed_status', []);
+}
+
+export async function reloadAllSeedData() {
+  return call('infra.seed.manager', 'action_reload_all_seed_data', []);
+}
+
 // ── Vault ──
 
 export async function getVaultConfigs(domain = []) {
