@@ -27,6 +27,8 @@ class InfraCompute(models.Model):
         ('esxi', 'ESXi'),
         ('other', 'Other'),
     ], string='OS Type', default='linux')
+    os_version_id = fields.Many2one('infra.os.version', string='OS Version', index=True)
+    os_display = fields.Char(string='OS', related='os_version_id.display_name', readonly=True)
     management_ip = fields.Char(string='Management IP')
     status = fields.Selection([
         ('active', 'Active'),

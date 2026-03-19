@@ -10,6 +10,7 @@ from . import infra_networking
 from . import infra_ip_address
 from . import infra_device_attribute
 from . import infra_device_model
+from . import infra_os
 from . import vault_client
 from . import infra_vault_config
 from . import infra_ssh_key

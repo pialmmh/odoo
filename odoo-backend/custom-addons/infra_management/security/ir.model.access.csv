@@ -29,3 +29,7 @@ access_infra_ssh_key_admin,infra.ssh.key admin,model_infra_ssh_key,base.group_sy
 access_infra_ssh_key_user,infra.ssh.key user,model_infra_ssh_key,base.group_user,1,1,1,0
 access_infra_ssh_credential_admin,infra.ssh.credential admin,model_infra_ssh_credential,base.group_system,1,1,1,1
 access_infra_ssh_credential_user,infra.ssh.credential user,model_infra_ssh_credential,base.group_user,1,1,1,0
+access_infra_os_family_admin,infra.os.family admin,model_infra_os_family,base.group_system,1,1,1,1
+access_infra_os_family_user,infra.os.family user,model_infra_os_family,base.group_user,1,1,0,0
+access_infra_os_version_admin,infra.os.version admin,model_infra_os_version,base.group_system,1,1,1,1
+access_infra_os_version_user,infra.os.version user,model_infra_os_version,base.group_user,1,1,0,0

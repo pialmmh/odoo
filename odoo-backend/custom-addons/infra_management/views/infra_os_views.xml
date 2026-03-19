@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- OS Family -->
+    <record id="view_infra_os_family_tree" model="ir.ui.view">
+        <field name="name">infra.os.family.tree</field>
+        <field name="model">infra.os.family</field>
+        <field name="arch" type="xml">
+            <tree><field name="sequence" widget="handle"/><field name="name"/><field name="code"/><field name="os_category"/><field name="vendor"/><field name="version_count"/><field name="is_active"/></tree>
+        </field>
+    </record>
+    <record id="view_infra_os_family_form" model="ir.ui.view">
+        <field name="name">infra.os.family.form</field>
+        <field name="model">infra.os.family</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group><group><field name="code"/><field name="os_category"/><field name="vendor"/></group><group><field name="sequence"/><field name="is_active"/></group></group>
+                    <notebook><page string="Versions"><field name="version_ids"><tree editable="bottom">
+                        <field name="name"/><field name="version_number"/><field name="codename"/><field name="arch"/><field name="release_date"/><field name="eol_date"/><field name="lts"/><field name="is_active"/>
+                    </tree></field></page></notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_infra_os_family" model="ir.actions.act_window">
+        <field name="name">OS Families</field><field name="res_model">infra.os.family</field><field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- OS Version -->
+    <record id="view_infra_os_version_tree" model="ir.ui.view">
+        <field name="name">infra.os.version.tree</field>
+        <field name="model">infra.os.version</field>
+        <field name="arch" type="xml">
+            <tree><field name="family_id"/><field name="name"/><field name="version_number"/><field name="codename"/><field name="arch"/><field name="lts"/><field name="release_date"/><field name="eol_date"/><field name="is_active"/></tree>
+        </field>
+    </record>
+    <record id="view_infra_os_version_search" model="ir.ui.view">
+        <field name="name">infra.os.version.search</field>
+        <field name="model">infra.os.version</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="display_name"/><field name="family_id"/><field name="codename"/>
+                <filter name="active" string="Active" domain="[('is_active','=',True)]"/>
+                <filter name="lts" string="LTS" domain="[('lts','=',True)]"/>
+                <group expand="0" string="Group By"><filter name="group_family" string="OS Family" context="{'group_by': 'family_id'}"/><filter name="group_arch" string="Architecture" context="{'group_by': 'arch'}"/></group>
+            </search>
+        </field>
+    </record>
+    <record id="action_infra_os_version" model="ir.actions.act_window">
+        <field name="name">OS Versions</field><field name="res_model">infra.os.version</field><field name="view_mode">tree,form</field><field name="search_view_id" ref="view_infra_os_version_search"/><field name="context">{'search_default_active': 1}</field>
+    </record>
+
+    <!-- Menu under Catalog -->
+    <menuitem id="menu_infra_os_families" name="OS Families" parent="menu_infra_catalog" action="action_infra_os_family" sequence="30"/>
+    <menuitem id="menu_infra_os_versions" name="OS Versions" parent="menu_infra_catalog" action="action_infra_os_version" sequence="40"/>
+</odoo>

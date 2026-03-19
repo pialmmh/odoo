@@ -93,7 +93,7 @@ export async function getComputes(domain = []) {
     fields: [
       'id', 'name', 'hostname', 'node_type', 'datacenter_id', 'pool_id',
       'cpu_cores', 'memory_gb', 'disk_gb', 'brand', 'model', 'serial_number',
-      'rack_location', 'os_type', 'management_ip', 'status',
+      'rack_location', 'os_type', 'os_version_id', 'os_display', 'management_ip', 'status',
     ],
   });
 }
@@ -314,6 +314,27 @@ export async function setupSSHForCompute(computeId, keyId, tempUsername, tempPas
 export async function generateSetupScript(credId) {
   return call('infra.ssh.credential', 'action_generate_setup_script', [[credId]]);
 }
+
+// ── OS Families & Versions ──
+
+export async function getOSFamilies(domain = []) {
+  return call('infra.os.family', 'search_read', [domain], {
+    fields: ['id', 'name', 'code', 'os_category', 'vendor', 'sequence', 'is_active', 'version_count'],
+    order: 'sequence, name',
+  });
+}
+
+export async function getOSVersions(domain = []) {
+  return call('infra.os.version', 'search_read', [domain], {
+    fields: ['id', 'name', 'family_id', 'version_number', 'codename', 'arch', 'release_date', 'eol_date', 'lts', 'is_active', 'display_name'],
+    order: 'family_id, release_date desc',
+  });
+}
+
+export async function createOSFamily(vals) { return call('infra.os.family', 'create', [vals]); }
+export async function updateOSFamily(id, vals) { return call('infra.os.family', 'write', [[id], vals]); }
+export async function createOSVersion(vals) { return call('infra.os.version', 'create', [vals]); }
+export async function updateOSVersion(id, vals) { return call('infra.os.version', 'write', [[id], vals]); }
 
 // ── Vault ──
 

@@ -419,7 +419,7 @@ export default function InfraDetailPane({ selection, onNavigate }) {
           <PropRow label="Hostname" value={c.hostname} />
           <PropRow label="Management IP" value={c.management_ip} mono />
           <PropRow label="Node Type" value={c.node_type === 'dedicated_server' ? 'Dedicated Server' : 'Virtual Machine'} />
-          <PropRow label="OS" value={c.os_type} />
+          <PropRow label="OS" value={c.os_display || c.os_type} />
           <PropRow label="Status" value={c.status} />
           <PropRow label="Datacenter" value={c.datacenter_id?.[1]} />
         </PropSection>
