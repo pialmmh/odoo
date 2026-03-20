@@ -1,7 +1,16 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { call } from '../services/odoo';
+import axios from 'axios';
 import { setKBTenant } from '../services/killbill';
 import { useAuth } from './AuthContext';
+
+// Direct call without JWT interceptor — tenant loading is a public endpoint
+async function loadPartnersFromOdoo(domain, fields) {
+  const resp = await axios.post('/api/odoo/res.partner/search_read',
+    { args: [domain], kwargs: { fields } },
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+  return resp.data;
+}
 
 const TenantContext = createContext(null);
 const STORAGE_KEY = 'platform_active_tenant';
@@ -25,15 +34,14 @@ export function TenantProvider({ children }) {
       // Load company partners — try with KB fields first, fallback without
       let partners;
       try {
-        partners = await call('res.partner', 'search_read',
-          [[['is_company', '=', true], ['x_kb_api_key', '!=', false]]],
-          { fields: ['id', 'name', 'x_kb_api_key', 'x_kb_api_secret', 'x_kb_tenant_id'] }
+        partners = await loadPartnersFromOdoo(
+          [['is_company', '=', true], ['x_kb_api_key', '!=', false]],
+          ['id', 'name', 'x_kb_api_key', 'x_kb_api_secret', 'x_kb_tenant_id']
         );
       } catch {
-        // KB module may not be installed — load all company partners
-        partners = await call('res.partner', 'search_read',
-          [[['is_company', '=', true]]],
-          { fields: ['id', 'name'] }
+        partners = await loadPartnersFromOdoo(
+          [['is_company', '=', true]],
+          ['id', 'name']
         );
       }
       setTenants(partners);
