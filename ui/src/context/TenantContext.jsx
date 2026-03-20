@@ -18,10 +18,20 @@ export function TenantProvider({ children }) {
   // Load tenants from Odoo
   const loadTenants = useCallback(async () => {
     try {
-      const partners = await call('res.partner', 'search_read',
-        [[['is_company', '=', true], ['x_kb_api_key', '!=', false]]],
-        { fields: ['id', 'name', 'x_kb_api_key', 'x_kb_api_secret', 'x_kb_tenant_id'] }
-      );
+      // Load company partners — try with KB fields first, fallback without
+      let partners;
+      try {
+        partners = await call('res.partner', 'search_read',
+          [[['is_company', '=', true], ['x_kb_api_key', '!=', false]]],
+          { fields: ['id', 'name', 'x_kb_api_key', 'x_kb_api_secret', 'x_kb_tenant_id'] }
+        );
+      } catch {
+        // KB module may not be installed — load all company partners
+        partners = await call('res.partner', 'search_read',
+          [[['is_company', '=', true]]],
+          { fields: ['id', 'name'] }
+        );
+      }
       setTenants(partners);
 
       // Restore last active tenant
