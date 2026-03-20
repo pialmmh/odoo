@@ -17,9 +17,16 @@ export function setKBTenant(tenant, username) {
   _username = username || 'billing-ui';
 }
 
-// Inject JWT + tenant headers
-api.interceptors.request.use((config) => {
-  const token = getToken();
+// Inject JWT + tenant headers — wait briefly if token not ready
+api.interceptors.request.use(async (config) => {
+  let token = getToken();
+  if (!token) {
+    for (let i = 0; i < 6; i++) {
+      await new Promise(r => setTimeout(r, 500));
+      token = getToken();
+      if (token) break;
+    }
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -39,8 +46,15 @@ const systemApi = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-systemApi.interceptors.request.use((config) => {
-  const token = getToken();
+systemApi.interceptors.request.use(async (config) => {
+  let token = getToken();
+  if (!token) {
+    for (let i = 0; i < 6; i++) {
+      await new Promise(r => setTimeout(r, 500));
+      token = getToken();
+      if (token) break;
+    }
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

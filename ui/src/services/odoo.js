@@ -8,9 +8,17 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Inject JWT token on every request
-api.interceptors.request.use((config) => {
-  const token = getToken();
+// Inject JWT token on every request — wait briefly if token not ready
+api.interceptors.request.use(async (config) => {
+  let token = getToken();
+  // If no token yet, wait up to 3s for Keycloak to be ready
+  if (!token) {
+    for (let i = 0; i < 6; i++) {
+      await new Promise(r => setTimeout(r, 500));
+      token = getToken();
+      if (token) break;
+    }
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
