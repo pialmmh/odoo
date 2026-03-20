@@ -3,13 +3,23 @@ import {
   Select, Button, Divider,
 } from '@mui/material';
 import { Logout, Warning, Business } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { DRAWER_WIDTH } from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useTenant } from '../context/TenantContext';
 
 export default function TopBar() {
   const { auth, isSuper, logout, authMode, switchAuthMode } = useAuth();
-  const { tenants, activeTenant, switchTenant } = useTenant();
+  const { tenants, activeTenant, switchTenant, tenantSlug } = useTenant();
+  const navigate = useNavigate();
+
+  const handleSwitchTenant = (tenantId) => {
+    const tenant = tenants.find(t => t.id === tenantId);
+    if (tenant) {
+      switchTenant(tenant);
+      navigate(`/${tenant.slug}/`);
+    }
+  };
 
   return (
     <AppBar
@@ -23,7 +33,6 @@ export default function TopBar() {
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
-        {/* Left: tenant info */}
         <Box>
           {activeTenant ? (
             <Typography variant="body2" color="text.secondary">
@@ -39,16 +48,11 @@ export default function TopBar() {
           )}
         </Box>
 
-        {/* Right: tenant selector + user info */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          {/* Tenant selector */}
           <Select
             size="small"
             value={activeTenant?.id || ''}
-            onChange={(e) => {
-              const tenant = tenants.find(t => t.id === e.target.value);
-              switchTenant(tenant || null);
-            }}
+            onChange={(e) => handleSwitchTenant(e.target.value)}
             displayEmpty
             sx={{ minWidth: 180, fontSize: 13, height: 32 }}
             startAdornment={<Business sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />}
@@ -63,7 +67,6 @@ export default function TopBar() {
 
           <Divider orientation="vertical" flexItem />
 
-          {/* User info */}
           <Chip
             label={authMode === 'keycloak' ? 'KC' : 'Local'}
             size="small"

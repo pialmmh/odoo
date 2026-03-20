@@ -2,25 +2,19 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import axios from 'axios';
 import { setKBTenant } from '../services/killbill';
 import { useAuth } from './AuthContext';
+import config, { getTenantSlug, getPartnerIdFromSlug } from '../config/platform';
+
+const TenantContext = createContext(null);
 
 // Direct call without JWT interceptor — tenant loading is a public endpoint
 async function loadPartnersFromOdoo(domain, fields) {
-  const resp = await axios.post('/api/odoo/res.partner/search_read',
+  const resp = await axios.post(`${config.api.odoo}/res.partner/search_read`,
     { args: [domain], kwargs: { fields } },
     { headers: { 'Content-Type': 'application/json' } }
   );
   return resp.data;
 }
 
-const TenantContext = createContext(null);
-const STORAGE_KEY = 'platform_active_tenant';
-
-/**
- * Unified tenant context.
- * Tenants are Odoo res.partner records (companies).
- * Selecting a tenant filters infra (by partner_id) and billing (by KB api key).
- * Waits for auth to be ready before loading tenants.
- */
 export function TenantProvider({ children }) {
   const [tenants, setTenants] = useState([]);
   const [activeTenant, setActiveTenant] = useState(null);
@@ -31,7 +25,6 @@ export function TenantProvider({ children }) {
   const loadTenants = useCallback(async () => {
     if (!isLoggedIn) { setLoading(false); return; }
     try {
-      // Load company partners — try with KB fields first, fallback without
       let partners;
       try {
         partners = await loadPartnersFromOdoo(
@@ -44,24 +37,22 @@ export function TenantProvider({ children }) {
           ['id', 'name']
         );
       }
-      setTenants(partners);
 
-      // Restore last active tenant
-      const savedId = localStorage.getItem(STORAGE_KEY);
-      if (savedId) {
-        const found = partners.find(p => p.id === +savedId);
-        if (found) setActiveTenant(found);
+      // Attach slugs
+      const withSlugs = partners.map(p => ({ ...p, slug: getTenantSlug(p.id) }));
+      setTenants(withSlugs);
+
+      // Auto-select tenant from URL path
+      const pathSlug = getTenantSlugFromURL();
+      if (pathSlug) {
+        const found = withSlugs.find(t => t.slug === pathSlug);
+        if (found) {
+          setActiveTenant(found);
+          setKBTenant(found);
+        }
       }
     } catch (e) {
-      // Fallback: load from localStorage if Odoo unreachable
       console.warn('Failed to load tenants from Odoo:', e.message);
-      try {
-        const saved = JSON.parse(localStorage.getItem('kb_tenants') || '[]');
-        setTenants(saved.map((t, i) => ({
-          id: i + 1, name: t.name,
-          x_kb_api_key: t.apiKey, x_kb_api_secret: t.apiSecret,
-        })));
-      } catch { /* ignore */ }
     } finally {
       setLoading(false);
     }
@@ -72,10 +63,14 @@ export function TenantProvider({ children }) {
   const switchTenant = (tenant) => {
     setActiveTenant(tenant);
     setKBTenant(tenant);
-    if (tenant) {
-      localStorage.setItem(STORAGE_KEY, String(tenant.id));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
+    // Update URL to reflect new tenant
+    if (tenant && config.tenantUrlMode === 'path') {
+      const currentPath = window.location.pathname;
+      const stripped = stripTenantFromPath(currentPath);
+      const newPath = `/${tenant.slug}${stripped || '/'}`;
+      if (currentPath !== newPath) {
+        window.history.replaceState(null, '', newPath);
+      }
     }
   };
 
@@ -91,16 +86,41 @@ export function TenantProvider({ children }) {
       switchTenant,
       loading,
       refreshTenants: loadTenants,
-      // Convenience getters for billing (KB headers)
       kbApiKey: activeTenant?.x_kb_api_key || '',
       kbApiSecret: activeTenant?.x_kb_api_secret || '',
-      // For infra filtering
       partnerId: activeTenant?.id || null,
       tenantName: activeTenant?.name || '',
+      tenantSlug: activeTenant?.slug || '',
     }}>
       {children}
     </TenantContext.Provider>
   );
+}
+
+/** Extract tenant slug from current URL path */
+function getTenantSlugFromURL() {
+  if (config.tenantUrlMode !== 'path') return null;
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  if (parts.length === 0) return null;
+  // First segment could be a tenant slug
+  const candidate = parts[0];
+  // Check if it's a known slug
+  if (getPartnerIdFromSlug(candidate) !== null) return candidate;
+  // Check against configured slugs
+  const knownSlugs = Object.values(config.tenantSlugs);
+  if (knownSlugs.includes(candidate)) return candidate;
+  return null;
+}
+
+/** Strip tenant prefix from a path */
+function stripTenantFromPath(path) {
+  const parts = path.split('/').filter(Boolean);
+  if (parts.length === 0) return '/';
+  const candidate = parts[0];
+  if (getPartnerIdFromSlug(candidate) !== null || Object.values(config.tenantSlugs).includes(candidate)) {
+    return '/' + parts.slice(1).join('/') || '/';
+  }
+  return path;
 }
 
 export const useTenant = () => useContext(TenantContext);

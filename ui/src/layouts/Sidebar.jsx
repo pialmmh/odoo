@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   Drawer, List, ListItemButton, ListItemIcon, ListItemText,
   Toolbar, Typography, Box, Divider,
@@ -23,42 +23,50 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
+import { useTenant } from '../context/TenantContext';
+import config from '../config/platform';
 
 const DRAWER_WIDTH = 240;
 
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { tenant: tenantSlug } = useParams();
   const { isSuper } = useAuth();
   const { brand } = useAppTheme();
+  const { tenantName } = useTenant();
+
+  const base = tenantSlug ? `/${tenantSlug}` : '';
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Customers', icon: <PeopleIcon />, path: '/customers' },
-    { text: 'Subscriptions', icon: <SubIcon />, path: '/subscriptions' },
-    { text: 'Invoices', icon: <InvoiceIcon />, path: '/invoices' },
-    { text: 'Payments', icon: <PaymentsIcon />, path: '/payments' },
-    { text: 'Catalog', icon: <CatalogIcon />, path: '/catalog' },
-    { text: 'Products', icon: <ProductsIcon />, path: '/products' },
-    { text: 'Pricing', icon: <PricingIcon />, path: '/pricing' },
-    { text: 'Rate History', icon: <HistoryIcon />, path: '/rate-history' },
-    { text: 'AR Report', icon: <ARIcon />, path: '/reports/ar' },
-    { text: 'Infra', icon: <InfraIcon />, path: '/infra' },
-    { text: 'Device Catalog', icon: <CatalogDeviceIcon />, path: '/infra/catalog' },
-    { text: 'SSH', icon: <SSHIcon />, path: '/infra/ssh' },
-    { text: 'Artifacts', icon: <ArtifactIcon />, path: '/artifacts' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+    { text: 'Dashboard', icon: <DashboardIcon />, path: `${base}/` },
+    { text: 'Customers', icon: <PeopleIcon />, path: `${base}/customers` },
+    { text: 'Subscriptions', icon: <SubIcon />, path: `${base}/subscriptions` },
+    { text: 'Invoices', icon: <InvoiceIcon />, path: `${base}/invoices` },
+    { text: 'Payments', icon: <PaymentsIcon />, path: `${base}/payments` },
+    { text: 'Catalog', icon: <CatalogIcon />, path: `${base}/catalog` },
+    { text: 'Products', icon: <ProductsIcon />, path: `${base}/products` },
+    { text: 'Pricing', icon: <PricingIcon />, path: `${base}/pricing` },
+    { text: 'Rate History', icon: <HistoryIcon />, path: `${base}/rate-history` },
+    { text: 'AR Report', icon: <ARIcon />, path: `${base}/reports/ar` },
+    { text: 'Infra', icon: <InfraIcon />, path: `${base}/infra` },
+    { text: 'Device Catalog', icon: <CatalogDeviceIcon />, path: `${base}/infra/catalog` },
+    { text: 'SSH', icon: <SSHIcon />, path: `${base}/infra/ssh` },
+    { text: 'Artifacts', icon: <ArtifactIcon />, path: `${base}/artifacts` },
+    { text: 'Settings', icon: <SettingsIcon />, path: `${base}/settings` },
   ];
 
-  // Super admin gets tenant management
   if (isSuper) {
-    menuItems.push({ text: 'Tenants', icon: <TenantIcon />, path: '/tenants' });
+    menuItems.push({ text: 'Tenants', icon: <TenantIcon />, path: `${base}/tenants` });
   }
 
   const isActive = (path) => {
-    if (path === '/') return location.pathname === '/';
-    if (path === '/infra') return location.pathname === '/infra';
-    return location.pathname.startsWith(path);
+    const loc = location.pathname;
+    // Exact match for dashboard
+    if (path === `${base}/`) return loc === `${base}/` || loc === `${base}`;
+    // Exact match for /infra (not /infra/catalog)
+    if (path === `${base}/infra`) return loc === `${base}/infra`;
+    return loc.startsWith(path);
   };
 
   return (
@@ -81,16 +89,18 @@ export default function Sidebar() {
             width: 32, height: 32, borderRadius: '8px',
             bgcolor: 'primary.main', display: 'flex',
             alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
           }}
+          onClick={() => navigate('/')}
         >
-          <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>TB</Typography>
+          <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>{config.appShortName}</Typography>
         </Box>
         <Box>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-            Telcobright
+            {tenantName || config.appName}
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>
-            Billing System
+            {tenantSlug || 'Select tenant'}
           </Typography>
         </Box>
       </Toolbar>

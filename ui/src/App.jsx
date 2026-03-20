@@ -2,9 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { ThemeRegistryProvider, useAppTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { TenantProvider } from './context/TenantContext';
+import { TenantProvider, useTenant } from './context/TenantContext';
 import { NotificationProvider } from './components/ErrorNotification';
 import MainLayout from './layouts/MainLayout';
+import TenantSelector from './pages/TenantSelector';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
@@ -25,45 +26,57 @@ import InfraDeviceCatalog from './pages/infra/InfraDeviceCatalog';
 import InfraSSH from './pages/infra/InfraSSH';
 import ArtifactsMain from './pages/artifacts/ArtifactsMain';
 
-function ProtectedRoutes() {
-  const { isLoggedIn, isSuper } = useAuth();
-
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
+/** All app pages under /:tenant prefix */
+function TenantRoutes() {
+  const { isSuper } = useAuth();
 
   return (
-    <Routes>
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/customers" element={<Customers />} />
-        <Route path="/customers/:id" element={<CustomerDetail />} />
-        <Route path="/subscriptions" element={<Subscriptions />} />
-        <Route path="/invoices" element={<Invoices />} />
-        <Route path="/payments" element={<Payments />} />
-        <Route path="/catalog" element={<Catalog />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/products/:id" element={<ProductDetail />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/rate-history" element={<RateHistory />} />
-        <Route path="/reports/ar" element={<ARReport />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/infra" element={<InfraMain />} />
-        <Route path="/infra/catalog" element={<InfraDeviceCatalog />} />
-        <Route path="/infra/ssh" element={<InfraSSH />} />
-        <Route path="/artifacts" element={<ArtifactsMain />} />
-        {isSuper && <Route path="/tenants" element={<Tenants />} />}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <Route element={<MainLayout />}>
+      <Route index element={<Dashboard />} />
+      <Route path="customers" element={<Customers />} />
+      <Route path="customers/:id" element={<CustomerDetail />} />
+      <Route path="subscriptions" element={<Subscriptions />} />
+      <Route path="invoices" element={<Invoices />} />
+      <Route path="payments" element={<Payments />} />
+      <Route path="catalog" element={<Catalog />} />
+      <Route path="products" element={<Products />} />
+      <Route path="products/:id" element={<ProductDetail />} />
+      <Route path="pricing" element={<Pricing />} />
+      <Route path="rate-history" element={<RateHistory />} />
+      <Route path="reports/ar" element={<ARReport />} />
+      <Route path="settings" element={<Settings />} />
+      <Route path="infra" element={<InfraMain />} />
+      <Route path="infra/catalog" element={<InfraDeviceCatalog />} />
+      <Route path="infra/ssh" element={<InfraSSH />} />
+      <Route path="artifacts" element={<ArtifactsMain />} />
+      {isSuper && <Route path="tenants" element={<Tenants />} />}
+      <Route path="*" element={<Navigate to="" replace />} />
+    </Route>
   );
 }
 
 function AppRoutes() {
   const { isLoggedIn } = useAuth();
 
+  if (!isLoggedIn) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
   return (
     <Routes>
-      <Route path="/login" element={isLoggedIn ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/*" element={<ProtectedRoutes />} />
+      {/* Root: tenant selector */}
+      <Route path="/" element={<TenantSelector />} />
+      {/* Tenant-prefixed routes */}
+      <Route path="/:tenant/*">
+        {TenantRoutes()}
+      </Route>
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

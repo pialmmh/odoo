@@ -1,9 +1,10 @@
 import Keycloak from 'keycloak-js';
+import config from '../config/platform';
 
 const keycloak = new Keycloak({
-  url: 'http://localhost:7104',
-  realm: 'telcobright',
-  clientId: 'platform-ui',
+  url: config.auth.keycloak.url,
+  realm: config.auth.keycloak.realm,
+  clientId: config.auth.keycloak.clientId,
 });
 
 let _initPromise = null;
