@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { call } from '../services/odoo';
 import { setKBTenant } from '../services/killbill';
+import { useAuth } from './AuthContext';
 
 const TenantContext = createContext(null);
 const STORAGE_KEY = 'platform_active_tenant';
@@ -9,14 +10,17 @@ const STORAGE_KEY = 'platform_active_tenant';
  * Unified tenant context.
  * Tenants are Odoo res.partner records (companies).
  * Selecting a tenant filters infra (by partner_id) and billing (by KB api key).
+ * Waits for auth to be ready before loading tenants.
  */
 export function TenantProvider({ children }) {
   const [tenants, setTenants] = useState([]);
   const [activeTenant, setActiveTenant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { isLoggedIn } = useAuth();
 
   // Load tenants from Odoo
   const loadTenants = useCallback(async () => {
+    if (!isLoggedIn) { setLoading(false); return; }
     try {
       // Load company partners — try with KB fields first, fallback without
       let partners;
@@ -53,7 +57,7 @@ export function TenantProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => { loadTenants(); }, [loadTenants]);
 
