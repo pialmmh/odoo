@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { setKBTenant } from '../services/killbill';
-import { useAuth } from './AuthContext';
 import config, { getTenantSlug, getPartnerIdFromSlug } from '../config/platform';
 
 const TenantContext = createContext(null);
@@ -19,11 +18,9 @@ export function TenantProvider({ children }) {
   const [tenants, setTenants] = useState([]);
   const [activeTenant, setActiveTenant] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { isLoggedIn } = useAuth();
 
   // Load tenants from Odoo
   const loadTenants = useCallback(async () => {
-    if (!isLoggedIn) { setLoading(false); return; }
     try {
       let partners;
       try {
@@ -56,7 +53,7 @@ export function TenantProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [isLoggedIn]);
+  }, []);
 
   useEffect(() => { loadTenants(); }, [loadTenants]);
 
