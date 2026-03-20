@@ -23,8 +23,9 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Health endpoint is public
+                // Public endpoints (no JWT required)
                 .requestMatchers("/api/odoo/health").permitAll()
+                .requestMatchers("/api/odoo/res.partner/search_read").permitAll()
                 // Everything else requires JWT
                 .anyRequest().authenticated()
             )
