@@ -1,17 +1,19 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { setKBTenant } from '../services/killbill';
 import config, { getTenantSlug, getPartnerIdFromSlug } from '../config/platform';
 
 const TenantContext = createContext(null);
 
-// Direct call without JWT interceptor — tenant loading is a public endpoint
+// Direct call without JWT/cookies — tenant loading is a public endpoint
 async function loadPartnersFromOdoo(domain, fields) {
-  const resp = await axios.post(`${config.api.odoo}/res.partner/search_read`,
-    { args: [domain], kwargs: { fields } },
-    { headers: { 'Content-Type': 'application/json' } }
-  );
-  return resp.data;
+  const resp = await fetch(`${config.api.odoo}/res.partner/search_read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'omit',  // Don't send cookies
+    body: JSON.stringify({ args: [domain], kwargs: { fields } }),
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  return resp.json();
 }
 
 export function TenantProvider({ children }) {
