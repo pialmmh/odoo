@@ -22,10 +22,17 @@ export function AuthProvider({ children }) {
 
   // Initialize auth on mount
   useEffect(() => {
+    let timeout;
     async function init() {
       if (mode === 'keycloak') {
+        // Timeout: if KC init takes >8s, fall back to legacy
+        timeout = setTimeout(() => {
+          console.warn('Keycloak init timeout — falling back to legacy');
+          setLoading(false);
+        }, 8000);
         try {
           const authenticated = await initKeycloak();
+          clearTimeout(timeout);
           if (authenticated) {
             const user = getKCUser();
             setAuthState({
@@ -38,6 +45,7 @@ export function AuthProvider({ children }) {
             });
           }
         } catch (e) {
+          clearTimeout(timeout);
           console.warn('Keycloak unavailable, falling back to legacy auth:', e.message);
           setMode('legacy');
           localStorage.setItem('auth_mode', 'legacy');
@@ -51,6 +59,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
     init();
+    return () => clearTimeout(timeout);
   }, [mode]);
 
   // Legacy login (only used when Keycloak is not available)

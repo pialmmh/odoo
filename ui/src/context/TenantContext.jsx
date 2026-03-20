@@ -1,20 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { setKBTenant } from '../services/killbill';
+import { getToken } from '../services/keycloak';
+import { call } from '../services/odoo';
 import config, { getTenantSlug, getPartnerIdFromSlug } from '../config/platform';
 
 const TenantContext = createContext(null);
-
-// Direct call without JWT/cookies — tenant loading is a public endpoint
-async function loadPartnersFromOdoo(domain, fields) {
-  const resp = await fetch(`${config.api.odoo}/res.partner/search_read`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'omit',  // Don't send cookies
-    body: JSON.stringify({ args: [domain], kwargs: { fields } }),
-  });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  return resp.json();
-}
 
 export function TenantProvider({ children }) {
   const [tenants, setTenants] = useState([]);
@@ -24,18 +14,10 @@ export function TenantProvider({ children }) {
   // Load tenants from Odoo
   const loadTenants = useCallback(async () => {
     try {
-      let partners;
-      try {
-        partners = await loadPartnersFromOdoo(
-          [['is_company', '=', true], ['x_kb_api_key', '!=', false]],
-          ['id', 'name', 'x_kb_api_key', 'x_kb_api_secret', 'x_kb_tenant_id']
-        );
-      } catch {
-        partners = await loadPartnersFromOdoo(
-          [['is_company', '=', true]],
-          ['id', 'name']
-        );
-      }
+      const partners = await call('res.partner', 'search_read',
+        [[['is_company', '=', true]]],
+        { fields: ['id', 'name'] }
+      );
 
       // Attach slugs
       const withSlugs = partners.map(p => ({ ...p, slug: getTenantSlug(p.id) }));

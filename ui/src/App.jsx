@@ -56,9 +56,14 @@ function TenantRoutes() {
 }
 
 function AppRoutes() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, authMode } = useAuth();
 
   if (!isLoggedIn) {
+    // In KC mode with check-sso: trigger login redirect
+    if (authMode === 'keycloak') {
+      import('./services/keycloak').then(m => m.login());
+      return null;
+    }
     return (
       <Routes>
         <Route path="/login" element={<Login />} />

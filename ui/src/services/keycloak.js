@@ -7,37 +7,52 @@ const keycloak = new Keycloak({
   clientId: config.auth.keycloak.clientId,
 });
 
-let _initPromise = null;
+let _initialized = false;
+let _initializing = false;
 
 /**
- * Initialize Keycloak. Safe to call multiple times — deduplicates via promise.
- * Returns true if user is authenticated (has valid token).
+ * Initialize Keycloak. Handles React Strict Mode double-invoke.
  */
 export async function initKeycloak() {
-  if (_initPromise) return _initPromise;
-  _initPromise = (async () => {
-    try {
-      const authenticated = await keycloak.init({
-        onLoad: 'login-required',
-        checkLoginIframe: false,
-        pkceMethod: 'S256',
-      });
-      // Auto-refresh token before expiry
-      setInterval(async () => {
-        try {
-          await keycloak.updateToken(30);
-        } catch {
-          keycloak.login();
+  // Already done
+  if (_initialized) return keycloak.authenticated;
+
+  // Already in progress — wait for it
+  if (_initializing) {
+    return new Promise((resolve) => {
+      const check = setInterval(() => {
+        if (_initialized) {
+          clearInterval(check);
+          resolve(keycloak.authenticated);
         }
+      }, 100);
+      // Timeout after 10s
+      setTimeout(() => { clearInterval(check); resolve(false); }, 10000);
+    });
+  }
+
+  _initializing = true;
+  try {
+    const authenticated = await keycloak.init({
+      onLoad: 'check-sso',
+      checkLoginIframe: false,
+      pkceMethod: 'S256',
+    });
+    _initialized = true;
+    _initializing = false;
+
+    if (authenticated) {
+      // Auto-refresh token
+      setInterval(async () => {
+        try { await keycloak.updateToken(30); } catch { keycloak.login(); }
       }, 10000);
-      return authenticated;
-    } catch (e) {
-      console.error('Keycloak init failed:', e);
-      _initPromise = null; // Allow retry on failure
-      return false;
     }
-  })();
-  return _initPromise;
+    return authenticated;
+  } catch (e) {
+    _initializing = false;
+    console.error('Keycloak init failed:', e);
+    return false;
+  }
 }
 
 export function getToken() {
@@ -75,7 +90,7 @@ export function isSuper() {
 }
 
 export function logout() {
-  keycloak.logout({ redirectUri: window.location.origin + '/login' });
+  keycloak.logout({ redirectUri: window.location.origin });
 }
 
 export function login() {
