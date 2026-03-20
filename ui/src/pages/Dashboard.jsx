@@ -14,17 +14,20 @@ import {
 import StatCard from '../components/StatCard';
 import StatusChip from '../components/StatusChip';
 import { getAccounts, getAccountBundles, getAccountInvoices } from '../services/killbill';
+import { useTenant } from '../context/TenantContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { activeTenant } = useTenant();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({ customers: 0, subscriptions: 0, invoices: 0, revenue: 0 });
   const [recentAccounts, setRecentAccounts] = useState([]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (activeTenant) loadData();
+    else setLoading(false);
+  }, [activeTenant]);
 
   const loadData = async () => {
     try {

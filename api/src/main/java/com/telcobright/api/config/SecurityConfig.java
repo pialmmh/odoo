@@ -2,6 +2,7 @@ package com.telcobright.api.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -16,19 +17,34 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    /**
+     * Public endpoints — NO JWT processing at all.
+     * Even if a bad/expired token is sent, it's ignored.
+     */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Order(1)
+    public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/api/odoo/health", "/api/odoo/res.partner/**")
+            .cors(cors -> cors.configurationSource(corsSource()))
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+
+        return http.build();
+    }
+
+    /**
+     * Protected endpoints — require valid JWT.
+     */
+    @Bean
+    @Order(2)
+    public SecurityFilterChain protectedFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // Public endpoints (no JWT required)
-                .requestMatchers("/api/odoo/health").permitAll()
-                .requestMatchers("/api/odoo/res.partner/search_read").permitAll()
-                // Everything else requires JWT
-                .anyRequest().authenticated()
-            )
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}));
 
         return http.build();
