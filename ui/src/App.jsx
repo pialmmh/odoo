@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { ThemeRegistryProvider, useAppTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { TenantProvider } from './context/TenantContext';
 import { NotificationProvider } from './components/ErrorNotification';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
@@ -74,9 +75,11 @@ function ThemedApp() {
       <CssBaseline />
       <NotificationProvider>
         <AuthProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
+          <TenantProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </TenantProvider>
         </AuthProvider>
       </NotificationProvider>
     </ThemeProvider>

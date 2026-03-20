@@ -1,15 +1,21 @@
 import axios from 'axios';
-import { getActiveTenant, getAuth } from './auth';
 import { getToken } from './keycloak';
 
-// ── Routes through Spring Boot API gateway ──
-// Spring Boot forwards /api/kb/** → Kill Bill :18080/1.0/kb/**
-// and injects KB auth headers server-side
+// ── Routes through API Gateway → Spring Boot → Kill Bill ──
 
 const api = axios.create({
   baseURL: '/api/kb',
   headers: { 'Content-Type': 'application/json' },
 });
+
+// Active tenant reference — set by TenantContext via setKBTenant()
+let _activeTenant = null;
+let _username = 'billing-ui';
+
+export function setKBTenant(tenant, username) {
+  _activeTenant = tenant;
+  _username = username || 'billing-ui';
+}
 
 // Inject JWT + tenant headers
 api.interceptors.request.use((config) => {
@@ -18,18 +24,16 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  const tenant = getActiveTenant();
-  if (tenant) {
-    config.headers['X-Killbill-ApiKey'] = tenant.apiKey;
-    config.headers['X-Killbill-ApiSecret'] = tenant.apiSecret;
+  if (_activeTenant) {
+    config.headers['X-Killbill-ApiKey'] = _activeTenant.x_kb_api_key || _activeTenant.apiKey || '';
+    config.headers['X-Killbill-ApiSecret'] = _activeTenant.x_kb_api_secret || _activeTenant.apiSecret || '';
   }
 
-  const auth = getAuth();
-  config.headers['X-Killbill-CreatedBy'] = auth?.username || 'billing-ui';
+  config.headers['X-Killbill-CreatedBy'] = _username;
   return config;
 });
 
-// System-level requests (no tenant headers)
+// System-level requests (no tenant headers needed)
 const systemApi = axios.create({
   baseURL: '/api/kb',
   headers: { 'Content-Type': 'application/json' },
@@ -40,6 +44,7 @@ systemApi.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  config.headers['X-Killbill-CreatedBy'] = _username;
   return config;
 });
 

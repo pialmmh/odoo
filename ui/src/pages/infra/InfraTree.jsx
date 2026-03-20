@@ -61,7 +61,7 @@ const CONTEXT_ACTIONS = {
   compute: [{ label: 'Add Container', childType: 'add_container', icon: <ContainerIcon fontSize="small" /> }],
 };
 
-export default function InfraTree({ onSelect, onContextAction }) {
+export default function InfraTree({ onSelect, onContextAction, partnerId }) {
   const [regions, setRegions] = useState([]);
   const [zones, setZones] = useState([]);
   const [datacenters, setDatacenters] = useState([]);
@@ -74,13 +74,15 @@ export default function InfraTree({ onSelect, onContextAction }) {
   const ic = brand.infra;
 
   // Context menu state
-  const [contextMenu, setContextMenu] = useState(null); // { mouseX, mouseY, nodeType, context }
+  const [contextMenu, setContextMenu] = useState(null);
 
   const loadTree = useCallback(async () => {
     setLoading(true);
     try {
+      // Filter datacenters by partner if tenant is selected
+      const dcDomain = partnerId ? [['partner_id', '=', partnerId]] : [];
       const [r, z, d, comp, dev, cont] = await Promise.all([
-        getRegions(), getAvailabilityZones(), getDatacenters(),
+        getRegions(), getAvailabilityZones(), getDatacenters(dcDomain),
         getComputes(), getNetworkDevices(), getContainers(),
       ]);
       setRegions(r); setZones(z); setDatacenters(d);
@@ -90,7 +92,7 @@ export default function InfraTree({ onSelect, onContextAction }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [partnerId]);
 
   useEffect(() => { loadTree(); }, [loadTree]);
 
