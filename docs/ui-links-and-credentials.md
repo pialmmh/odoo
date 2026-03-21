@@ -97,3 +97,9 @@ React (:5180) → APISIX (:9080) → Spring Boot (:8180) → Odoo (:7169) / Kill
 - **Username:** `admin`
 - **Password:** `admin`
 - Shows all routes, upstreams, plugins configured in APISIX
+
+### Monitoring
+- **Grafana:** http://localhost:3100 (`admin` / `admin`)
+  - Dashboard: APISIX Gateway Metrics (requests, latency, status codes, bandwidth)
+- **Prometheus:** http://localhost:9095
+  - Scrapes APISIX metrics from :9091/apisix/prometheus/metrics
