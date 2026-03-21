@@ -91,3 +91,9 @@ React (:5180) → APISIX (:9080) → Spring Boot (:8180) → Odoo (:7169) / Kill
               Keycloak (:7104)                          PostgreSQL (:5433)
               (JWT validation)                          MySQL (:3306)
 ```
+
+### APISIX Dashboard
+- **URL:** http://localhost:9000
+- **Username:** `admin`
+- **Password:** `admin`
+- Shows all routes, upstreams, plugins configured in APISIX
