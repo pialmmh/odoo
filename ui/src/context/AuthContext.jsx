@@ -1,38 +1,28 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import {
-  getAuth, setAuth as saveAuth, clearAuth,
+  getAuth, clearAuth, login as doLegacyLogin, isSuperAdmin, getTenants,
   getActiveTenant, setActiveTenant as saveActiveTenant,
-  getTenants, isSuperAdmin, login as doLegacyLogin,
 } from '../services/auth';
 import {
-  initKeycloak, getUser as getKCUser, isAuthenticated as isKCAuth,
+  initKeycloak, getUser as getKCUser,
   isSuper as isKCSuper, logout as kcLogout, getToken,
 } from '../services/keycloak';
+import config from '../config/platform';
 
 const AuthContext = createContext(null);
 
-// Auth mode: 'keycloak' or 'legacy'
-const AUTH_MODE = localStorage.getItem('auth_mode') || 'keycloak';
+const AUTH_MODE = localStorage.getItem('auth_mode') || config.auth.mode;
 
 export function AuthProvider({ children }) {
   const [auth, setAuthState] = useState(null);
-  const [activeTenant, setActiveTenantState] = useState(() => getActiveTenant());
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState(AUTH_MODE);
 
-  // Initialize auth on mount
   useEffect(() => {
-    let timeout;
     async function init() {
       if (mode === 'keycloak') {
-        // Timeout: if KC init takes >8s, fall back to legacy
-        timeout = setTimeout(() => {
-          console.warn('Keycloak init timeout — falling back to legacy');
-          setLoading(false);
-        }, 8000);
         try {
           const authenticated = await initKeycloak();
-          clearTimeout(timeout);
           if (authenticated) {
             const user = getKCUser();
             setAuthState({
@@ -45,8 +35,7 @@ export function AuthProvider({ children }) {
             });
           }
         } catch (e) {
-          clearTimeout(timeout);
-          console.warn('Keycloak unavailable, falling back to legacy auth:', e.message);
+          console.warn('Keycloak failed, falling back to legacy:', e.message);
           setMode('legacy');
           localStorage.setItem('auth_mode', 'legacy');
           const saved = getAuth();
@@ -59,19 +48,11 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
     init();
-    return () => clearTimeout(timeout);
   }, [mode]);
 
-  // Legacy login (only used when Keycloak is not available)
   const login = (username, password) => {
     const result = doLegacyLogin(username, password);
-    if (result) {
-      setAuthState(result);
-      if (result.tenantApiKey) {
-        const tenant = getTenants().find(t => t.apiKey === result.tenantApiKey);
-        if (tenant) setActiveTenantState(tenant);
-      }
-    }
+    if (result) setAuthState(result);
     return result;
   };
 
@@ -81,43 +62,29 @@ export function AuthProvider({ children }) {
     } else {
       clearAuth();
       setAuthState(null);
-      setActiveTenantState(null);
     }
   };
 
-  const switchTenant = (tenant) => {
-    saveActiveTenant(tenant);
-    setActiveTenantState(tenant);
-  };
-
   const isSuper = auth?.keycloak ? auth.roles?.includes('super_admin') : isSuperAdmin(auth);
-  const availableTenants = isSuper ? getTenants() : (activeTenant ? [activeTenant] : []);
 
-  // Switch between auth modes
   const switchAuthMode = (newMode) => {
     localStorage.setItem('auth_mode', newMode);
     clearAuth();
     setAuthState(null);
     setMode(newMode);
-    if (newMode === 'keycloak') {
-      window.location.reload(); // Keycloak needs full page init
-    }
+    if (newMode === 'keycloak') window.location.reload();
   };
 
-  if (loading) {
-    return null; // or a spinner — Keycloak init takes ~1s
-  }
+  if (loading) return null;
 
   return (
     <AuthContext.Provider value={{
-      auth, activeTenant, isSuper,
-      login, logout, switchTenant,
-      availableTenants,
+      auth,
+      isSuper,
       isLoggedIn: !!auth,
       authMode: mode,
-      switchAuthMode,
+      login, logout, switchAuthMode,
       getToken: auth?.keycloak ? getToken : () => null,
-      refreshTenants: () => setAuthState(prev => ({ ...prev })),
     }}>
       {children}
     </AuthContext.Provider>

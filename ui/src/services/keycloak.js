@@ -8,48 +8,30 @@ const keycloak = new Keycloak({
 });
 
 let _initialized = false;
-let _initializing = false;
 
 /**
- * Initialize Keycloak. Handles React Strict Mode double-invoke.
+ * Initialize Keycloak. login-required mode redirects to KC if not authenticated.
+ * Must only be called once (StrictMode removed to ensure this).
  */
 export async function initKeycloak() {
-  // Already done
   if (_initialized) return keycloak.authenticated;
 
-  // Already in progress — wait for it
-  if (_initializing) {
-    return new Promise((resolve) => {
-      const check = setInterval(() => {
-        if (_initialized) {
-          clearInterval(check);
-          resolve(keycloak.authenticated);
-        }
-      }, 100);
-      // Timeout after 10s
-      setTimeout(() => { clearInterval(check); resolve(false); }, 10000);
-    });
-  }
-
-  _initializing = true;
   try {
     const authenticated = await keycloak.init({
-      onLoad: 'check-sso',
+      onLoad: 'login-required',
       checkLoginIframe: false,
       pkceMethod: 'S256',
     });
     _initialized = true;
-    _initializing = false;
 
     if (authenticated) {
-      // Auto-refresh token
+      // Auto-refresh token before expiry
       setInterval(async () => {
         try { await keycloak.updateToken(30); } catch { keycloak.login(); }
       }, 10000);
     }
     return authenticated;
   } catch (e) {
-    _initializing = false;
     console.error('Keycloak init failed:', e);
     return false;
   }
@@ -57,10 +39,6 @@ export async function initKeycloak() {
 
 export function getToken() {
   return keycloak.token || '';
-}
-
-export function getRefreshToken() {
-  return keycloak.refreshToken || '';
 }
 
 export function isAuthenticated() {

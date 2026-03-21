@@ -1,13 +1,8 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
-import { bootstrapTenants } from './services/bootstrap'
 
-bootstrapTenants()
+// Note: StrictMode removed — keycloak-js init() cannot be called twice,
+// and StrictMode double-invokes useEffect in development.
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+createRoot(document.getElementById('root')).render(<App />)

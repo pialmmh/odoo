@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { ThemeRegistryProvider, useAppTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { TenantProvider, useTenant } from './context/TenantContext';
+import { TenantProvider } from './context/TenantContext';
 import { NotificationProvider } from './components/ErrorNotification';
 import MainLayout from './layouts/MainLayout';
 import TenantSelector from './pages/TenantSelector';
@@ -26,10 +26,8 @@ import InfraDeviceCatalog from './pages/infra/InfraDeviceCatalog';
 import InfraSSH from './pages/infra/InfraSSH';
 import ArtifactsMain from './pages/artifacts/ArtifactsMain';
 
-/** All app pages under /:tenant prefix */
 function TenantRoutes() {
   const { isSuper } = useAuth();
-
   return (
     <Route element={<MainLayout />}>
       <Route index element={<Dashboard />} />
@@ -59,28 +57,23 @@ function AppRoutes() {
   const { isLoggedIn, authMode } = useAuth();
 
   if (!isLoggedIn) {
-    // In KC mode with check-sso: trigger login redirect
-    if (authMode === 'keycloak') {
-      import('./services/keycloak').then(m => m.login());
-      return null;
+    // In legacy mode, show login page
+    if (authMode !== 'keycloak') {
+      return (
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      );
     }
-    return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    );
+    // In KC mode, login-required already handled it — should not reach here
+    return null;
   }
 
   return (
     <Routes>
-      {/* Root: tenant selector */}
       <Route path="/" element={<TenantSelector />} />
-      {/* Tenant-prefixed routes */}
-      <Route path="/:tenant/*">
-        {TenantRoutes()}
-      </Route>
-      {/* Fallback */}
+      <Route path="/:tenant/*">{TenantRoutes()}</Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

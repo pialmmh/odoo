@@ -7,10 +7,10 @@
 
 ADMIN="http://localhost:9180/apisix/admin"
 KEY="telcobright-apisix-admin-key"
-KC_SECRET="T3HRg6Jf72Botb5Tgx1Hbd61VLBGrkbf"
+KC_SECRET="tde2klJ3vsgG5wYprw8IHHP9xo7df8V9"
 KC_DISCOVERY="http://localhost:7104/realms/telcobright/.well-known/openid-configuration"
 CORS='{"allow_origins":"http://localhost:5180","allow_methods":"**","allow_headers":"**","allow_credential":true}'
-OIDC="{\"client_id\":\"platform-ui\",\"client_secret\":\"$KC_SECRET\",\"discovery\":\"$KC_DISCOVERY\",\"bearer_only\":true,\"scope\":\"openid\"}"
+OIDC="{\"client_id\":\"platform-api\",\"client_secret\":\"$KC_SECRET\",\"discovery\":\"$KC_DISCOVERY\",\"bearer_only\":true,\"scope\":\"openid\"}"
 
 echo "Configuring APISIX routes..."
 
