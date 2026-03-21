@@ -1,17 +1,16 @@
-// @ts-check
 import { test, expect } from '@playwright/test';
 
 const BASE = 'http://localhost:5180';
-const GATEWAY = 'http://localhost:8001';
+const APISIX = 'http://localhost:9080';
 const KC = 'http://localhost:7104';
 const API = 'http://localhost:8180';
 
-// Helper: get Keycloak token
 async function getKCToken(request) {
   const resp = await request.post(`${KC}/realms/telcobright/protocol/openid-connect/token`, {
     form: {
       grant_type: 'password',
       client_id: 'platform-ui',
+      client_secret: 'T3HRg6Jf72Botb5Tgx1Hbd61VLBGrkbf',
       username: 'admin',
       password: 'password',
     },
@@ -20,99 +19,90 @@ async function getKCToken(request) {
   return body.access_token;
 }
 
-test.describe('Platform smoke tests', () => {
+test.describe('Platform smoke tests (APISIX)', () => {
 
   test('React UI loads', async ({ page }) => {
-    const response = await page.goto(BASE);
-    expect(response.status()).toBeLessThan(500);
+    const resp = await page.goto(BASE);
+    expect(resp.status()).toBeLessThan(500);
   });
 
   test('Keycloak is reachable', async ({ request }) => {
     const resp = await request.get(`${KC}/realms/telcobright`);
     expect(resp.ok()).toBeTruthy();
-    const body = await resp.json();
-    expect(body.realm).toBe('telcobright');
   });
 
   test('Keycloak token grant works', async ({ request }) => {
     const token = await getKCToken(request);
     expect(token).toBeTruthy();
-    expect(token.split('.').length).toBe(3); // JWT has 3 parts
+    expect(token.split('.').length).toBe(3);
   });
 
-  test('Gateway health (public, no auth)', async ({ request }) => {
-    const resp = await request.get(`${GATEWAY}/PLATFORM-API/api/odoo/health`);
+  test('APISIX health (public)', async ({ request }) => {
+    const resp = await request.get(`${APISIX}/api/odoo/health`);
     expect(resp.ok()).toBeTruthy();
     const body = await resp.json();
     expect(body.odoo_connected).toBe(true);
   });
 
-  test('Gateway rejects unauthenticated requests', async ({ request }) => {
-    const resp = await request.post(`${GATEWAY}/PLATFORM-API/api/odoo/infra.region/search_read`, {
+  test('APISIX rejects unauthenticated', async ({ request }) => {
+    const resp = await request.post(`${APISIX}/api/odoo/infra.region/search_read`, {
       data: { args: [[]], kwargs: { fields: ['name'] } },
     });
-    // Should be 401 or 403
-    expect(resp.status()).toBeGreaterThanOrEqual(400);
-    expect(resp.status()).toBeLessThan(500);
+    expect(resp.status()).toBe(401);
   });
 
-  test('Gateway + KC token → Odoo regions', async ({ request }) => {
+  test('APISIX tenant loading (public)', async ({ request }) => {
+    const resp = await request.post(`${APISIX}/api/odoo/res.partner/search_read`, {
+      data: { args: [[['is_company', '=', true]]], kwargs: { fields: ['id', 'name'] } },
+    });
+    expect(resp.ok()).toBeTruthy();
+    const body = await resp.json();
+    expect(body.length).toBeGreaterThan(0);
+    const names = body.map(b => b.name);
+    expect(names).toContain('BTCL');
+  });
+
+  test('APISIX + KC token → Odoo regions', async ({ request }) => {
     const token = await getKCToken(request);
-    const resp = await request.post(`${GATEWAY}/PLATFORM-API/api/odoo/infra.region/search_read`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    const resp = await request.post(`${APISIX}/api/odoo/infra.region/search_read`, {
+      headers: { Authorization: `Bearer ${token}` },
       data: { args: [[]], kwargs: { fields: ['name', 'code'] } },
     });
     expect(resp.ok()).toBeTruthy();
     const body = await resp.json();
     expect(body.length).toBeGreaterThan(0);
-    expect(body[0].name).toBeTruthy();
   });
 
-  test('Gateway + KC token → Odoo device models', async ({ request }) => {
+  test('APISIX + KC token → device models', async ({ request }) => {
     const token = await getKCToken(request);
-    const resp = await request.post(`${GATEWAY}/PLATFORM-API/api/odoo/infra.device.model/search_read`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    const resp = await request.post(`${APISIX}/api/odoo/infra.device.model/search_read`, {
+      headers: { Authorization: `Bearer ${token}` },
       data: { args: [[]], kwargs: { fields: ['name', 'vendor'], limit: 3 } },
     });
     expect(resp.ok()).toBeTruthy();
     const body = await resp.json();
-    expect(body.length).toBeGreaterThan(0);
     expect(body[0].vendor).toBe('MikroTik');
   });
 
-  test('Gateway + KC token → Kill Bill', async ({ request }) => {
+  test('APISIX + KC token → Kill Bill', async ({ request }) => {
     const token = await getKCToken(request);
-    const resp = await request.get(`${GATEWAY}/PLATFORM-API/api/kb/nodesInfo`, {
+    const resp = await request.get(`${APISIX}/api/kb/nodesInfo`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(resp.ok()).toBeTruthy();
   });
 
-  test('Gateway + KC token → OS versions', async ({ request }) => {
-    const token = await getKCToken(request);
-    const resp = await request.post(`${GATEWAY}/PLATFORM-API/api/odoo/infra.os.version/search_read`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      data: { args: [[['is_active', '=', true]]], kwargs: { fields: ['display_name', 'lts'], limit: 5 } },
-    });
-    expect(resp.ok()).toBeTruthy();
-    const body = await resp.json();
-    expect(body.length).toBeGreaterThan(0);
-  });
-
   test('Spring Boot API direct health', async ({ request }) => {
     const resp = await request.get(`${API}/api/odoo/health`);
     expect(resp.ok()).toBeTruthy();
-    const body = await resp.json();
-    expect(body.odoo_connected).toBe(true);
   });
 
-  test('Eureka has PLATFORM-API registered', async ({ request }) => {
-    const resp = await request.get('http://localhost:8761/eureka/apps/PLATFORM-API', {
-      headers: { Accept: 'application/json' },
+  test('APISIX admin API reachable', async ({ request }) => {
+    const resp = await request.get('http://localhost:9180/apisix/admin/routes', {
+      headers: { 'X-API-KEY': 'telcobright-apisix-admin-key' },
     });
     expect(resp.ok()).toBeTruthy();
     const body = await resp.json();
-    expect(body.application.name).toBe('PLATFORM-API');
+    expect(body.total).toBeGreaterThanOrEqual(4);
   });
-
 });

@@ -9,9 +9,9 @@ export default defineConfig({
   server: {
     port: 5180,
     proxy: {
-      // All API calls route through the API Gateway → PLATFORM-API service
+      // All API calls route through APISIX gateway
       '/api': {
-        target: 'http://127.0.0.1:8001/PLATFORM-API',
+        target: 'http://127.0.0.1:9080',
         changeOrigin: true,
       },
     },
