@@ -62,7 +62,22 @@ else
     warn "Not reachable (needed only for Kill Bill)"
 fi
 
-# ── 3. Odoo (port 7169) ──
+# ── 3. etcd (port 2379) ──
+echo "etcd (:2379)"
+if etcdctl endpoint health &>/dev/null 2>&1; then
+    ok "Running"
+else
+    if [ "$STATUS_ONLY" = true ]; then
+        fail "Not running"
+    else
+        warn "Starting etcd..."
+        nohup etcd --data-dir /tmp/etcd-data > /tmp/etcd.log 2>&1 &
+        sleep 3
+        if etcdctl endpoint health &>/dev/null 2>&1; then ok "etcd started"; else fail "etcd failed"; fi
+    fi
+fi
+
+# ── 4. Odoo (port 7169) ──
 echo "Odoo (:7169)"
 CODE=$(check_port 7169 "/web/login")
 if [ "$CODE" != "000" ]; then
@@ -77,7 +92,7 @@ else
     fi
 fi
 
-# ── 4. Keycloak (port 7104) ──
+# ── 5. Keycloak (port 7104) ──
 echo "Keycloak (:7104)"
 CODE=$(check_port 7104 "/realms/master")
 if [ "$CODE" != "000" ]; then
@@ -93,7 +108,7 @@ else
     fi
 fi
 
-# ── 5. Spring Boot API (port 8180) ──
+# ── 6. Spring Boot API (port 8180) ──
 echo "Spring Boot API (:8180)"
 CODE=$(check_port 8180 "/api/odoo/health")
 if [ "$CODE" != "000" ]; then
@@ -102,7 +117,6 @@ else
     if [ "$STATUS_ONLY" = true ]; then
         fail "Not running"
     else
-        # Check if JAR exists
         API_JAR="$SCRIPT_DIR/api/target/platform-api-1.0-SNAPSHOT.jar"
         if [ ! -f "$API_JAR" ]; then
             warn "Building Spring Boot API..."
@@ -114,7 +128,23 @@ else
     fi
 fi
 
-# ── 6. Kill Bill (port 18080) ──
+# ── 7. APISIX Gateway (port 9080) ──
+echo "APISIX (:9080)"
+CODE=$(check_port 9080 "/api/odoo/health")
+if [ "$CODE" != "000" ]; then
+    ok "Running (HTTP $CODE)"
+else
+    if [ "$STATUS_ONLY" = true ]; then
+        fail "Not running"
+    else
+        warn "Starting APISIX..."
+        sudo rm -f /usr/local/apisix/logs/*.sock /usr/local/apisix/logs/*.pid 2>/dev/null
+        sudo apisix start > /dev/null 2>&1
+        wait_for 9080 "/api/odoo/health" 10 "APISIX"
+    fi
+fi
+
+# ── 8. Kill Bill (port 18080) ──
 echo "Kill Bill (:18080)"
 CODE=$(check_port 18080 "/1.0/kb/nodesInfo")
 if [ "$CODE" != "000" ]; then
@@ -129,7 +159,7 @@ else
     fi
 fi
 
-# ── 7. Vault/OpenBao (port 8200) ──
+# ── 9. Vault/OpenBao (port 8200) ──
 echo "Vault/OpenBao (:8200)"
 CODE=$(check_port 8200 "/v1/sys/health")
 if [ "$CODE" != "000" ]; then
@@ -149,7 +179,7 @@ else
     fi
 fi
 
-# ── 8. React UI (port 5180) ──
+# ── 10. React UI (port 5180) ──
 echo "React UI (:5180)"
 CODE=$(check_port 5180 "/")
 if [ "$CODE" != "000" ]; then
@@ -170,6 +200,8 @@ echo "  URLs"
 echo "═══════════════════════════════════════════"
 echo ""
 echo "  React UI:      http://localhost:5180"
+echo "  APISIX Gateway: http://localhost:9080"
+echo "  APISIX Admin:  http://localhost:9180"
 echo "  Odoo Admin:    http://localhost:7169"
 echo "  Keycloak:      http://localhost:7104/admin/"
 echo "  Spring Boot:   http://localhost:8180/api/odoo/health"
