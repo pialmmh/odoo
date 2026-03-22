@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────────
+# Kafka Topic Configuration — Telcobright Platform
+# ─────────────────────────────────────────────────────
+#
+# Global defaults and per-topic overrides.
+# Used by setup-topics.sh on startup to ensure all required topics exist.
+#
+
+# Global defaults (overridden per-topic if specified)
+defaults:
+  replication_factor: 1    # 1 for dev, 3 for production
+  partitions: 1            # 1 for dev, increase per throughput needs
+
+# Required topics
+topics:
+  # ── Kill Bill Events ──
+  - name: kb.invoice.created
+    description: "Kill Bill invoice creation events → Odoo accounting"
+
+  - name: kb.payment.success
+    description: "Kill Bill payment success events → Odoo accounting"
+
+  - name: kb.subscription.created
+    description: "Subscription created → RTC-Manager package provisioning"
+
+  - name: kb.subscription.cancelled
+    description: "Subscription cancelled → RTC-Manager deprovisioning"
+
+  - name: kb.subscription.changed
+    description: "Subscription plan change → RTC-Manager package update"
+
+  - name: kb.overdue.state
+    description: "Overdue state transitions (WARNING/SUSPENDED/DISCONNECTED)"
+
+  # ── Odoo Accounting ──
+  - name: odoo.journal.entry
+    description: "Journal entries created in Odoo (audit/notification)"
+
+  # ── RTC-Manager Provisioning ──
+  - name: rtc.package.provisioned
+    description: "RTC-Manager confirms PackageAccount created"
+
+  - name: rtc.package.deprovisioned
+    description: "RTC-Manager confirms PackageAccount removed"
+
+  # ── Platform Events ──
+  - name: platform.notifications
+    description: "Email/SMS notifications to send (invoice, receipt, overdue)"
+
+  - name: platform.audit
+    description: "Platform-wide audit log events"

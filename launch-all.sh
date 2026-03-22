@@ -77,6 +77,32 @@ else
     fi
 fi
 
+# ── 3b. Kafka (port 9092) ──
+echo "Kafka (:9092)"
+if curl -s --connect-timeout 2 localhost:9092 &>/dev/null || docker exec platform-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 &>/dev/null 2>&1; then
+    ok "Running"
+else
+    if [ "$STATUS_ONLY" = true ]; then
+        fail "Not running"
+    else
+        warn "Starting Kafka (Docker)..."
+        (cd "$SCRIPT_DIR/kafka" && docker compose up -d 2>&1 | tail -1)
+        # Wait for broker to be ready
+        elapsed=0
+        while [ $elapsed -lt 30 ]; do
+            if docker exec platform-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 &>/dev/null 2>&1; then
+                ok "Kafka started"
+                # Setup topics
+                "$SCRIPT_DIR/kafka/setup-topics.sh" 2>&1 | grep -E "^\s+[✓+✗]|^Done"
+                break
+            fi
+            sleep 2
+            elapsed=$((elapsed + 2))
+        done
+        [ $elapsed -ge 30 ] && fail "Kafka failed to start within 30s"
+    fi
+fi
+
 # ── 4. Odoo (port 7169) ──
 echo "Odoo (:7169)"
 CODE=$(check_port 7169 "/web/login")
@@ -207,4 +233,5 @@ echo "  Keycloak:      http://localhost:7104/admin/"
 echo "  Spring Boot:   http://localhost:8180/api/odoo/health"
 echo "  Kill Bill:     http://localhost:18080"
 echo "  Vault UI:      http://localhost:8200/ui"
+echo "  Kafka:         localhost:9092"
 echo ""
