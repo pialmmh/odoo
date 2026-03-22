@@ -307,8 +307,8 @@ export async function execSSHCommand(credId, command) {
   return call('infra.ssh.credential', 'action_exec_command', [[credId], command]);
 }
 
-export async function setupSSHForCompute(computeId, keyId, tempUsername, tempPassword, clientOS = 'ubuntu') {
-  return call('infra.ssh.credential', 'action_setup_ssh_for_compute', [computeId, keyId, tempUsername, tempPassword, clientOS]);
+export async function setupSSHForCompute(computeId, keyId, tempUsername, tempPassword, clientOS = 'ubuntu', port = 22) {
+  return call('infra.ssh.credential', 'action_setup_ssh_for_compute', [computeId, keyId, tempUsername, tempPassword, clientOS, port]);
 }
 
 export async function generateSetupScript(credId) {

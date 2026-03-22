@@ -511,7 +511,7 @@ Write-Host ""
 """
 
     @api.model
-    def action_setup_ssh_for_compute(self, compute_id, key_id, temp_username, temp_password, client_os='ubuntu'):
+    def action_setup_ssh_for_compute(self, compute_id, key_id, temp_username, temp_password, client_os='ubuntu', port=22):
         """Combined action: create credential, deploy key, return setup script.
         Called from the compute detail pane UI."""
         compute = self.env['infra.compute'].browse(compute_id)
@@ -528,17 +528,19 @@ Write-Host ""
         if not host:
             raise UserError('Compute has no management IP configured.')
 
+        ssh_port = port or 22
+
         # Create or find existing credential
         cred_name = f'{compute.name}-ssh'
         existing = self.search([('name', '=', cred_name)], limit=1)
         if existing:
             cred = existing
-            cred.write({'key_id': key_id})
+            cred.write({'key_id': key_id, 'port': ssh_port})
         else:
             cred = self.create({
                 'name': cred_name,
                 'host': host,
-                'port': 22,
+                'port': ssh_port,
                 'username': temp_username,
                 'server_type': 'linux',
                 'key_id': key_id,

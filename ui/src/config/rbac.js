@@ -107,6 +107,7 @@ export const MENU_PERMISSIONS = {
   'Device Catalog':  [PERMISSIONS.CATALOG_VIEW],
   'SSH':             [PERMISSIONS.SSH_VIEW],
   'Artifacts':       [PERMISSIONS.ARTIFACT_VIEW],
+  'RBAC':            [PERMISSIONS.USER_MANAGE],
   'Settings':        [PERMISSIONS.SETTINGS_VIEW],
   'Tenants':         [PERMISSIONS.USER_MANAGE],
 };

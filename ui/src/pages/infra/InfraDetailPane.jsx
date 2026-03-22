@@ -41,14 +41,14 @@ const CLIENT_OS_OPTIONS = [
 
 function SetupSSHDialog({ open, onClose, compute, onDone }) {
   const [keys, setKeys] = useState([]);
-  const [form, setForm] = useState({ key_id: '', username: 'root', password: '', client_os: 'ubuntu' });
+  const [form, setForm] = useState({ key_id: '', username: 'root', password: '', port: 22, client_os: 'ubuntu' });
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState(null);
   const { success: notify, error: notifyErr } = useNotification();
 
   useEffect(() => {
     if (open) {
-      setForm({ key_id: '', username: 'root', password: '', client_os: 'ubuntu' });
+      setForm({ key_id: '', username: 'root', password: '', port: 22, client_os: 'ubuntu' });
       setResult(null);
       getSSHKeys().then(setKeys).catch(() => {});
     }
@@ -58,7 +58,7 @@ function SetupSSHDialog({ open, onClose, compute, onDone }) {
     if (!form.key_id || !form.username || !form.password) return;
     setRunning(true);
     try {
-      const res = await setupSSHForCompute(compute.id, form.key_id, form.username, form.password, form.client_os);
+      const res = await setupSSHForCompute(compute.id, form.key_id, form.username, form.password, form.client_os, form.port);
       setResult(res);
       if (res.deploy_success) notify('SSH key deployed successfully');
       else notifyErr('Key deployment failed', res.deploy_log);
@@ -113,19 +113,24 @@ function SetupSSHDialog({ open, onClose, compute, onDone }) {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 6 }}>
+            <Grid size={{ xs: 5 }}>
               <TextField fullWidth size="small" label="Temp Username" required
                 value={form.username} onChange={e => setForm({ ...form, username: e.target.value })}
                 helperText="Root or sudo user for key push" />
             </Grid>
-            <Grid size={{ xs: 6 }}>
+            <Grid size={{ xs: 4 }}>
               <TextField fullWidth size="small" label="Temp Password" type="password" required
                 value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
                 helperText="Used once, not stored" />
             </Grid>
+            <Grid size={{ xs: 3 }}>
+              <TextField fullWidth size="small" label="SSH Port" type="number" required
+                value={form.port} onChange={e => setForm({ ...form, port: +e.target.value || 22 })}
+                helperText="Default: 22" />
+            </Grid>
             <Grid size={{ xs: 12 }}>
               <Typography fontSize={12} color="text.secondary">
-                Target: {compute?.management_ip || 'No IP configured'}
+                Target: {compute?.management_ip || 'No IP configured'}:{form.port}
                 {form.client_os === 'windows' && ' — will generate PowerShell script (.ps1)'}
               </Typography>
             </Grid>

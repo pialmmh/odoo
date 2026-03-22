@@ -20,6 +20,7 @@ import {
   DeviceHub as CatalogDeviceIcon,
   VpnKey as SSHIcon,
   Inventory2 as ArtifactIcon,
+  AdminPanelSettings as RBACIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -40,35 +41,71 @@ export default function Sidebar() {
 
   const base = tenantSlug ? `/${tenantSlug}` : '';
 
-  const menuItems = [
+  // Menu organized by category. `null` items are section headers.
+  const menu = [
+    // ── Overview ──
     { text: 'Dashboard', icon: <DashboardIcon />, path: `${base}/` },
+
+    // ── Billing ──
+    { section: 'Billing' },
     { text: 'Customers', icon: <PeopleIcon />, path: `${base}/customers` },
     { text: 'Subscriptions', icon: <SubIcon />, path: `${base}/subscriptions` },
     { text: 'Invoices', icon: <InvoiceIcon />, path: `${base}/invoices` },
     { text: 'Payments', icon: <PaymentsIcon />, path: `${base}/payments` },
-    { text: 'Catalog', icon: <CatalogIcon />, path: `${base}/catalog` },
     { text: 'Products', icon: <ProductsIcon />, path: `${base}/products` },
+    { text: 'Catalog', icon: <CatalogIcon />, path: `${base}/catalog` },
     { text: 'Pricing', icon: <PricingIcon />, path: `${base}/pricing` },
     { text: 'Rate History', icon: <HistoryIcon />, path: `${base}/rate-history` },
     { text: 'AR Report', icon: <ARIcon />, path: `${base}/reports/ar` },
+
+    // ── Infrastructure ──
+    { section: 'Infrastructure' },
     { text: 'Infra', icon: <InfraIcon />, path: `${base}/infra` },
     { text: 'Device Catalog', icon: <CatalogDeviceIcon />, path: `${base}/infra/catalog` },
     { text: 'SSH', icon: <SSHIcon />, path: `${base}/infra/ssh` },
+
+    // ── Artifacts ──
+    { section: 'Artifacts' },
     { text: 'Artifacts', icon: <ArtifactIcon />, path: `${base}/artifacts` },
+
+    // ── Admin ──
+    { section: 'Admin' },
+    { text: 'RBAC', icon: <RBACIcon />, path: `${base}/rbac` },
+    { text: 'Tenants', icon: <TenantIcon />, path: `${base}/tenants` },
     { text: 'Settings', icon: <SettingsIcon />, path: `${base}/settings` },
   ];
 
-  // Tenants always in the list — RBAC canMenu() will hide it for non-admins
-  menuItems.push({ text: 'Tenants', icon: <TenantIcon />, path: `${base}/tenants` });
-
   const isActive = (path) => {
     const loc = location.pathname;
-    // Exact match for dashboard
     if (path === `${base}/`) return loc === `${base}/` || loc === `${base}`;
-    // Exact match for /infra (not /infra/catalog)
     if (path === `${base}/infra`) return loc === `${base}/infra`;
     return loc.startsWith(path);
   };
+
+  // Filter items by RBAC, and hide section headers if all their items are hidden
+  const visibleItems = [];
+  let i = 0;
+  while (i < menu.length) {
+    const item = menu[i];
+    if (item.section) {
+      // Collect following non-section items
+      const sectionItems = [];
+      let j = i + 1;
+      while (j < menu.length && !menu[j].section) {
+        if (canMenu(menu[j].text)) sectionItems.push(menu[j]);
+        j++;
+      }
+      if (sectionItems.length > 0) {
+        visibleItems.push(item); // section header
+        visibleItems.push(...sectionItems);
+      }
+      i = j;
+    } else {
+      // Top-level item (Dashboard)
+      if (canMenu(item.text)) visibleItems.push(item);
+      i++;
+    }
+  }
 
   return (
     <Drawer
@@ -106,31 +143,55 @@ export default function Sidebar() {
         </Box>
       </Toolbar>
       <Divider />
-      <List sx={{ px: 1, pt: 1 }}>
-        {menuItems.filter(item => canMenu(item.text)).map((item) => (
-          <ListItemButton
-            key={item.text}
-            onClick={() => navigate(item.path)}
-            selected={isActive(item.path)}
-            sx={{
-              borderRadius: '6px', mb: 0.5,
-              '&.Mui-selected': {
-                bgcolor: brand.sidebar.activeBg,
-                color: 'primary.main',
-                '& .MuiListItemIcon-root': { color: 'primary.main' },
-              },
-              '&:hover': { bgcolor: brand.sidebar.hoverBg },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 36, color: isActive(item.path) ? 'primary.main' : '#6b7280' }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText
-              primary={item.text}
-              primaryTypographyProps={{ fontSize: 14, fontWeight: isActive(item.path) ? 600 : 400 }}
-            />
-          </ListItemButton>
-        ))}
+      <List sx={{ px: 1, pt: 0.5, overflow: 'auto' }}>
+        {visibleItems.map((item, idx) => {
+          if (item.section) {
+            return (
+              <Typography
+                key={`sec-${item.section}`}
+                variant="overline"
+                sx={{
+                  display: 'block',
+                  px: 1.5,
+                  pt: idx === 0 ? 0.5 : 1.5,
+                  pb: 0.3,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 1.2,
+                  color: 'text.secondary',
+                  lineHeight: 1,
+                }}
+              >
+                {item.section}
+              </Typography>
+            );
+          }
+
+          return (
+            <ListItemButton
+              key={item.text}
+              onClick={() => navigate(item.path)}
+              selected={isActive(item.path)}
+              sx={{
+                borderRadius: '6px', mb: 0.3, py: 0.4,
+                '&.Mui-selected': {
+                  bgcolor: brand.sidebar.activeBg,
+                  color: 'primary.main',
+                  '& .MuiListItemIcon-root': { color: 'primary.main' },
+                },
+                '&:hover': { bgcolor: brand.sidebar.hoverBg },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 32, color: isActive(item.path) ? 'primary.main' : '#6b7280' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                primaryTypographyProps={{ fontSize: 13, fontWeight: isActive(item.path) ? 600 : 400 }}
+              />
+            </ListItemButton>
+          );
+        })}
       </List>
     </Drawer>
   );
