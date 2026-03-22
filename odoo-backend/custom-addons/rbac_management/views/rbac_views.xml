@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ═══ Permission ═══ -->
+    <record id="view_rbac_permission_tree" model="ir.ui.view">
+        <field name="name">rbac.permission.tree</field>
+        <field name="model">rbac.permission</field>
+        <field name="arch" type="xml">
+            <tree editable="bottom"><field name="code"/><field name="name"/><field name="module"/><field name="action"/><field name="is_active"/></tree>
+        </field>
+    </record>
+    <record id="action_rbac_permission" model="ir.actions.act_window">
+        <field name="name">Permissions</field><field name="res_model">rbac.permission</field><field name="view_mode">tree</field>
+    </record>
+
+    <!-- ═══ Role ═══ -->
+    <record id="view_rbac_role_tree" model="ir.ui.view">
+        <field name="name">rbac.role.tree</field>
+        <field name="model">rbac.role</field>
+        <field name="arch" type="xml">
+            <tree><field name="sequence" widget="handle"/><field name="code"/><field name="name"/><field name="permission_count"/><field name="is_active"/></tree>
+        </field>
+    </record>
+    <record id="view_rbac_role_form" model="ir.ui.view">
+        <field name="name">rbac.role.form</field>
+        <field name="model">rbac.role</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group><group><field name="code"/><field name="is_active"/></group><group><field name="sequence"/></group></group>
+                    <field name="description"/>
+                    <notebook><page string="Permissions">
+                        <field name="permission_ids" widget="many2many_tags"/>
+                        <field name="permission_ids">
+                            <tree><field name="code"/><field name="name"/><field name="module"/><field name="action"/></tree>
+                        </field>
+                    </page></notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_rbac_role" model="ir.actions.act_window">
+        <field name="name">Roles</field><field name="res_model">rbac.role</field><field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- ═══ URL Pattern ═══ -->
+    <record id="view_rbac_url_pattern_tree" model="ir.ui.view">
+        <field name="name">rbac.url.pattern.tree</field>
+        <field name="model">rbac.url.pattern</field>
+        <field name="arch" type="xml">
+            <tree><field name="sequence" widget="handle"/><field name="url_pattern"/><field name="name"/><field name="menu_label"/><field name="http_methods"/><field name="permission_ids" widget="many2many_tags"/><field name="is_active"/></tree>
+        </field>
+    </record>
+    <record id="view_rbac_url_pattern_form" model="ir.ui.view">
+        <field name="name">rbac.url.pattern.form</field>
+        <field name="model">rbac.url.pattern</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group><field name="name"/><field name="url_pattern" placeholder="/*/infra"/><field name="http_methods" placeholder="ALL or GET,POST"/></group>
+                        <group><field name="menu_label" placeholder="Sidebar label, e.g. Infra"/><field name="sequence"/><field name="is_active"/></group>
+                    </group>
+                    <field name="permission_ids" widget="many2many_tags"/>
+                    <field name="description" placeholder="What this pattern protects..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_rbac_url_pattern" model="ir.actions.act_window">
+        <field name="name">URL Patterns</field><field name="res_model">rbac.url.pattern</field><field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- ═══ Menus ═══ -->
+    <menuitem id="menu_rbac_root" name="RBAC" sequence="97"/>
+    <menuitem id="menu_rbac_roles" name="Roles" parent="menu_rbac_root" action="action_rbac_role" sequence="10"/>
+    <menuitem id="menu_rbac_permissions" name="Permissions" parent="menu_rbac_root" action="action_rbac_permission" sequence="20"/>
+    <menuitem id="menu_rbac_url_patterns" name="URL Patterns" parent="menu_rbac_root" action="action_rbac_url_pattern" sequence="30"/>
+</odoo>

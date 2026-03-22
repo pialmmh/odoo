@@ -44,3 +44,4 @@ Thumbs.db
 logs/
 Eureka-Server/
 test-results/
+data/etcd/

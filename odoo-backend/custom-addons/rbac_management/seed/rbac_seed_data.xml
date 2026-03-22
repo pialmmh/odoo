@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- ═══ Permissions ═══ -->
+        <record id="perm_infra_view" model="rbac.permission"><field name="name">View Infrastructure</field><field name="code">infra:view</field><field name="module">infra</field><field name="action">view</field></record>
+        <record id="perm_infra_edit" model="rbac.permission"><field name="name">Edit Infrastructure</field><field name="code">infra:edit</field><field name="module">infra</field><field name="action">edit</field></record>
+        <record id="perm_infra_delete" model="rbac.permission"><field name="name">Delete Infrastructure</field><field name="code">infra:delete</field><field name="module">infra</field><field name="action">delete</field></record>
+        <record id="perm_ssh_view" model="rbac.permission"><field name="name">View SSH Keys</field><field name="code">ssh:view</field><field name="module">ssh</field><field name="action">view</field></record>
+        <record id="perm_ssh_manage" model="rbac.permission"><field name="name">Manage SSH Keys</field><field name="code">ssh:manage</field><field name="module">ssh</field><field name="action">manage</field></record>
+        <record id="perm_ssh_deploy" model="rbac.permission"><field name="name">Deploy SSH Keys</field><field name="code">ssh:deploy</field><field name="module">ssh</field><field name="action">deploy</field></record>
+        <record id="perm_artifact_view" model="rbac.permission"><field name="name">View Artifacts</field><field name="code">artifact:view</field><field name="module">artifact</field><field name="action">view</field></record>
+        <record id="perm_artifact_deploy" model="rbac.permission"><field name="name">Deploy Artifacts</field><field name="code">artifact:deploy</field><field name="module">artifact</field><field name="action">deploy</field></record>
+        <record id="perm_artifact_manage" model="rbac.permission"><field name="name">Manage Artifacts</field><field name="code">artifact:manage</field><field name="module">artifact</field><field name="action">manage</field></record>
+        <record id="perm_billing_view" model="rbac.permission"><field name="name">View Billing</field><field name="code">billing:view</field><field name="module">billing</field><field name="action">view</field></record>
+        <record id="perm_billing_manage" model="rbac.permission"><field name="name">Manage Billing</field><field name="code">billing:manage</field><field name="module">billing</field><field name="action">manage</field></record>
+        <record id="perm_catalog_view" model="rbac.permission"><field name="name">View Device Catalog</field><field name="code">catalog:view</field><field name="module">catalog</field><field name="action">view</field></record>
+        <record id="perm_catalog_manage" model="rbac.permission"><field name="name">Manage Device Catalog</field><field name="code">catalog:manage</field><field name="module">catalog</field><field name="action">manage</field></record>
+        <record id="perm_settings_view" model="rbac.permission"><field name="name">View Settings</field><field name="code">settings:view</field><field name="module">settings</field><field name="action">view</field></record>
+        <record id="perm_tenant_switch" model="rbac.permission"><field name="name">Switch Tenant</field><field name="code">tenant:switch</field><field name="module">admin</field><field name="action">switch</field></record>
+        <record id="perm_user_manage" model="rbac.permission"><field name="name">Manage Users</field><field name="code">user:manage</field><field name="module">admin</field><field name="action">manage</field></record>
+
+        <!-- ═══ Roles ═══ -->
+        <record id="role_super_admin" model="rbac.role">
+            <field name="name">Super Admin</field><field name="code">super_admin</field><field name="sequence">1</field>
+            <field name="description">Full access to all features across all tenants</field>
+            <field name="permission_ids" eval="[(6, 0, [
+                ref('perm_infra_view'), ref('perm_infra_edit'), ref('perm_infra_delete'),
+                ref('perm_ssh_view'), ref('perm_ssh_manage'), ref('perm_ssh_deploy'),
+                ref('perm_artifact_view'), ref('perm_artifact_deploy'), ref('perm_artifact_manage'),
+                ref('perm_billing_view'), ref('perm_billing_manage'),
+                ref('perm_catalog_view'), ref('perm_catalog_manage'),
+                ref('perm_settings_view'), ref('perm_tenant_switch'), ref('perm_user_manage'),
+            ])]"/>
+        </record>
+        <record id="role_tenant_admin" model="rbac.role">
+            <field name="name">Tenant Admin</field><field name="code">tenant_admin</field><field name="sequence">2</field>
+            <field name="description">Manages billing and views infrastructure for own tenant</field>
+            <field name="permission_ids" eval="[(6, 0, [
+                ref('perm_infra_view'), ref('perm_ssh_view'),
+                ref('perm_billing_view'), ref('perm_billing_manage'),
+                ref('perm_catalog_view'), ref('perm_artifact_view'), ref('perm_settings_view'),
+            ])]"/>
+        </record>
+        <record id="role_operator" model="rbac.role">
+            <field name="name">Operator</field><field name="code">operator</field><field name="sequence">3</field>
+            <field name="description">Manages infrastructure, SSH, and deployments</field>
+            <field name="permission_ids" eval="[(6, 0, [
+                ref('perm_infra_view'), ref('perm_infra_edit'),
+                ref('perm_ssh_view'), ref('perm_ssh_manage'), ref('perm_ssh_deploy'),
+                ref('perm_artifact_view'), ref('perm_artifact_deploy'), ref('perm_artifact_manage'),
+                ref('perm_catalog_view'), ref('perm_catalog_manage'),
+            ])]"/>
+        </record>
+        <record id="role_readonly" model="rbac.role">
+            <field name="name">Read Only</field><field name="code">readonly</field><field name="sequence">4</field>
+            <field name="description">View-only access to all modules</field>
+            <field name="permission_ids" eval="[(6, 0, [
+                ref('perm_infra_view'), ref('perm_ssh_view'),
+                ref('perm_billing_view'), ref('perm_catalog_view'), ref('perm_artifact_view'),
+            ])]"/>
+        </record>
+
+        <!-- ═══ URL Patterns ═══ -->
+        <record id="url_infra" model="rbac.url.pattern"><field name="name">Infrastructure</field><field name="url_pattern">/*/infra</field><field name="menu_label">Infra</field><field name="sequence">10</field><field name="permission_ids" eval="[(6, 0, [ref('perm_infra_view')])]"/></record>
+        <record id="url_infra_catalog" model="rbac.url.pattern"><field name="name">Device Catalog</field><field name="url_pattern">/*/infra/catalog</field><field name="menu_label">Device Catalog</field><field name="sequence">11</field><field name="permission_ids" eval="[(6, 0, [ref('perm_catalog_view')])]"/></record>
+        <record id="url_infra_ssh" model="rbac.url.pattern"><field name="name">SSH Management</field><field name="url_pattern">/*/infra/ssh</field><field name="menu_label">SSH</field><field name="sequence">12</field><field name="permission_ids" eval="[(6, 0, [ref('perm_ssh_view')])]"/></record>
+        <record id="url_customers" model="rbac.url.pattern"><field name="name">Customers</field><field name="url_pattern">/*/customers</field><field name="menu_label">Customers</field><field name="sequence">20</field><field name="permission_ids" eval="[(6, 0, [ref('perm_billing_view')])]"/></record>
+        <record id="url_subscriptions" model="rbac.url.pattern"><field name="name">Subscriptions</field><field name="url_pattern">/*/subscriptions</field><field name="menu_label">Subscriptions</field><field name="sequence">21</field><field name="permission_ids" eval="[(6, 0, [ref('perm_billing_view')])]"/></record>
+        <record id="url_invoices" model="rbac.url.pattern"><field name="name">Invoices</field><field name="url_pattern">/*/invoices</field><field name="menu_label">Invoices</field><field name="sequence">22</field><field name="permission_ids" eval="[(6, 0, [ref('perm_billing_view')])]"/></record>
+        <record id="url_payments" model="rbac.url.pattern"><field name="name">Payments</field><field name="url_pattern">/*/payments</field><field name="menu_label">Payments</field><field name="sequence">23</field><field name="permission_ids" eval="[(6, 0, [ref('perm_billing_view')])]"/></record>
+        <record id="url_artifacts" model="rbac.url.pattern"><field name="name">Artifacts</field><field name="url_pattern">/*/artifacts</field><field name="menu_label">Artifacts</field><field name="sequence">30</field><field name="permission_ids" eval="[(6, 0, [ref('perm_artifact_view')])]"/></record>
+        <record id="url_settings" model="rbac.url.pattern"><field name="name">Settings</field><field name="url_pattern">/*/settings</field><field name="menu_label">Settings</field><field name="sequence">40</field><field name="permission_ids" eval="[(6, 0, [ref('perm_settings_view')])]"/></record>
+        <record id="url_tenants" model="rbac.url.pattern"><field name="name">Tenant Management</field><field name="url_pattern">/*/tenants</field><field name="menu_label">Tenants</field><field name="sequence">50</field><field name="permission_ids" eval="[(6, 0, [ref('perm_user_manage')])]"/></record>
+    </data>
+</odoo>
