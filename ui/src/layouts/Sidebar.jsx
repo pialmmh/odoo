@@ -21,6 +21,7 @@ import {
   VpnKey as SSHIcon,
   Inventory2 as ArtifactIcon,
   AdminPanelSettings as RBACIcon,
+  AddShoppingCart as PurchaseIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -57,6 +58,7 @@ export default function Sidebar() {
     { text: 'Pricing', icon: <PricingIcon />, path: `${base}/pricing` },
     { text: 'Rate History', icon: <HistoryIcon />, path: `${base}/rate-history` },
     { text: 'AR Report', icon: <ARIcon />, path: `${base}/reports/ar` },
+    { text: 'Purchase', icon: <PurchaseIcon />, path: `${base}/purchase` },
 
     // ── Infrastructure ──
     { section: 'Infrastructure' },

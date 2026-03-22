@@ -161,4 +161,12 @@ export const setSubscriptionCustomFields = (subscriptionId, fields) =>
 // ==================== TAGS ====================
 export const getAccountTags = (accountId) => api.get(`/accounts/${accountId}/tags`);
 
+// ==================== EXTERNAL CHARGES ====================
+export const addExternalCharge = (accountId, charges) =>
+  api.post(`/invoices/charges/${accountId}?autoCommit=true`, charges);
+
+// ==================== PAYMENT METHODS ====================
+export const addPaymentMethod = (accountId, data) =>
+  api.post(`/accounts/${accountId}/paymentMethods?isDefault=true`, data);
+
 export default api;

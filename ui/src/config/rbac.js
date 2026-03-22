@@ -103,6 +103,7 @@ export const MENU_PERMISSIONS = {
   'Pricing':         [PERMISSIONS.BILLING_VIEW],
   'Rate History':    [PERMISSIONS.BILLING_VIEW],
   'AR Report':       [PERMISSIONS.BILLING_VIEW],
+  'Purchase':        [PERMISSIONS.BILLING_MANAGE],
   'Infra':           [PERMISSIONS.INFRA_VIEW],
   'Device Catalog':  [PERMISSIONS.CATALOG_VIEW],
   'SSH':             [PERMISSIONS.SSH_VIEW],

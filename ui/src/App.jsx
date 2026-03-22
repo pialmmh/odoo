@@ -26,6 +26,7 @@ import InfraDeviceCatalog from './pages/infra/InfraDeviceCatalog';
 import InfraSSH from './pages/infra/InfraSSH';
 import ArtifactsMain from './pages/artifacts/ArtifactsMain';
 import RBACManagement from './pages/RBACManagement';
+import Purchase from './pages/Purchase';
 
 function TenantRoutes() {
   const { isSuper } = useAuth();
@@ -48,6 +49,7 @@ function TenantRoutes() {
       <Route path="infra/catalog" element={<InfraDeviceCatalog />} />
       <Route path="infra/ssh" element={<InfraSSH />} />
       <Route path="artifacts" element={<ArtifactsMain />} />
+      <Route path="purchase" element={<Purchase />} />
       <Route path="rbac" element={<RBACManagement />} />
       {isSuper && <Route path="tenants" element={<Tenants />} />}
       <Route path="*" element={<Navigate to="" replace />} />
