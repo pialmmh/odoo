@@ -24,6 +24,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { useTenant } from '../context/TenantContext';
+import { useRBAC } from '../hooks/useRBAC';
 import config from '../config/platform';
 
 const DRAWER_WIDTH = 240;
@@ -35,6 +36,7 @@ export default function Sidebar() {
   const { isSuper } = useAuth();
   const { brand } = useAppTheme();
   const { tenantName } = useTenant();
+  const { canMenu } = useRBAC();
 
   const base = tenantSlug ? `/${tenantSlug}` : '';
 
@@ -56,9 +58,8 @@ export default function Sidebar() {
     { text: 'Settings', icon: <SettingsIcon />, path: `${base}/settings` },
   ];
 
-  if (isSuper) {
-    menuItems.push({ text: 'Tenants', icon: <TenantIcon />, path: `${base}/tenants` });
-  }
+  // Tenants always in the list — RBAC canMenu() will hide it for non-admins
+  menuItems.push({ text: 'Tenants', icon: <TenantIcon />, path: `${base}/tenants` });
 
   const isActive = (path) => {
     const loc = location.pathname;
@@ -106,7 +107,7 @@ export default function Sidebar() {
       </Toolbar>
       <Divider />
       <List sx={{ px: 1, pt: 1 }}>
-        {menuItems.map((item) => (
+        {menuItems.filter(item => canMenu(item.text)).map((item) => (
           <ListItemButton
             key={item.text}
             onClick={() => navigate(item.path)}
