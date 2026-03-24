@@ -55,6 +55,7 @@ export function TenantProvider({ children }) {
   const switchTenant = (tenant) => {
     setActiveTenant(tenant);
     setKBTenant(tenant);
+    setBrandingCookies(tenant?.slug);
     // Update URL to reflect new tenant
     if (tenant && config.tenantUrlMode === 'path') {
       const currentPath = window.location.pathname;
@@ -66,9 +67,12 @@ export function TenantProvider({ children }) {
     }
   };
 
-  // Sync KB tenant on restore
+  // Sync KB tenant and branding cookies on restore
   useEffect(() => {
-    if (activeTenant) setKBTenant(activeTenant);
+    if (activeTenant) {
+      setKBTenant(activeTenant);
+      setBrandingCookies(activeTenant.slug);
+    }
   }, [activeTenant]);
 
   return (
@@ -113,6 +117,19 @@ function stripTenantFromPath(path) {
     return '/' + parts.slice(1).join('/') || '/';
   }
   return path;
+}
+
+/**
+ * Set branding cookies so the Keycloak login page can display
+ * the tenant-specific title and subtitle on next login.
+ */
+function setBrandingCookies(slug) {
+  const branding = slug
+    ? (config.tenantBranding?.[slug] || config.defaultBranding)
+    : config.defaultBranding;
+  const opts = 'path=/;max-age=31536000;SameSite=Lax';
+  document.cookie = `tb_login_title=${encodeURIComponent(branding.loginTitle || '')};${opts}`;
+  document.cookie = `tb_login_subtitle=${encodeURIComponent(branding.loginSubtitle || '')};${opts}`;
 }
 
 export const useTenant = () => useContext(TenantContext);
