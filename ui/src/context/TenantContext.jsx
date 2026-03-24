@@ -3,6 +3,7 @@ import { setKBTenant } from '../services/killbill';
 import { getToken } from '../services/keycloak';
 import { call } from '../services/odoo';
 import config, { getTenantSlug, getPartnerIdFromSlug } from '../config/platform';
+import { useAuth } from './AuthContext';
 
 const TenantContext = createContext(null);
 
@@ -10,8 +11,9 @@ export function TenantProvider({ children }) {
   const [tenants, setTenants] = useState([]);
   const [activeTenant, setActiveTenant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { allowedTenantSlugs, isSuper } = useAuth();
 
-  // Load tenants from Odoo
+  // Load tenants from Odoo, then filter by Keycloak group membership
   const loadTenants = useCallback(async () => {
     try {
       const partners = await call('res.partner', 'search_read',
@@ -21,12 +23,17 @@ export function TenantProvider({ children }) {
 
       // Attach slugs
       const withSlugs = partners.map(p => ({ ...p, slug: getTenantSlug(p.id) }));
-      setTenants(withSlugs);
+
+      // Filter by allowed tenants: null = super admin, sees all
+      const filtered = allowedTenantSlugs === null
+        ? withSlugs
+        : withSlugs.filter(t => allowedTenantSlugs.includes(t.slug));
+      setTenants(filtered);
 
       // Auto-select tenant from URL path
       const pathSlug = getTenantSlugFromURL();
       if (pathSlug) {
-        const found = withSlugs.find(t => t.slug === pathSlug);
+        const found = filtered.find(t => t.slug === pathSlug);
         if (found) {
           setActiveTenant(found);
           setKBTenant(found);
@@ -37,7 +44,7 @@ export function TenantProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [allowedTenantSlugs]);
 
   useEffect(() => { loadTenants(); }, [loadTenants]);
 

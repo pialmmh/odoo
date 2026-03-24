@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, Outlet } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { ThemeRegistryProvider, useAppTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -28,10 +28,26 @@ import ArtifactsMain from './pages/artifacts/ArtifactsMain';
 import RBACManagement from './pages/RBACManagement';
 import Purchase from './pages/Purchase';
 
+/** Block access to tenant URLs the user is not authorized for */
+function TenantAuthGuard() {
+  const { tenant } = useParams();
+  const { allowedTenantSlugs, isSuper } = useAuth();
+
+  // Super admin can access any tenant
+  if (isSuper || allowedTenantSlugs === null) return <MainLayout />;
+
+  // Check if the URL tenant slug is in the user's allowed list
+  if (!allowedTenantSlugs.includes(tenant)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <MainLayout />;
+}
+
 function TenantRoutes() {
   const { isSuper } = useAuth();
   return (
-    <Route element={<MainLayout />}>
+    <Route element={<TenantAuthGuard />}>
       <Route index element={<Dashboard />} />
       <Route path="customers" element={<Customers />} />
       <Route path="customers/:id" element={<CustomerDetail />} />

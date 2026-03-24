@@ -6,6 +6,7 @@ import {
 import {
   initKeycloak, getUser as getKCUser,
   isSuper as isKCSuper, logout as kcLogout, getToken,
+  getTenantSlugs,
 } from '../services/keycloak';
 import config from '../config/platform';
 
@@ -25,12 +26,16 @@ export function AuthProvider({ children }) {
           const authenticated = await initKeycloak();
           if (authenticated) {
             const user = getKCUser();
+            const isSuperAdmin = isKCSuper();
             setAuthState({
               username: user.username,
               name: user.name,
               email: user.email,
-              role: isKCSuper() ? 'super_admin' : 'tenant_admin',
+              role: isSuperAdmin ? 'super_admin' : 'tenant_admin',
               roles: user.roles,
+              groups: user.groups,
+              // null = super admin, all tenants allowed; array = scoped to these slugs
+              allowedTenantSlugs: isSuperAdmin ? null : getTenantSlugs(),
               keycloak: true,
             });
           }
@@ -83,6 +88,7 @@ export function AuthProvider({ children }) {
       isSuper,
       isLoggedIn: !!auth,
       authMode: mode,
+      allowedTenantSlugs: auth?.allowedTenantSlugs ?? null,
       login, logout, switchAuthMode,
       getToken: auth?.keycloak ? getToken : () => null,
     }}>

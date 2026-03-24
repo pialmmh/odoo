@@ -1,18 +1,41 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import { Box, Typography, Card, CardActionArea, Grid, Chip, CircularProgress } from '@mui/material';
 import { Business as BusinessIcon } from '@mui/icons-material';
 import { useTenant } from '../context/TenantContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function TenantSelector() {
   const { tenants, loading, switchTenant } = useTenant();
+  const { isSuper } = useAuth();
   const navigate = useNavigate();
+  const autoRedirected = useRef(false);
 
   const handleSelect = (tenant) => {
     switchTenant(tenant);
     navigate(`/${tenant.slug}/`);
   };
 
+  // Auto-redirect if user has exactly one tenant (tenant admin with single group)
+  useEffect(() => {
+    if (loading || autoRedirected.current) return;
+    if (!isSuper && tenants.length === 1) {
+      autoRedirected.current = true;
+      switchTenant(tenants[0]);
+      navigate(`/${tenants[0].slug}/`, { replace: true });
+    }
+  }, [loading, tenants, isSuper, switchTenant, navigate]);
+
   if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // If auto-redirecting, show spinner briefly
+  if (!isSuper && tenants.length === 1) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <CircularProgress />
@@ -41,7 +64,7 @@ export default function TenantSelector() {
       </Grid>
       {tenants.length === 0 && (
         <Typography color="text.secondary" sx={{ mt: 4, textAlign: 'center' }}>
-          No tenants found. Create a company partner in Odoo first.
+          No tenants assigned to your account. Contact an administrator.
         </Typography>
       )}
     </Box>

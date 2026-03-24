@@ -56,7 +56,20 @@ export function getUser() {
     lastName: tp.family_name,
     name: tp.name || tp.preferred_username,
     roles: tp.realm_access?.roles || [],
+    groups: tp.groups || [],
   };
+}
+
+/**
+ * Extract tenant slugs from Keycloak groups.
+ * Groups like "/tenants/btcl" → "btcl"
+ */
+export function getTenantSlugs() {
+  const user = getUser();
+  if (!user) return [];
+  return user.groups
+    .filter(g => g.startsWith('/tenants/'))
+    .map(g => g.replace('/tenants/', ''));
 }
 
 export function hasRole(role) {
