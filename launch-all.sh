@@ -154,9 +154,9 @@ else
     fi
 fi
 
-# ── 7. APISIX Gateway (port 9080) ──
-echo "APISIX (:9080)"
-CODE=$(check_port 9080 "/api/odoo/health")
+# ── 7. APISIX Gateway (port 9081) ──
+echo "APISIX (:9081)"
+CODE=$(check_port 9081 "/api/odoo/health")
 if [ "$CODE" != "000" ]; then
     ok "Running (HTTP $CODE)"
 else
@@ -166,7 +166,7 @@ else
         warn "Starting APISIX..."
         sudo rm -f /usr/local/apisix/logs/*.sock /usr/local/apisix/logs/*.pid 2>/dev/null
         sudo apisix start > /dev/null 2>&1
-        wait_for 9080 "/api/odoo/health" 10 "APISIX"
+        wait_for 9081 "/api/odoo/health" 10 "APISIX"
     fi
 fi
 
@@ -226,7 +226,7 @@ echo "  URLs"
 echo "═══════════════════════════════════════════"
 echo ""
 echo "  React UI:      http://localhost:5180"
-echo "  APISIX Gateway: http://localhost:9080"
+echo "  APISIX Gateway: http://localhost:9081"
 echo "  APISIX Admin:  http://localhost:9180"
 echo "  Odoo Admin:    http://localhost:7169"
 echo "  Keycloak:      http://localhost:7104/admin/"

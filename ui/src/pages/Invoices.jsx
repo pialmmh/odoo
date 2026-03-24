@@ -14,6 +14,7 @@ import {
 import { getPlanFeatures } from '../services/planFeatures';
 import { saveAttachment } from '../services/attachments';
 import PaymentReceipt from '../components/PaymentReceipt';
+import { useTenant } from '../context/TenantContext';
 import { useNotification } from '../components/ErrorNotification';
 import { extractError } from '../services/errorHelper';
 import dayjs from 'dayjs';
@@ -31,6 +32,7 @@ const PAYMENT_METHODS = [
 
 export default function Invoices() {
   const navigate = useNavigate();
+  const { activeTenant } = useTenant();
   const { success, error: notifyError } = useNotification();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,7 @@ export default function Invoices() {
     setLoading(false);
   };
 
-  useEffect(() => { loadInvoices(); }, []);
+  useEffect(() => { if (activeTenant) loadInvoices(); }, [activeTenant]);
 
   const openPayDialog = async (inv) => {
     const balance = parseFloat(inv.balance || 0);

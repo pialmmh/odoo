@@ -6,15 +6,18 @@ import {
   CircularProgress,
 } from '@mui/material';
 import StatusChip from '../components/StatusChip';
+import { useTenant } from '../context/TenantContext';
 import { getAccounts, getAccountBundles } from '../services/killbill';
 import dayjs from 'dayjs';
 
 export default function Subscriptions() {
   const navigate = useNavigate();
+  const { activeTenant } = useTenant();
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!activeTenant) return;
     (async () => {
       try {
         const accRes = await getAccounts(0, 200);
@@ -34,7 +37,7 @@ export default function Subscriptions() {
       } catch (e) { /* */ }
       setLoading(false);
     })();
-  }, []);
+  }, [activeTenant]);
 
   return (
     <Box>

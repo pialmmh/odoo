@@ -4,15 +4,18 @@ import {
   CircularProgress, Alert, ToggleButton, ToggleButtonGroup,
 } from '@mui/material';
 import { getCatalog } from '../services/killbill';
+import { useTenant } from '../context/TenantContext';
 import { getAllPlans, getFeatureLabel } from '../services/planFeatures';
 
 export default function Catalog() {
+  const { activeTenant } = useTenant();
   const [catalog, setCatalog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
+    if (!activeTenant) return;
     (async () => {
       try {
         const res = await getCatalog();
@@ -22,7 +25,7 @@ export default function Catalog() {
       }
       setLoading(false);
     })();
-  }, []);
+  }, [activeTenant]);
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>;
   if (error) return <Alert severity="warning">{error}</Alert>;

@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { getAccounts, createAccount } from '../services/killbill';
+import { useTenant } from '../context/TenantContext';
 import { useNotification } from '../components/ErrorNotification';
 import { extractError } from '../services/errorHelper';
 
@@ -19,6 +20,7 @@ const emptyForm = {
 
 export default function Customers() {
   const navigate = useNavigate();
+  const { activeTenant } = useTenant();
   const { success, error: notifyError } = useNotification();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +28,7 @@ export default function Customers() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { loadAccounts(); }, []);
+  useEffect(() => { if (activeTenant) loadAccounts(); }, [activeTenant]);
 
   const loadAccounts = async () => {
     try {

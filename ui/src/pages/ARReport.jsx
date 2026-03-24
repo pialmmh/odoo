@@ -7,10 +7,12 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { getAccounts, getAccountInvoicesList, getAccountPayments } from '../services/killbill';
+import { useTenant } from '../context/TenantContext';
 import { useNotification } from '../components/ErrorNotification';
 
 export default function ARReport() {
   const navigate = useNavigate();
+  const { activeTenant } = useTenant();
   const { error: notifyError } = useNotification();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +20,7 @@ export default function ARReport() {
   const [orderBy, setOrderBy] = useState('outstanding');
   const [orderDir, setOrderDir] = useState('desc');
 
-  useEffect(() => { loadReport(); }, []);
+  useEffect(() => { if (activeTenant) loadReport(); }, [activeTenant]);
 
   const loadReport = async () => {
     try {

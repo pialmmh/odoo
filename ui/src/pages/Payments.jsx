@@ -19,6 +19,7 @@ import {
 } from '../services/killbill';
 import { getPlanFeatures } from '../services/planFeatures';
 import { saveAttachment, getAttachments, deleteAttachment } from '../services/attachments';
+import { useTenant } from '../context/TenantContext';
 import { useNotification } from '../components/ErrorNotification';
 import { extractError } from '../services/errorHelper';
 import dayjs from 'dayjs';
@@ -32,6 +33,7 @@ const PAYMENT_METHODS = Object.entries(PAYMENT_METHODS_MAP).map(([value, label])
 
 export default function Payments() {
   const navigate = useNavigate();
+  const { activeTenant } = useTenant();
   const { success, error: notifyError } = useNotification();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +96,7 @@ export default function Payments() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadPayments(); }, [loadPayments]);
+  useEffect(() => { if (activeTenant) loadPayments(); }, [activeTenant, loadPayments]);
 
   // When account is selected, load unpaid invoices
   const handleAccountChange = async (accountId) => {

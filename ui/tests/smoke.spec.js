@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const BASE = 'http://localhost:5180';
-const APISIX = 'http://localhost:9080';
+const APISIX = 'http://localhost:9081';
 const KC = 'http://localhost:7104';
 
 async function getKCToken(request) {

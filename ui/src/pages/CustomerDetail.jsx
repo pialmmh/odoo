@@ -22,6 +22,7 @@ import {
 import PaymentReceipt from '../components/PaymentReceipt';
 import { getAllPlans, getPlanFeatures, getFeatureLabel, getProductName } from '../services/planFeatures';
 import { saveAttachment, getAttachments, deleteAttachment } from '../services/attachments';
+import { useTenant } from '../context/TenantContext';
 import { useNotification } from '../components/ErrorNotification';
 import { extractError } from '../services/errorHelper';
 import dayjs from 'dayjs';
@@ -29,6 +30,7 @@ import dayjs from 'dayjs';
 export default function CustomerDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { activeTenant } = useTenant();
   const [account, setAccount] = useState(null);
   const [bundles, setBundles] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -90,7 +92,7 @@ export default function CustomerDetail() {
     }
   }, [id]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { if (activeTenant) loadData(); }, [activeTenant, loadData]);
 
   const allSubscriptions = bundles.flatMap(b =>
     (b.subscriptions || []).map(s => ({ ...s, bundleExternalKey: b.externalKey }))

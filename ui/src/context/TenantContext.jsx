@@ -18,11 +18,15 @@ export function TenantProvider({ children }) {
     try {
       const partners = await call('res.partner', 'search_read',
         [[['is_company', '=', true]]],
-        { fields: ['id', 'name'] }
+        { fields: ['id', 'name', 'x_external_key'] }
       );
 
-      // Attach slugs
-      const withSlugs = partners.map(p => ({ ...p, slug: getTenantSlug(p.id) }));
+      // Attach slugs and KB credentials
+      const withSlugs = partners.map(p => {
+        const slug = getTenantSlug(p.id);
+        const kb = config.kbTenants[slug] || {};
+        return { ...p, slug, apiKey: kb.apiKey || '', apiSecret: kb.apiSecret || '' };
+      });
 
       // Filter by allowed tenants: null = super admin, sees all
       const filtered = allowedTenantSlugs === null

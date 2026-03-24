@@ -118,7 +118,7 @@ export default function Pricing() {
                       <Typography variant="body2" color="text.secondary">{tmpl.description_sale}</Typography>
                     </Box>
                     {tmpl.x_kb_product_name && (
-                      <Chip label={`KB: ${tmpl.x_kb_product_name}`} size="small" variant="outlined" />
+                      <Chip label={`Billing: ${tmpl.x_kb_product_name}`} size="small" variant="outlined" />
                     )}
                   </Box>
                   <TableContainer>

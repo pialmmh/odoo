@@ -104,7 +104,7 @@ function ProductModal({ open, onClose, product, categories, onSave }) {
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
           <Tab label="General" />
           <Tab label={`Variants (${variants.length})`} />
-          <Tab label="Kill Bill" />
+          <Tab label="Billing" />
         </Tabs>
       </Box>
 
@@ -187,19 +187,19 @@ function ProductModal({ open, onClose, product, categories, onSave }) {
 
         <TabPanel value={tab} index={2}>
           <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
-            Kill Bill catalog mapping for this product
+            Billing catalog mapping for this product
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={8}>
-              <TextField fullWidth size="small" label="KB Product Name"
+              <TextField fullWidth size="small" label="Billing Product Name"
                 placeholder="e.g. Internet-100Mbps"
                 value={form.x_kb_product_name}
                 onChange={e => setForm(f => ({ ...f, x_kb_product_name: e.target.value }))} />
             </Grid>
             <Grid item xs={4}>
               <FormControl fullWidth size="small">
-                <InputLabel>KB Category</InputLabel>
-                <Select value={form.x_kb_category || ''} label="KB Category"
+                <InputLabel>Billing Category</InputLabel>
+                <Select value={form.x_kb_category || ''} label="Billing Category"
                   onChange={e => setForm(f => ({ ...f, x_kb_category: e.target.value }))}>
                   <MenuItem value="">Not Set</MenuItem>
                   <MenuItem value="BASE">BASE</MenuItem>

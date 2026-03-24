@@ -40,4 +40,4 @@ curl -s -X PUT "$ADMIN/routes/4" -H "X-API-KEY: $KEY" -H "Content-Type: applicat
 echo "  ✓ Route: /api/kb/* (Keycloak JWT)"
 
 echo ""
-echo "Done. Verify: curl http://localhost:9080/api/odoo/health"
+echo "Done. Verify: curl http://localhost:9081/api/odoo/health"

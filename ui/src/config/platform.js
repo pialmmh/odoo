@@ -24,6 +24,13 @@ const config = {
     7: 'abc-isp',
   },
 
+  // ── Kill Bill tenant credentials (slug → apiKey/apiSecret) ──
+  kbTenants: {
+    btcl:        { apiKey: 'btcl',        apiSecret: 'btcl-secret' },
+    telcobright: { apiKey: 'telcobright', apiSecret: 'telcobright-secret' },
+    'abc-isp':   { apiKey: 'abc-isp',     apiSecret: 'abc-isp-secret' },
+  },
+
   // ── Default tenant (redirect to this if no tenant in URL) ──
   defaultTenantSlug: null, // null = show tenant selection page
 

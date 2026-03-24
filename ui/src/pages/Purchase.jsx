@@ -10,6 +10,7 @@ import {
   ArrowBack as BackIcon, ArrowForward as NextIcon,
 } from '@mui/icons-material';
 import { useNotification } from '../components/ErrorNotification';
+import { useTenant } from '../context/TenantContext';
 import { call } from '../services/odoo';
 import {
   getCatalog, createAccount, createSubscription,
@@ -40,9 +41,11 @@ export default function Purchase() {
   const [result, setResult] = useState(null);
 
   const { success, error: notifyError } = useNotification();
+  const { activeTenant } = useTenant();
 
-  // Load partners and catalog
+  // Load partners and catalog (wait for tenant to be set so KB headers are available)
   useEffect(() => {
+    if (!activeTenant) return;
     (async () => {
       setLoading(true);
       try {
@@ -88,7 +91,7 @@ export default function Purchase() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [activeTenant]);
 
   // Step 1: Select partner and ensure KB account exists
   const handleSelectPartner = async (partner) => {
@@ -243,7 +246,7 @@ export default function Purchase() {
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
               Choose Plan for {selectedPartner?.name}
             </Typography>
-            <Chip label={`KB Account: ${kbAccount?.accountId?.slice(0, 8)}...`} size="small" sx={{ mb: 2 }} />
+            <Chip label={`Account: ${kbAccount?.accountId?.slice(0, 8)}...`} size="small" sx={{ mb: 2 }} />
 
             <RadioGroup value={selectedPlan?.planName || ''} onChange={(e) => {
               const plan = plans.find(p => p.planName === e.target.value);
@@ -326,7 +329,7 @@ export default function Purchase() {
             </Table>
 
             <Alert severity="info" sx={{ fontSize: 12, mb: 2 }}>
-              This will create a Kill Bill subscription and generate an invoice. Payment can be recorded separately from the Invoices page.
+              This will create a subscription and generate an invoice. Payment can be recorded separately from the Invoices page.
             </Alert>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

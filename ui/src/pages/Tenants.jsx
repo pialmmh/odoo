@@ -85,7 +85,7 @@ export default function Tenants() {
         const updated = addTenant(tenant);
         setTenantsState(updated);
         refreshTenants();
-        success(`Tenant "${form.name}" registered (already existed in Kill Bill)`);
+        success(`Tenant "${form.name}" registered (already existed in billing system)`);
         setDialogOpen(false);
         setForm(emptyForm);
       } else {
@@ -98,7 +98,7 @@ export default function Tenants() {
   };
 
   const handleDelete = (apiKey, name) => {
-    if (!confirm(`Remove tenant "${name}" from the registry?\n\nThis only removes the local entry. Kill Bill tenant data is preserved.`)) return;
+    if (!confirm(`Remove tenant "${name}" from the registry?\n\nThis only removes the local entry. Billing data is preserved.`)) return;
     const updated = removeTenant(apiKey);
     setTenantsState(updated);
     refreshTenants();
@@ -190,7 +190,7 @@ export default function Tenants() {
         <DialogTitle>Create New Tenant</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            This creates a tenant in Kill Bill and registers a tenant admin for the billing UI.
+            This creates a tenant in the billing system and registers a tenant admin for the billing UI.
           </Typography>
           <Grid container spacing={2} sx={{ mt: 0 }}>
             <Grid item xs={12}>

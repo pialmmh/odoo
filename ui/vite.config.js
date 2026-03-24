@@ -11,7 +11,7 @@ export default defineConfig({
     proxy: {
       // All API calls route through APISIX gateway
       '/api': {
-        target: 'http://127.0.0.1:9080',
+        target: 'http://127.0.0.1:9081',
         changeOrigin: true,
       },
     },

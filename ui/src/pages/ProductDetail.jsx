@@ -99,10 +99,10 @@ export default function ProductDetail() {
               </Box>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Kill Bill Mapping</Typography>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Billing Mapping</Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                <InfoRow label="KB Product Name" value={template.x_kb_product_name || 'Not mapped'} mono />
-                <InfoRow label="KB Category" value={template.x_kb_category || 'Not set'} />
+                <InfoRow label="Billing Product Name" value={template.x_kb_product_name || 'Not mapped'} mono />
+                <InfoRow label="Billing Category" value={template.x_kb_category || 'Not set'} />
               </Box>
             </Grid>
           </Grid>
