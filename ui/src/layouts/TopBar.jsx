@@ -1,16 +1,18 @@
 import {
   AppBar, Toolbar, Typography, Chip, Box, MenuItem,
-  Select, Button, Divider,
+  Select, Button, Divider, Tooltip,
 } from '@mui/material';
 import { Logout, Warning, Business } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { DRAWER_WIDTH } from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useTenant } from '../context/TenantContext';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function TopBar() {
   const { auth, isSuper, logout, authMode, switchAuthMode } = useAuth();
   const { tenants, activeTenant, switchTenant, tenantSlug } = useTenant();
+  const { themeKey, switchTheme, available, primaryColor } = useAppTheme();
   const navigate = useNavigate();
 
   const handleSwitchTenant = (tenantId) => {
@@ -64,6 +66,27 @@ export default function TopBar() {
               </MenuItem>
             ))}
           </Select>
+
+          <Divider orientation="vertical" flexItem />
+
+          {/* Theme switcher */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+            {available.map(t => (
+              <Tooltip key={t.key} title={t.label} arrow>
+                <Box
+                  onClick={() => switchTheme(t.key)}
+                  sx={{
+                    width: 14, height: 14, borderRadius: '50%',
+                    bgcolor: t.color,
+                    border: themeKey === t.key ? '2px solid #333' : '2px solid transparent',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s',
+                    '&:hover': { border: '2px solid #999' },
+                  }}
+                />
+              </Tooltip>
+            ))}
+          </Box>
 
           <Divider orientation="vertical" flexItem />
 

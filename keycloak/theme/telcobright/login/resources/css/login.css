@@ -1,0 +1,66 @@
+/*
+ * Telcobright Platform — Keycloak Login Theme
+ * Overrides the default keycloak login page styling using CSS variables
+ * defined in theme-colors.css.
+ */
+
+/* ── Page background ── */
+.login-pf body,
+body.login-pf {
+  background: var(--tb-bg) !important;
+}
+
+/* ── Login card ── */
+#kc-login {
+  background-color: var(--tb-primary) !important;
+  border-color: var(--tb-primary) !important;
+  color: #fff !important;
+}
+#kc-login:hover {
+  background-color: var(--tb-primary-dark) !important;
+  border-color: var(--tb-primary-dark) !important;
+}
+
+/* ── Header / branding ── */
+#kc-header-wrapper {
+  color: var(--tb-primary-dark) !important;
+  font-family: 'Inter', 'Segoe UI', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 24px !important;
+}
+
+/* ── Form card ── */
+#kc-form-wrapper,
+.card-pf {
+  border-top: 3px solid var(--tb-primary) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+}
+
+/* ── Links ── */
+#kc-content a,
+#kc-info a,
+.login-pf a {
+  color: var(--tb-primary) !important;
+}
+#kc-content a:hover,
+.login-pf a:hover {
+  color: var(--tb-primary-dark) !important;
+}
+
+/* ── Input focus ring ── */
+.login-pf input[type="text"]:focus,
+.login-pf input[type="password"]:focus {
+  border-color: var(--tb-primary) !important;
+  box-shadow: 0 0 0 2px var(--tb-primary-light) !important;
+}
+
+/* ── Alerts ── */
+.alert-error {
+  border-left: 3px solid var(--tb-primary) !important;
+}
+
+/* ── Footer ── */
+#kc-locale ul li a {
+  color: var(--tb-primary) !important;
+}

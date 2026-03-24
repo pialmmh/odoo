@@ -1,0 +1,21 @@
+/*
+ * Telcobright Platform — Keycloak Login Theme Colors
+ *
+ * The active color is set by a CSS class on <body>: theme-green, theme-blue, etc.
+ * A small JS snippet in login.ftl reads the 'tb_theme' cookie (set by the React app)
+ * and applies the matching class.
+ */
+
+/* ── Color palettes ── */
+body.theme-green   { --tb-primary: #00A651; --tb-primary-dark: #007a3b; --tb-primary-light: #e8f5e9; --tb-bg: #f5f6fa; }
+body.theme-blue    { --tb-primary: #1565C0; --tb-primary-dark: #003c8f; --tb-primary-light: #e3f2fd; --tb-bg: #f4f6f9; }
+body.theme-red     { --tb-primary: #C62828; --tb-primary-dark: #8e0000; --tb-primary-light: #ffebee; --tb-bg: #f5f6fa; }
+body.theme-gray    { --tb-primary: #455A64; --tb-primary-dark: #1c313a; --tb-primary-light: #eceff1; --tb-bg: #f5f6fa; }
+body.theme-orange  { --tb-primary: #E65100; --tb-primary-dark: #ac1900; --tb-primary-light: #fff3e0; --tb-bg: #f5f6fa; }
+body.theme-light-green { --tb-primary: #43A047; --tb-primary-dark: #00701a; --tb-primary-light: #f1f8e9; --tb-bg: #f1f8e9; }
+body.theme-light-blue  { --tb-primary: #1E88E5; --tb-primary-dark: #005cb2; --tb-primary-light: #e3f2fd; --tb-bg: #e3f2fd; }
+body.theme-light-red   { --tb-primary: #E53935; --tb-primary-dark: #ab000d; --tb-primary-light: #ffebee; --tb-bg: #ffebee; }
+body.theme-light-gray  { --tb-primary: #607D8B; --tb-primary-dark: #34515e; --tb-primary-light: #eceff1; --tb-bg: #eceff1; }
+
+/* Default if no class applied */
+body { --tb-primary: #00A651; --tb-primary-dark: #007a3b; --tb-primary-light: #e8f5e9; --tb-bg: #f5f6fa; }
