@@ -37,6 +37,46 @@ features/
 | `kb-catalog-tiered/` | Tiered PBX/VBS/CC plans in KB catalog |
 | `sslcommerz-payment/` | SSLCommerz → KB payment recording |
 | `deployment/` | LXC container deployment scripts |
+| `cleanup/` | Port fixes, doc updates, misc housekeeping |
+
+## Task → Feature Mapping
+
+| Task # | Subject | Feature Folder | Doc in open/ |
+|--------|---------|---------------|--------------|
+| #1 | Fix APISIX port refs in docs | `cleanup/` | apisix-port-refs.md |
+| #2 | Move KB creds to tenant YAML | `tenant-config/` | move-kb-creds-to-yaml.md |
+| #3 | Build config loader API | `tenant-config/` | config-loader-api.md |
+| #4 | Fix pause/resume subscription API | `purchase-subscription/` | fix-pause-resume.md |
+| #5 | Wire KB webhook → Kafka | `event-bridge/` | kb-webhook-to-kafka.md |
+| #6 | Kafka → RTC-Manager PackageAccount | `rtc-provisioning/` | kafka-to-rtc-manager.md |
+| #7 | Product mapping config | `tenant-config/` | product-mapping-config.md |
+| #8 | Tiered PBX/VBS/CC plans | `kb-catalog-tiered/` | tiered-plans.md |
+| #9 | KB → Odoo accounting bridge | `vat-ait-chalan/` | accounting-bridge.md |
+| #10 | Keycloak tenant isolation | `rbac/` | keycloak-tenant-isolation.md |
+| #11 | Deployment scripts | `deployment/` | platform-deploy-scripts.md |
+| #12 | SSLCommerz → KB payment | `sslcommerz-payment/` | payment-integration.md |
+| #13 | NBR Chalan dispatch | `vat-ait-chalan/` | chalan-dispatch.md |
+| #14 | Overdue → suspension | `overdue-suspension/` | overdue-automation.md |
+
+## Dependency Chain
+
+```
+#5 KB→Kafka event bridge (critical path — blocks everything downstream)
+  ├── #6 Kafka→RTC provisioning (also needs #7)
+  │     └── #14 Overdue→suspension
+  └── #9 Accounting bridge
+        └── #13 Chalan dispatch
+
+#3 Config loader API
+  └── #2 Move KB creds to YAML
+
+#8 Tiered catalog (independent)
+#4 Fix pause/resume (independent)
+#1 APISIX port docs (independent)
+#10 Keycloak isolation (independent)
+#11 Deployment scripts (independent)
+#12 SSLCommerz payment (independent)
+```
 
 ## Adding a New Feature
 
