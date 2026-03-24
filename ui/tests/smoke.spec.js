@@ -27,6 +27,96 @@ async function loginAndSelectTenant(page, tenantName) {
   }
 }
 
+async function getKCTokenForUser(request, username, password) {
+  const resp = await request.post(`${KC}/realms/telcobright/protocol/openid-connect/token`, {
+    form: { grant_type: 'password', client_id: 'platform-ui', username, password },
+  });
+  return (await resp.json()).access_token;
+}
+
+async function loginAsUser(page, username, password, expectTenantSelector = true) {
+  await page.goto(BASE);
+  await page.waitForTimeout(2000);
+  if (page.url().includes('7104')) {
+    await page.fill('#username', username);
+    await page.fill('#password', password);
+    await page.click('#kc-login');
+    await page.waitForURL(/localhost:5180/, { timeout: 10000 });
+  }
+  await page.waitForTimeout(5000);
+}
+
+test.describe('Tenant Auth — API layer', () => {
+  test('Super admin JWT has super_admin role', async ({ request }) => {
+    const token = await getKCToken(request);
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    expect(payload.realm_access.roles).toContain('super_admin');
+  });
+
+  test('Tenant admin JWT has groups claim with /tenants/btcl', async ({ request }) => {
+    const token = await getKCTokenForUser(request, 'btcl-admin', 'password');
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    expect(payload.groups).toContain('/tenants/btcl');
+    expect(payload.realm_access.roles).toContain('tenant_admin');
+    expect(payload.realm_access.roles).not.toContain('super_admin');
+  });
+
+  test('Tenant admin can access their own tenant KB API', async ({ request }) => {
+    const token = await getKCTokenForUser(request, 'btcl-admin', 'password');
+    const r = await request.get(`${APISIX}/api/kb/accounts/pagination`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Killbill-ApiKey': 'btcl',
+        'X-Killbill-ApiSecret': 'btcl-secret',
+      },
+    });
+    // Should succeed (200) or return KB data, NOT 403
+    expect(r.status()).not.toBe(403);
+  });
+
+  test('Tenant admin BLOCKED from another tenant KB API', async ({ request }) => {
+    const token = await getKCTokenForUser(request, 'btcl-admin', 'password');
+    const r = await request.get(`${APISIX}/api/kb/accounts/pagination`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Killbill-ApiKey': 'abc-isp',
+        'X-Killbill-ApiSecret': 'abc-isp-secret',
+      },
+    });
+    expect(r.status()).toBe(403);
+  });
+
+  test('Super admin can access any tenant KB API', async ({ request }) => {
+    const token = await getKCToken(request);
+    const r = await request.get(`${APISIX}/api/kb/accounts/pagination`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Killbill-ApiKey': 'abc-isp',
+        'X-Killbill-ApiSecret': 'abc-isp-secret',
+      },
+    });
+    expect(r.status()).not.toBe(403);
+  });
+});
+
+test.describe('Tenant Auth — UI', () => {
+  test('Super admin sees all tenants on selector', async ({ page }) => {
+    await loginAsUser(page, 'admin', 'password');
+    await expect(page.locator('text=Select Tenant')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h6:text("BTCL")')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('h6:text("Telcobright ISP")')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('Tenant admin (btcl-admin) auto-redirects to /btcl/', async ({ page }) => {
+    await loginAsUser(page, 'btcl-admin', 'password', false);
+    // Should auto-redirect to /btcl/ without showing tenant selector
+    await page.waitForTimeout(3000);
+    expect(page.url()).toContain('/btcl');
+    // Should NOT see "Select Tenant"
+    await expect(page.locator('text=Select Tenant')).not.toBeVisible({ timeout: 3000 });
+  });
+});
+
 test.describe('API tests', () => {
   test('APISIX health', async ({ request }) => {
     const r = await request.get(`${APISIX}/api/odoo/health`);
