@@ -1,0 +1,16 @@
+# Platform Multi-Tenant Configuration
+# Enable/disable tenants and set their active profile here.
+# Configuration files must exist at: config/tenants/{name}/{profile}/profile-{profile}.yml
+
+tenants:
+  - name: btcl
+    enabled: true
+    profile: dev
+
+  - name: telcobright
+    enabled: true
+    profile: dev
+
+  - name: abc-isp
+    enabled: false
+    profile: dev

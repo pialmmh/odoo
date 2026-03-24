@@ -1,0 +1,86 @@
+# ABC ISP Staging Profile Configuration
+# Staging environment settings for ABC ISP tenant
+
+platform:
+  tenant:
+    name: "ABC ISP Limited"
+    slug: "abc-isp"
+    odoo-partner-id: 7
+    environment: "staging"
+
+  billing:
+    api-key: "abc-isp"
+    api-secret: "abc-isp-secret"
+    currency: "BDT"
+    timezone: "Asia/Dhaka"
+    locale: "en_BD"
+    test-clock-enabled: false
+
+  services:
+    odoo:
+      url: "http://odoo-staging:7169"
+      db: "odoo"
+      username: "admin"
+      password: "CHANGE_ME"
+    killbill:
+      url: "http://killbill-staging:18080"
+      username: "admin"
+      password: "CHANGE_ME"
+    keycloak:
+      url: "http://keycloak-staging:7104"
+      realm: "telcobright"
+      client-id: "platform-api"
+      client-secret: "CHANGE_ME"
+    kafka:
+      bootstrap-servers: "kafka-staging:9092"
+    apisix:
+      url: "http://apisix-staging:9081"
+      admin-url: "http://apisix-staging:9180"
+      admin-key: "CHANGE_ME"
+
+  kafka:
+    topics:
+      invoice-created: "kb.invoice.created"
+      payment-success: "kb.payment.success"
+      subscription-created: "kb.subscription.created"
+      subscription-cancelled: "kb.subscription.cancelled"
+      subscription-changed: "kb.subscription.changed"
+      overdue-state: "kb.overdue.state"
+      journal-entry: "odoo.journal.entry"
+      package-provisioned: "rtc.package.provisioned"
+      package-deprovisioned: "rtc.package.deprovisioned"
+      notifications: "platform.notifications"
+      audit: "platform.audit"
+
+  overdue:
+    warning-days: 7
+    suspend-days: 14
+    disconnect-days: 30
+
+  accounting:
+    vat-percent: 15.0
+    ait-percent: 10.0
+    accounts:
+      receivable: "1200"
+      revenue: "4000"
+      bank: "1014"
+      cash: "1010"
+      mobile-money: "1015"
+      vat-payable: "2200"
+      ait-payable: "2201"
+
+  rtc-manager:
+    enabled: false
+    base-url: "http://rtc-manager-staging:8080"
+    tenant-endpoint: "/api/v1/tenant/abc-isp"
+    timeout: "30s"
+
+  monitoring:
+    metrics:
+      enabled: true
+    health:
+      enabled: true
+    logging:
+      level: "INFO"
+      format: "json"
+      file-path: "/var/log/platform/abc-isp-staging.log"
