@@ -8,13 +8,50 @@
 .login-pf body,
 body.login-pf {
   background: var(--tb-bg) !important;
+  font-family: 'Inter', 'Segoe UI', sans-serif !important;
+}
+
+/* ── Center the login container ── */
+#kc-content-wrapper,
+.login-pf .container-fluid,
+.login-pf .container {
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  padding: 0 24px !important;
+}
+
+#kc-header {
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  padding: 40px 24px 0 !important;
+  text-align: center !important;
 }
 
 /* ── Login card ── */
+.card-pf {
+  max-width: 420px !important;
+  margin: 24px auto !important;
+  padding: 32px 28px !important;
+  border-top: 3px solid var(--tb-primary) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.10) !important;
+  background: #fff !important;
+}
+
+#kc-form-wrapper {
+  max-width: 100% !important;
+}
+
+/* ── Submit button ── */
 #kc-login {
   background-color: var(--tb-primary) !important;
   border-color: var(--tb-primary) !important;
   color: #fff !important;
+  border-radius: 6px !important;
+  padding: 10px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  margin-top: 8px !important;
 }
 #kc-login:hover {
   background-color: var(--tb-primary-dark) !important;
@@ -26,15 +63,39 @@ body.login-pf {
   color: var(--tb-primary-dark) !important;
   font-family: 'Inter', 'Segoe UI', sans-serif !important;
   font-weight: 700 !important;
-  font-size: 24px !important;
+  font-size: 22px !important;
+  text-align: center !important;
 }
 
-/* ── Form card ── */
-#kc-form-wrapper,
-.card-pf {
-  border-top: 3px solid var(--tb-primary) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+/* ── Form header (Sign in to your account) ── */
+#kc-page-title {
+  text-align: center !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: #2c2c2c !important;
+  margin-bottom: 20px !important;
+}
+
+/* ── Inputs ── */
+.login-pf .pf-c-form-control,
+.login-pf input[type="text"],
+.login-pf input[type="password"] {
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+}
+
+/* ── Labels ── */
+.login-pf .pf-c-form__label-text,
+.login-pf label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #444 !important;
+}
+
+/* ── Form groups spacing ── */
+.login-pf .form-group {
+  margin-bottom: 14px !important;
 }
 
 /* ── Links ── */
