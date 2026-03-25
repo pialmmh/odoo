@@ -24,46 +24,8 @@ const config = {
     7: 'abc-isp',
   },
 
-  // ── Kill Bill tenant credentials (slug → apiKey/apiSecret) ──
-  kbTenants: {
-    btcl:        { apiKey: 'btcl',        apiSecret: 'btcl-secret' },
-    telcobright: { apiKey: 'telcobright', apiSecret: 'telcobright-secret' },
-    'abc-isp':   { apiKey: 'abc-isp',     apiSecret: 'abc-isp-secret' },
-  },
-
-  // ── Per-tenant branding (mirrors config/tenants/{slug}/dev/profile-dev.yml branding section) ──
-  // TODO: Replace with config loader API when built
-  tenantBranding: {
-    btcl: {
-      loginTitle: 'BTCL Service Portal',
-      loginSubtitle: 'Bangladesh Telecommunications Company Limited',
-      appName: 'BTCL Portal',
-      appShortName: 'BTCL',
-      theme: 'green',
-    },
-    telcobright: {
-      loginTitle: 'Telcobright Platform',
-      loginSubtitle: 'ISP Management & Billing Portal',
-      appName: 'Telcobright Platform',
-      appShortName: 'TB',
-      theme: 'blue',
-    },
-    'abc-isp': {
-      loginTitle: 'ABC ISP Portal',
-      loginSubtitle: 'Internet Service Management',
-      appName: 'ABC ISP',
-      appShortName: 'ABC',
-      theme: 'orange',
-    },
-  },
-
-  // ── Default branding (super admin / no tenant selected) ──
-  defaultBranding: {
-    loginTitle: 'Telcobright Platform',
-    loginSubtitle: 'Multi-Tenant Service Management',
-    appName: 'Telcobright Platform',
-    appShortName: 'TB',
-  },
+  // ── KB credentials and branding now come from Odoo DB ──
+  // (platform.tenant.config model, fetched by TenantContext)
 
   // ── Default tenant (redirect to this if no tenant in URL) ──
   defaultTenantSlug: null, // null = show tenant selection page

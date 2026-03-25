@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Seed data is inserted via post_init_hook in __init__.py -->
+    <!-- This file is intentionally empty — kept for manifest compatibility -->
+</odoo>

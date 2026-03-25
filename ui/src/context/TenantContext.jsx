@@ -1,41 +1,59 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { setKBTenant } from '../services/killbill';
-import { getToken } from '../services/keycloak';
 import { call } from '../services/odoo';
-import config, { getTenantSlug, getPartnerIdFromSlug } from '../config/platform';
+import config from '../config/platform';
 import { useAuth } from './AuthContext';
 
 const TenantContext = createContext(null);
+
+// Cache tenant configs from DB so we don't refetch on every render
+let _tenantConfigCache = null;
+
+/**
+ * Fetch tenant configs from Odoo DB (platform.tenant.config model).
+ * Returns array of { slug, partnerId, partnerName, billing, branding, overdue }.
+ */
+async function fetchTenantConfigs() {
+  if (_tenantConfigCache) return _tenantConfigCache;
+  try {
+    const configs = await call('platform.tenant.config', 'get_all_active', []);
+    _tenantConfigCache = configs;
+    return configs;
+  } catch (e) {
+    console.warn('Failed to fetch tenant configs from DB, using empty:', e.message);
+    return [];
+  }
+}
 
 export function TenantProvider({ children }) {
   const [tenants, setTenants] = useState([]);
   const [activeTenant, setActiveTenant] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { allowedTenantSlugs, isSuper } = useAuth();
+  const { allowedTenantSlugs } = useAuth();
 
-  // Load tenants from Odoo, then filter by Keycloak group membership
   const loadTenants = useCallback(async () => {
     try {
-      const partners = await call('res.partner', 'search_read',
-        [[['is_company', '=', true]]],
-        { fields: ['id', 'name', 'x_external_key'] }
-      );
+      // Fetch tenant configs from DB (billing creds + branding)
+      const dbConfigs = await fetchTenantConfigs();
 
-      // Attach slugs and KB credentials
-      const withSlugs = partners.map(p => {
-        const slug = getTenantSlug(p.id);
-        const kb = config.kbTenants[slug] || {};
-        return { ...p, slug, apiKey: kb.apiKey || '', apiSecret: kb.apiSecret || '' };
-      });
+      // Build tenant list from DB configs (each config has partnerId, slug, billing creds)
+      const tenantList = dbConfigs.map(cfg => ({
+        id: cfg.partnerId,
+        name: cfg.partnerName,
+        slug: cfg.slug,
+        apiKey: cfg.billing?.apiKey || '',
+        apiSecret: cfg.billing?.apiSecret || '',
+        branding: cfg.branding || {},
+      }));
 
       // Filter by allowed tenants: null = super admin, sees all
       const filtered = allowedTenantSlugs === null
-        ? withSlugs
-        : withSlugs.filter(t => allowedTenantSlugs.includes(t.slug));
+        ? tenantList
+        : tenantList.filter(t => allowedTenantSlugs.includes(t.slug));
       setTenants(filtered);
 
       // Auto-select tenant from URL path
-      const pathSlug = getTenantSlugFromURL();
+      const pathSlug = getTenantSlugFromURL(filtered);
       if (pathSlug) {
         const found = filtered.find(t => t.slug === pathSlug);
         if (found) {
@@ -44,7 +62,7 @@ export function TenantProvider({ children }) {
         }
       }
     } catch (e) {
-      console.warn('Failed to load tenants from Odoo:', e.message);
+      console.warn('Failed to load tenants:', e.message);
     } finally {
       setLoading(false);
     }
@@ -55,11 +73,10 @@ export function TenantProvider({ children }) {
   const switchTenant = (tenant) => {
     setActiveTenant(tenant);
     setKBTenant(tenant);
-    setBrandingCookies(tenant?.slug);
-    // Update URL to reflect new tenant
+    setBrandingCookies(tenant);
     if (tenant && config.tenantUrlMode === 'path') {
       const currentPath = window.location.pathname;
-      const stripped = stripTenantFromPath(currentPath);
+      const stripped = stripTenantFromPath(currentPath, tenants);
       const newPath = `/${tenant.slug}${stripped || '/'}`;
       if (currentPath !== newPath) {
         window.history.replaceState(null, '', newPath);
@@ -71,7 +88,7 @@ export function TenantProvider({ children }) {
   useEffect(() => {
     if (activeTenant) {
       setKBTenant(activeTenant);
-      setBrandingCookies(activeTenant.slug);
+      setBrandingCookies(activeTenant);
     }
   }, [activeTenant]);
 
@@ -82,8 +99,8 @@ export function TenantProvider({ children }) {
       switchTenant,
       loading,
       refreshTenants: loadTenants,
-      kbApiKey: activeTenant?.x_kb_api_key || '',
-      kbApiSecret: activeTenant?.x_kb_api_secret || '',
+      kbApiKey: activeTenant?.apiKey || '',
+      kbApiSecret: activeTenant?.apiSecret || '',
       partnerId: activeTenant?.id || null,
       tenantName: activeTenant?.name || '',
       tenantSlug: activeTenant?.slug || '',
@@ -93,43 +110,46 @@ export function TenantProvider({ children }) {
   );
 }
 
-/** Extract tenant slug from current URL path */
-function getTenantSlugFromURL() {
+/** Extract tenant slug from URL path by checking against known tenant slugs */
+function getTenantSlugFromURL(tenantList) {
   if (config.tenantUrlMode !== 'path') return null;
   const parts = window.location.pathname.split('/').filter(Boolean);
   if (parts.length === 0) return null;
-  // First segment could be a tenant slug
   const candidate = parts[0];
-  // Check if it's a known slug
-  if (getPartnerIdFromSlug(candidate) !== null) return candidate;
-  // Check against configured slugs
-  const knownSlugs = Object.values(config.tenantSlugs);
-  if (knownSlugs.includes(candidate)) return candidate;
+  // Check against loaded tenant slugs
+  if (tenantList?.some(t => t.slug === candidate)) return candidate;
+  // Fallback: check hardcoded slugs (for backward compat during transition)
+  if (config.tenantSlugs) {
+    const knownSlugs = Object.values(config.tenantSlugs);
+    if (knownSlugs.includes(candidate)) return candidate;
+  }
   return null;
 }
 
 /** Strip tenant prefix from a path */
-function stripTenantFromPath(path) {
+function stripTenantFromPath(path, tenantList) {
   const parts = path.split('/').filter(Boolean);
   if (parts.length === 0) return '/';
   const candidate = parts[0];
-  if (getPartnerIdFromSlug(candidate) !== null || Object.values(config.tenantSlugs).includes(candidate)) {
+  const isKnown = tenantList?.some(t => t.slug === candidate)
+    || (config.tenantSlugs && Object.values(config.tenantSlugs).includes(candidate));
+  if (isKnown) {
     return '/' + parts.slice(1).join('/') || '/';
   }
   return path;
 }
 
 /**
- * Set branding cookies so the Keycloak login page can display
- * the tenant-specific title and subtitle on next login.
+ * Set branding cookies from tenant's DB config so the Keycloak login page
+ * can display tenant-specific title and subtitle on next login.
  */
-function setBrandingCookies(slug) {
-  const branding = slug
-    ? (config.tenantBranding?.[slug] || config.defaultBranding)
-    : config.defaultBranding;
+function setBrandingCookies(tenant) {
+  const branding = tenant?.branding || {};
+  const title = branding.loginTitle || config.appName || 'Telcobright Platform';
+  const subtitle = branding.loginSubtitle || '';
   const opts = 'path=/;max-age=31536000;SameSite=Lax';
-  document.cookie = `tb_login_title=${encodeURIComponent(branding.loginTitle || '')};${opts}`;
-  document.cookie = `tb_login_subtitle=${encodeURIComponent(branding.loginSubtitle || '')};${opts}`;
+  document.cookie = `tb_login_title=${encodeURIComponent(title)};${opts}`;
+  document.cookie = `tb_login_subtitle=${encodeURIComponent(subtitle)};${opts}`;
 }
 
 export const useTenant = () => useContext(TenantContext);

@@ -24,10 +24,15 @@ curl -s -X PUT "$ADMIN/routes/1" -H "X-API-KEY: $KEY" -H "Content-Type: applicat
   -d "{\"name\":\"api-health\",\"uri\":\"/api/odoo/health\",\"methods\":[\"GET\",\"POST\"],\"upstream_id\":\"1\",\"priority\":10,\"plugins\":{\"cors\":$CORS}}" > /dev/null
 echo "  ✓ Route: /api/odoo/health (public)"
 
-# Public: tenant loading
+# Public: tenant loading (partners)
 curl -s -X PUT "$ADMIN/routes/2" -H "X-API-KEY: $KEY" -H "Content-Type: application/json" \
   -d "{\"name\":\"api-tenants\",\"uri\":\"/api/odoo/res.partner/*\",\"methods\":[\"GET\",\"POST\",\"OPTIONS\"],\"upstream_id\":\"1\",\"priority\":10,\"plugins\":{\"cors\":$CORS}}" > /dev/null
 echo "  ✓ Route: /api/odoo/res.partner/* (public)"
+
+# Public: tenant config (billing creds, branding — needed before auth)
+curl -s -X PUT "$ADMIN/routes/5" -H "X-API-KEY: $KEY" -H "Content-Type: application/json" \
+  -d "{\"name\":\"api-tenant-config\",\"uri\":\"/api/odoo/platform.tenant.config/*\",\"methods\":[\"GET\",\"POST\",\"OPTIONS\"],\"upstream_id\":\"1\",\"priority\":10,\"plugins\":{\"cors\":$CORS}}" > /dev/null
+echo "  ✓ Route: /api/odoo/platform.tenant.config/* (public)"
 
 # Protected: all Odoo APIs
 curl -s -X PUT "$ADMIN/routes/3" -H "X-API-KEY: $KEY" -H "Content-Type: application/json" \

@@ -1,0 +1,54 @@
+# Platform Infrastructure Configuration
+# ONE file per deployment — only connection details to infra services.
+# All tenant-specific config (KB creds, branding, overdue) is in Odoo DB.
+
+platform:
+  environment: dev
+
+  # ── Database ──
+  mysql:
+    host: 127.0.0.1
+    port: 3306
+    username: root
+    password: 123456
+
+  postgresql:
+    host: 127.0.0.1
+    port: 5433
+    username: mustafa
+    password: ""
+    database: odoo_billing
+
+  # ── Message Broker ──
+  kafka:
+    bootstrap-servers: 127.0.0.1:9092
+
+  # ── Identity Provider ──
+  keycloak:
+    url: http://localhost:7104
+    realm: telcobright
+    client-id: platform-api
+    client-secret: tde2klJ3vsgG5wYprw8IHHP9xo7df8V9
+
+  # ── API Gateway ──
+  apisix:
+    url: http://localhost:9081
+    admin-url: http://localhost:9180
+    admin-key: telcobright-apisix-admin-key
+
+  # ── Backend Services ──
+  odoo:
+    url: http://127.0.0.1:7169
+    db: odoo_billing
+    username: admin
+    password: admin
+
+  killbill:
+    url: http://127.0.0.1:18080
+    username: admin
+    password: password
+
+  # ── Secrets (future: Vault/OpenBao) ──
+  vault:
+    url: http://localhost:8200
+    token: dev-root-token

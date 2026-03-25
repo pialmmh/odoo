@@ -21,6 +21,7 @@ public class SecurityConfig {
                 // Public endpoints — no JWT required
                 .requestMatchers("/api/odoo/health").permitAll()
                 .requestMatchers("/api/odoo/res.partner/**").permitAll()
+                .requestMatchers("/api/odoo/platform.tenant.config/**").permitAll()
                 // All other API calls require a valid JWT
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
