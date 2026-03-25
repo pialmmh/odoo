@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestrix — Subscription Entity Diagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    overflow: hidden;
+  }
+  #controls {
+    position: fixed; top: 12px; right: 12px; z-index: 100;
+    display: flex; gap: 6px; align-items: center;
+    background: rgba(26,26,46,0.9); padding: 6px 10px; border-radius: 8px;
+    border: 1px solid #333; font-size: 12px;
+  }
+  #controls button {
+    background: #2a2a4a; color: #ccc; border: 1px solid #444;
+    padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+  }
+  #controls button:hover { background: #3a3a5a; }
+  #zoom-level { color: #888; min-width: 40px; text-align: center; }
+  #title {
+    position: fixed; top: 12px; left: 12px; z-index: 100;
+    font-size: 14px; font-weight: 600; color: #7c83ff;
+    background: rgba(26,26,46,0.9); padding: 6px 12px; border-radius: 8px;
+    border: 1px solid #333;
+  }
+  #canvas {
+    width: 100vw; height: 100vh; cursor: grab;
+    overflow: hidden; position: relative;
+  }
+  #canvas.dragging { cursor: grabbing; }
+  #diagram-container {
+    transform-origin: 0 0;
+    position: absolute;
+    padding: 40px;
+  }
+  .mermaid {
+    min-width: max-content;
+  }
+  .mermaid svg {
+    max-width: none !important;
+  }
+</style>
+</head>
+<body>
+
+<div id="title">Orchestrix — Subscription Entity Diagram (scroll to zoom, drag to pan)</div>
+
+<div id="controls">
+  <button onclick="zoomIn()">+</button>
+  <span id="zoom-level">100%</span>
+  <button onclick="zoomOut()">−</button>
+  <button onclick="resetView()">Reset</button>
+  <button onclick="fitToScreen()">Fit</button>
+</div>
+
+<div id="canvas">
+  <div id="diagram-container">
+    <pre class="mermaid">
+erDiagram
+
+    %% ════════════════════════════════════════════════════
+    %% ODOO — Source of Truth (catalog, tax, accounting)
+    %% ════════════════════════════════════════════════════
+
+    product_template {
+        int id PK "e.g. 5"
+        string name "Internet 100Mbps"
+        string x_kb_product_name "Internet-100Mbps — maps to KB Product"
+        string x_kb_category "BASE | ADD_ON"
+        float list_price "1200.00 BDT"
+        int categ_id FK "→ product.category (Internet Services)"
+    }
+
+    product_product {
+        int id PK "e.g. 12 (variant)"
+        int product_tmpl_id FK "→ product_template"
+        string x_kb_plan_name "internet-100mbps-monthly — maps to KB Plan"
+        string x_kb_billing_period "MONTHLY | QUARTERLY | ANNUAL"
+        json x_package_items "NEW — defines PackageAccounts to create in RTC"
+    }
+
+    product_rate_history {
+        int id PK
+        int product_tmpl_id FK "→ product_template"
+        float price "1200.00 — base price at this date"
+        date effective_date "2026-01-01 — rate starts"
+        date end_date "NULL = currently active"
+        string pricelist_tier "standard | enterprise | govt | wholesale"
+        string reason "Annual rate revision"
+        string gazette_ref "SRO reference if govt mandated"
+    }
+
+    product_tax_rate {
+        int id PK
+        string tax_type "vat | ait | sd | other"
+        float rate "15.0 (percentage)"
+        date effective_date "2024-07-01"
+        date end_date "NULL = currently active"
+        boolean is_deduction "true for AIT (deducted at source by payer)"
+        string gazette_ref "SRO 190/2024"
+        int categ_id FK "→ product.category (or NULL for default)"
+        int product_tmpl_id FK "→ specific product override"
+        int odoo_tax_id FK "→ account.tax"
+    }
+
+    res_partner {
+        int id PK "8 = BTCL, 15 = XYZ Corp"
+        string name "XYZ Corp"
+        boolean is_company "true = tenant or customer"
+        string x_external_key "XYZ-001 — CROSS-SYSTEM JOIN KEY"
+        string x_kb_account_id "KB account UUID (set after sync)"
+        string email
+        string phone
+    }
+
+    account_move {
+        int id PK
+        string move_type "out_invoice | entry | out_refund"
+        string x_kb_invoice_id "KB invoice UUID — links to KB"
+        int partner_id FK "→ res_partner"
+        date invoice_date "Tax rates looked up at THIS date"
+        float amount_total "1380.00 (base 1200 + VAT 180)"
+        string state "draft | posted"
+    }
+
+    account_move_line {
+        int id PK
+        int move_id FK "→ account_move"
+        string account_code "1200=AR, 4100=Revenue, 2200=VAT Payable"
+        float debit "DR side"
+        float credit "CR side"
+        string name "Internet 100Mbps service | VAT 15%"
+    }
+
+    account_payment {
+        int id PK
+        string x_kb_payment_id "KB payment UUID"
+        int partner_id FK "→ res_partner"
+        float amount "1380.00 or 1260.00 (if AIT deducted)"
+        string payment_method "bKash | Bank | Cash"
+    }
+
+    chalan_dispatch {
+        int id PK
+        date dispatch_date
+        float amount "accumulated VAT or AIT"
+        string tax_type "vat | ait | income_tax"
+        string chalan_number "NBR chalan reference"
+        string nbr_reference
+        date period_from
+        date period_to
+        int journal_entry_id FK "→ account_move (clearing entry)"
+        string status "draft | submitted | acknowledged"
+    }
+
+    product_template ||--o{ product_product : "has variants"
+    product_template ||--o{ product_rate_history : "price history"
+    product_template ||--o{ product_tax_rate : "tax override"
+    res_partner ||--o{ account_move : "invoices"
+    res_partner ||--o{ account_payment : "payments"
+    account_move ||--o{ account_move_line : "journal lines"
+    chalan_dispatch ||--|| account_move : "clearing entry"
+
+    %% ════════════════════════════════════════════════════
+    %% KILL BILL — Billing Engine (price, invoice, payment)
+    %% ════════════════════════════════════════════════════
+
+    KB_Tenant {
+        string tenantId PK "UUID"
+        string apiKey "btcl — identifies tenant per request"
+        string apiSecret "btcl-secret"
+        string externalKey "btcl"
+    }
+
+    KB_Catalog {
+        string catalogName "TelcobrightISP"
+        date effectiveDate "2026-03-24 — version date"
+        string currencies "BDT"
+        string billingMode "IN_ADVANCE"
+    }
+
+    KB_Product {
+        string name PK "Internet-100Mbps"
+        string category "BASE | ADD_ON"
+        string prettyName "Internet 100Mbps"
+    }
+
+    KB_Plan {
+        string name PK "internet-100mbps-monthly"
+        string productName FK "→ KB_Product"
+        string billingPeriod "MONTHLY"
+        string billingMode "IN_ADVANCE"
+    }
+
+    KB_Phase {
+        string type "EVERGREEN | FIXEDTERM"
+        float recurringPrice "1200.00 BDT (EVERGREEN)"
+        float fixedPrice "5000.00 BDT (OTC in FIXEDTERM)"
+        string durationUnit "UNLIMITED | DAYS"
+        int durationNumber "-1 or 1"
+    }
+
+    KB_Account {
+        string accountId PK "UUID"
+        string externalKey "XYZ-001 — SAME AS Odoo partner key"
+        string name "XYZ Corp"
+        string currency "BDT"
+        string country "BD"
+        string timeZone "Asia/Dhaka"
+    }
+
+    KB_Bundle {
+        string bundleId PK "UUID — pause/resume at this level"
+        string accountId FK "→ KB_Account"
+        string externalKey "bundle key"
+    }
+
+    KB_Subscription {
+        string subscriptionId PK "UUID"
+        string bundleId FK "→ KB_Bundle"
+        string planName FK "internet-100mbps-monthly → KB_Plan"
+        string productName "Internet-100Mbps"
+        string state "ACTIVE | BLOCKED | CANCELLED"
+        date startDate "2026-03-26"
+        string billingPeriod "MONTHLY"
+    }
+
+    KB_Invoice {
+        string invoiceId PK "UUID"
+        string accountId FK "→ KB_Account"
+        date invoiceDate "2026-03-26"
+        float amount "1200.00 — BASE PRICE ONLY, no tax"
+        float balance "1200.00 (unpaid) or 0 (paid)"
+        string currency "BDT"
+        string status "COMMITTED"
+    }
+
+    KB_InvoiceItem {
+        string invoiceItemId PK "UUID"
+        string invoiceId FK "→ KB_Invoice"
+        string subscriptionId FK "→ KB_Subscription"
+        string itemType "RECURRING | FIXED | EXTERNAL_CHARGE"
+        string planName "internet-100mbps-monthly"
+        float amount "1200.00"
+        date startDate "2026-03-26"
+        date endDate "2026-04-26"
+    }
+
+    KB_Payment {
+        string paymentId PK "UUID"
+        string accountId FK "→ KB_Account"
+        float amount "1200.00"
+        string currency "BDT"
+        string status "SUCCESS | FAILED"
+    }
+
+    KB_Catalog ||--o{ KB_Product : "contains"
+    KB_Product ||--o{ KB_Plan : "has plans"
+    KB_Plan ||--o{ KB_Phase : "has phases"
+    KB_Tenant ||--o{ KB_Account : "owns"
+    KB_Account ||--o{ KB_Bundle : "has bundles"
+    KB_Bundle ||--o{ KB_Subscription : "has subscriptions"
+    KB_Account ||--o{ KB_Invoice : "invoiced to"
+    KB_Invoice ||--o{ KB_InvoiceItem : "line items"
+    KB_Account ||--o{ KB_Payment : "pays"
+
+    %% ════════════════════════════════════════════════════
+    %% EVENT BRIDGE — Stateless (Kafka topics)
+    %% ════════════════════════════════════════════════════
+
+    Kafka_Topic {
+        string name PK "topic name"
+        string direction "KB→Consumer | RTC→Audit"
+        string description "purpose"
+    }
+
+    Kafka_Message {
+        string eventId "UUID"
+        string topic FK "→ Kafka_Topic"
+        string tenantSlug "btcl"
+        string accountId "KB account UUID"
+        string externalKey "XYZ-001 — resolves partner across systems"
+        string planName "internet-100mbps-monthly"
+        json packageItems "enriched from Odoo x_package_items"
+        float vatRate "15.0 — from Odoo product.tax.rate"
+        float aitRate "10.0 — from Odoo product.tax.rate"
+        datetime timestamp
+    }
+
+    Kafka_Topic ||--o{ Kafka_Message : "carries"
+
+    %% ════════════════════════════════════════════════════
+    %% RTC-MANAGER — Service Delivery (entitlements)
+    %% ════════════════════════════════════════════════════
+
+    RTC_Partner {
+        int idPartner PK "same ID space as Odoo"
+        string partnerName "XYZ Corp"
+        string telephone
+        string email
+        int customerPrePaid "1=prepaid 2=postpaid"
+    }
+
+    RTC_Package {
+        int id PK "10"
+        string name "Internet-100Mbps-Monthly"
+        float basePrice "1200.00"
+        float vatPercent "15.00"
+        float aitPercent "10.00"
+        int validity "2592000 (30 days in seconds)"
+        boolean activeStatus "true"
+    }
+
+    RTC_PackageItem {
+        int id PK
+        int id_package FK "→ RTC_Package"
+        float quantity "100"
+        string uom "MBPS | GB | CH | MIN | EXT | MSG | AGENT"
+        int category "1=bandwidth 2=data 3=voice etc"
+        string description "Bandwidth"
+    }
+
+    RTC_PackagePurchase {
+        int id PK "501"
+        int idPartner FK "→ RTC_Partner"
+        int id_package FK "→ RTC_Package"
+        datetime purchaseDate "2026-03-26"
+        datetime expireDate "2026-04-26"
+        string status "ACTIVE | SUSPENDED | CANCELLED"
+        boolean autoRenewalStatus "true — monthly auto-renew"
+        float price "1200.00"
+        float vat "180.00 (15% of base)"
+        float ait "120.00 (10% of base)"
+        int priority "1"
+        int discount "0"
+    }
+
+    RTC_PackageAccount {
+        int id PK "1001"
+        int id_PackagePurchase FK "→ RTC_PackagePurchase"
+        string name "Bandwidth"
+        float lastAmount "0 — last debit/credit"
+        float balanceBefore "0"
+        float balanceAfter "100 — the entitlement"
+        string uom "MBPS"
+    }
+
+    RTC_PackageAccountReserve {
+        int id PK
+        string channel_call_uuid "call-123 — active session ID"
+        int id_packageaccount FK "→ RTC_PackageAccount"
+        int id_PackagePurchase FK "→ RTC_PackagePurchase"
+        string name "Bandwidth"
+        float reserveUnit "100"
+        string uom "MBPS"
+    }
+
+    RTC_Partner ||--o{ RTC_PackagePurchase : "purchases"
+    RTC_Package ||--o{ RTC_PackageItem : "includes items"
+    RTC_Package ||--o{ RTC_PackagePurchase : "purchased as"
+    RTC_PackagePurchase ||--o{ RTC_PackageAccount : "creates accounts"
+    RTC_PackageAccount ||--o{ RTC_PackageAccountReserve : "reserves during session"
+
+    %% ════════════════════════════════════════════════════
+    %% CROSS-SYSTEM RELATIONSHIPS (via join keys)
+    %% ════════════════════════════════════════════════════
+
+    res_partner }|--|| KB_Account : "externalKey links partner to KB account"
+    res_partner }|--|| RTC_Partner : "same partner ID or externalKey"
+    product_product }|--|| KB_Plan : "x_kb_plan_name maps variant to KB plan"
+    product_template }|--|| KB_Product : "x_kb_product_name maps to KB product"
+    account_move }|--|| KB_Invoice : "x_kb_invoice_id links journal entry to KB invoice"
+    account_payment }|--|| KB_Payment : "x_kb_payment_id links payment to KB payment"
+    KB_Subscription }|--|| RTC_PackagePurchase : "event bridge creates purchase from subscription"
+    product_product }|--|| RTC_Package : "x_package_items defines what to provision"
+    </pre>
+  </div>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    er: {
+      layoutDirection: 'TB',
+      minEntityWidth: 200,
+      entityPadding: 15,
+      fontSize: 13,
+      useMaxWidth: false,
+    },
+    themeVariables: {
+      primaryColor: '#2a2a4a',
+      primaryTextColor: '#e0e0e0',
+      primaryBorderColor: '#555',
+      lineColor: '#7c83ff',
+      secondaryColor: '#1e3a5f',
+      tertiaryColor: '#2d1f3d',
+      background: '#1a1a2e',
+      mainBkg: '#2a2a4a',
+      nodeBorder: '#555',
+      clusterBkg: '#1e1e36',
+      titleColor: '#7c83ff',
+      edgeLabelBackground: '#1a1a2e',
+    },
+  });
+
+  // Wait for mermaid to render, then set up pan/zoom
+  setTimeout(setupPanZoom, 2000);
+
+  let scale = 1;
+  let panX = 0, panY = 0;
+  let isDragging = false;
+  let startX, startY;
+
+  function setupPanZoom() {
+    const canvas = document.getElementById('canvas');
+    const container = document.getElementById('diagram-container');
+
+    // Remove mermaid's max-width constraints
+    const svg = container.querySelector('svg');
+    if (svg) {
+      svg.style.maxWidth = 'none';
+      svg.removeAttribute('width');
+      svg.style.width = 'auto';
+      svg.style.height = 'auto';
+    }
+
+    applyTransform();
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      // Zoom toward mouse position
+      panX = mx - (mx - panX) * delta;
+      panY = my - (my - panY) * delta;
+      scale *= delta;
+      scale = Math.max(0.05, Math.min(10, scale));
+
+      applyTransform();
+    }, { passive: false });
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+      canvas.classList.add('dragging');
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      applyTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+      canvas.classList.remove('dragging');
+    });
+
+    // Touch support
+    let lastTouchDist = 0;
+    let lastTouchX = 0, lastTouchY = 0;
+
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        isDragging = true;
+        startX = e.touches[0].clientX - panX;
+        startY = e.touches[0].clientY - panY;
+      } else if (e.touches.length === 2) {
+        isDragging = false;
+        lastTouchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        lastTouchX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        lastTouchY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && isDragging) {
+        panX = e.touches[0].clientX - startX;
+        panY = e.touches[0].clientY - startY;
+        applyTransform();
+      } else if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const delta = dist / lastTouchDist;
+        const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        panX = mx - (mx - panX) * delta;
+        panY = my - (my - panY) * delta;
+        scale *= delta;
+        scale = Math.max(0.05, Math.min(10, scale));
+        lastTouchDist = dist;
+        applyTransform();
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => { isDragging = false; });
+
+    fitToScreen();
+  }
+
+  function applyTransform() {
+    const container = document.getElementById('diagram-container');
+    container.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    document.getElementById('zoom-level').textContent = Math.round(scale * 100) + '%';
+  }
+
+  window.zoomIn = () => {
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const delta = 1.2;
+    panX = cx - (cx - panX) * delta;
+    panY = cy - (cy - panY) * delta;
+    scale *= delta;
+    scale = Math.min(10, scale);
+    applyTransform();
+  };
+
+  window.zoomOut = () => {
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const delta = 0.8;
+    panX = cx - (cx - panX) * delta;
+    panY = cy - (cy - panY) * delta;
+    scale *= delta;
+    scale = Math.max(0.05, scale);
+    applyTransform();
+  };
+
+  window.resetView = () => {
+    scale = 1; panX = 0; panY = 0;
+    applyTransform();
+  };
+
+  window.fitToScreen = () => {
+    const container = document.getElementById('diagram-container');
+    const svg = container.querySelector('svg');
+    if (!svg) return;
+    const bbox = svg.getBBox ? svg.getBBox() : svg.getBoundingClientRect();
+    const w = bbox.width || svg.scrollWidth || 2000;
+    const h = bbox.height || svg.scrollHeight || 1500;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    scale = Math.min(vw / (w + 100), vh / (h + 100), 1);
+    panX = (vw - w * scale) / 2;
+    panY = (vh - h * scale) / 2;
+    applyTransform();
+  };
+</script>
+
+</body>
+</html>
