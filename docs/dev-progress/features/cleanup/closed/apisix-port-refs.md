@@ -1,5 +1,7 @@
 # Fix APISIX Port References in Docs
 
+**Completed:** 2026-03-25 — Updated all remaining 9080→9081 refs in docs.
+
 **Task:** #1
 **Priority:** Low (cosmetic)
 

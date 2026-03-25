@@ -83,8 +83,16 @@ export const createAccount = (data) => api.post('/accounts', data);
 export const getAccountBundles = (accountId) => api.get(`/accounts/${accountId}/bundles`);
 export const createSubscription = (data) => api.post('/subscriptions', data);
 export const cancelSubscription = (id) => api.delete(`/subscriptions/${id}`);
-export const pauseSubscription = (id) => api.put(`/subscriptions/${id}/pause`);
-export const resumeSubscription = (id) => api.put(`/subscriptions/${id}/resume`);
+export const pauseSubscription = async (subscriptionId) => {
+  const sub = await api.get(`/subscriptions/${subscriptionId}`);
+  const bundleId = sub.data.bundleId;
+  return api.put(`/bundles/${bundleId}/pause`);
+};
+export const resumeSubscription = async (subscriptionId) => {
+  const sub = await api.get(`/subscriptions/${subscriptionId}`);
+  const bundleId = sub.data.bundleId;
+  return api.put(`/bundles/${bundleId}/resume`);
+};
 export const getSubscription = (id) => api.get(`/subscriptions/${id}`);
 
 // ==================== INVOICES ====================

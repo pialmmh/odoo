@@ -60,7 +60,7 @@ Auth handled by Keycloak (realm: `telcobright`, client: `platform-ui`)
 ### Client: `platform-ui`
 - Type: Confidential
 - Client Secret: `T3HRg6Jf72Botb5Tgx1Hbd61VLBGrkbf`
-- Redirect URIs: `http://localhost:5180/*`, `http://localhost:9080/*`
+- Redirect URIs: `http://localhost:5180/*`, `http://localhost:9081/*`
 
 ### Roles
 | Role | Purpose |

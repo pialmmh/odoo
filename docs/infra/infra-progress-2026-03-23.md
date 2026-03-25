@@ -94,7 +94,7 @@ The `infra_management` Odoo module and corresponding React UI were implemented t
 
 ```
 React UI (:5180)
-  ↓ Vite proxy /api → APISIX (:9080)
+  ↓ Vite proxy /api → APISIX (:9081)
     ↓ JWT validation via Keycloak (:7104)
       ↓ Spring Boot API (:8180) → Odoo XML-RPC (:7169)
                                 → Kill Bill REST (:18080)
@@ -114,7 +114,7 @@ React UI (:5180)
 | Odoo | 7169 | Backend ERP |
 | Keycloak | 7104 | Auth (SSO, RBAC roles) |
 | Spring Boot API | 8180 | API gateway backend |
-| APISIX | 9080 | API gateway (routes, OIDC) |
+| APISIX | 9081 | API gateway (routes, OIDC) |
 | Kill Bill | 18080 | Billing engine |
 | PostgreSQL | 5433 | Odoo database |
 | MySQL | 3306 | Kill Bill database |

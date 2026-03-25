@@ -1,5 +1,7 @@
 # Per-Tenant Keycloak Realm/Role Isolation
 
+**Completed:** 2026-03-25 — Implemented Option A (single realm + Keycloak groups). Groups `/tenants/{slug}` scope users to tenants. JWT `groups` claim enforced by React UI (TenantAuthGuard) and Spring Boot (TenantAuthorizationFilter). Super admin bypasses. Setup script: `keycloak/setup-tenant-groups.sh`. Test user `btcl-admin` created. All 7 Playwright tests pass.
+
 **Task:** #10
 **Priority:** Medium
 
