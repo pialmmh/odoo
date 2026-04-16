@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Internet 100Mbps — Subscription Entities & Flow</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0f1117; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+
+#controls {
+  position: fixed; top: 10px; right: 10px; z-index: 100;
+  display: flex; gap: 6px; align-items: center;
+  background: rgba(15,17,23,0.95); padding: 6px 10px; border-radius: 8px;
+  border: 1px solid #333; font-size: 12px;
+}
+#controls button {
+  background: #1e2030; color: #ccc; border: 1px solid #444;
+  padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+}
+#controls button:hover { background: #2e3050; }
+#zoom-level { color: #888; min-width: 40px; text-align: center; }
+
+#title-bar {
+  position: fixed; top: 10px; left: 10px; z-index: 100;
+  font-size: 13px; font-weight: 600; color: #7c83ff;
+  background: rgba(15,17,23,0.95); padding: 6px 12px; border-radius: 8px;
+  border: 1px solid #333;
+}
+
+#tab-bar {
+  position: fixed; top: 44px; left: 10px; z-index: 100;
+  display: flex; gap: 4px;
+  background: rgba(15,17,23,0.95); padding: 4px 6px; border-radius: 8px;
+  border: 1px solid #333;
+}
+.tab {
+  padding: 5px 14px; border-radius: 4px; cursor: pointer;
+  font-size: 12px; color: #888; border: 1px solid transparent;
+}
+.tab:hover { color: #ccc; }
+.tab.active { color: #7c83ff; background: #1e2030; border-color: #444; }
+
+#canvas { width: 100vw; height: 100vh; overflow: hidden; cursor: grab; }
+#canvas.dragging { cursor: grabbing; }
+#diagram { width: 100%; height: 100%; display: block; }
+svg text { font-family: 'Segoe UI', system-ui, sans-serif; }
+</style>
+</head>
+<body>
+
+<div id="title-bar">Internet 100Mbps — Subscription Entities & Flow</div>
+
+<div id="tab-bar">
+  <div class="tab active" onclick="showView('entities')">Entities</div>
+  <div class="tab" onclick="showView('flow')">Purchase Flow</div>
+</div>
+
+<div id="controls">
+  <button onclick="zoomIn()">+</button>
+  <span id="zoom-level">100%</span>
+  <button onclick="zoomOut()">−</button>
+  <button onclick="resetView()">Reset</button>
+  <button onclick="fitToScreen()">Fit</button>
+  <span style="color:#555; margin-left:4px; font-size:11px">Ctrl+scroll=zoom · scroll=pan · drag=move</span>
+</div>
+
+<div id="canvas"><svg id="diagram"></svg></div>
+
+<script>
+const svgNS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('diagram');
+const canvas = document.getElementById('canvas');
+
+// ── helpers ──
+function el(tag, attrs = {}, parent = svg) {
+  const e = document.createElementNS(svgNS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
+}
+function txt(x, y, text, attrs = {}, parent = svg) {
+  const t = el('text', { x, y, ...attrs }, parent);
+  t.textContent = text;
+  return t;
+}
+
+// ── service box ──
+function serviceBox(x, y, w, h, label, subtitle, color, borderColor, textColor) {
+  const g = el('g');
+  el('rect', { x, y, width: w, height: h, rx: 10, fill: color, stroke: borderColor, 'stroke-width': 2, opacity: 0.75 }, g);
+  txt(x + 14, y + 24, label, { fill: textColor, 'font-size': 17, 'font-weight': 700 }, g);
+  txt(x + 14, y + 40, subtitle, { fill: textColor, 'font-size': 10, opacity: 0.6 }, g);
+  return g;
+}
+
+// ── entity card ──
+function entityCard(x, y, title, rows, opts = {}) {
+  const g = el('g');
+  const w = opts.width || 320;
+  const rowH = 19;
+  const hdrH = 26;
+  const h = hdrH + rows.length * rowH + 6;
+
+  el('rect', { x, y, width: w, height: h, rx: 5, fill: '#14161e', stroke: opts.borderColor || '#444', 'stroke-width': 1 }, g);
+  el('rect', { x, y, width: w, height: hdrH, rx: 5, fill: opts.headerBg || '#222436' }, g);
+  el('rect', { x, y: y + hdrH - 5, width: w, height: 5, fill: opts.headerBg || '#222436' }, g);
+  txt(x + 10, y + 18, title, { fill: '#fff', 'font-size': 12, 'font-weight': 600 }, g);
+
+  rows.forEach((r, i) => {
+    const ry = y + hdrH + i * rowH + 14;
+    const isKey = r.key;
+    txt(x + 10, ry, r.field, { fill: isKey ? '#ffdb4a' : r.fk ? '#8ab4f8' : '#bbb', 'font-size': 11 }, g);
+    if (r.value) txt(x + 140, ry, r.value, { fill: '#666', 'font-size': 10 }, g);
+  });
+
+  return { g, x, y, w, h, cx: x + w/2, cy: y + h/2 };
+}
+
+// ── arrow ──
+function arrow(x1, y1, x2, y2, opts = {}) {
+  const g = el('g');
+  const color = opts.color || '#555';
+  const dash = opts.dashed ? '6,4' : 'none';
+
+  // Line
+  el('line', { x1, y1, x2, y2, stroke: color, 'stroke-width': opts.thick ? 2 : 1.2, 'stroke-dasharray': dash }, g);
+
+  // Arrowhead
+  if (opts.arrow !== false) {
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const aLen = 10;
+    const p1x = x2 - aLen * Math.cos(angle - 0.35);
+    const p1y = y2 - aLen * Math.sin(angle - 0.35);
+    const p2x = x2 - aLen * Math.cos(angle + 0.35);
+    const p2y = y2 - aLen * Math.sin(angle + 0.35);
+    el('polygon', { points: `${x2},${y2} ${p1x},${p1y} ${p2x},${p2y}`, fill: color }, g);
+  }
+
+  // Label
+  if (opts.label) {
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    el('rect', { x: mx - 52, y: my - 9, width: 104, height: 16, rx: 3, fill: '#0f1117', opacity: 0.9 }, g);
+    txt(mx, my + 3, opts.label, { fill: opts.labelColor || '#888', 'font-size': 9, 'text-anchor': 'middle' }, g);
+  }
+  return g;
+}
+
+// ── flow step ──
+function flowStep(x, y, w, h, text, opts = {}) {
+  const g = el('g');
+  const fill = opts.fill || '#1e2030';
+  const stroke = opts.stroke || '#444';
+  if (opts.rounded) {
+    el('rect', { x, y, width: w, height: h, rx: h/2, fill, stroke, 'stroke-width': 1.5 }, g);
+  } else if (opts.diamond) {
+    const cx = x + w/2, cy = y + h/2;
+    el('polygon', { points: `${cx},${y} ${x+w},${cy} ${cx},${y+h} ${x},${cy}`, fill, stroke, 'stroke-width': 1.5 }, g);
+  } else {
+    el('rect', { x, y, width: w, height: h, rx: 6, fill, stroke, 'stroke-width': 1.5 }, g);
+  }
+  const lines = text.split('\n');
+  lines.forEach((line, i) => {
+    const ty = y + h/2 + (i - (lines.length-1)/2) * 14 + 4;
+    txt(x + w/2, ty, line, { fill: opts.textColor || '#ddd', 'font-size': opts.fontSize || 11, 'text-anchor': 'middle' }, g);
+  });
+  return { g, x, y, w, h, cx: x + w/2, cy: y + h/2, bottom: y + h, right: x + w, left: x, top: y };
+}
+
+// ═══════════════════════════════════════════════════════════
+// VIEW 1: ENTITIES
+// ═══════════════════════════════════════════════════════════
+function drawEntities() {
+  svg.innerHTML = '';
+
+  // ── Service boxes ──
+  serviceBox(30, 30, 700, 520, 'ODOO', 'Source of Truth — product definition, tax, accounting', '#1a3a5f', '#2a6aaf', '#6ab0ff');
+  serviceBox(780, 30, 520, 520, 'KILL BILL', 'Billing — subscription, invoice, payment', '#3d1f1f', '#af4a4a', '#ff7a7a');
+  serviceBox(30, 590, 700, 200, 'EVENT BRIDGE', 'Stateless — enriches KB events with Odoo data → Kafka', '#1f3d2a', '#4aaf5a', '#7aff8a');
+  serviceBox(780, 590, 520, 380, 'RTC-MANAGER', 'Service Delivery — what the customer actually gets', '#3d2d1f', '#af8a4a', '#ffbf6a');
+
+  // ── ODOO entities ──
+  const tmpl = entityCard(50, 80, 'product.template', [
+    { field: 'name', value: 'Internet 100Mbps' },
+    { field: 'x_kb_product_name', value: 'Internet-100Mbps', key: true },
+    { field: 'x_kb_category', value: 'BASE' },
+    { field: 'list_price', value: '1200.00 BDT' },
+  ], { headerBg: '#1a3a5f', borderColor: '#2a6aaf', width: 310 });
+
+  const variant = entityCard(50, 270, 'product.product (variant)', [
+    { field: 'x_kb_plan_name', value: 'internet-100mbps-monthly', key: true },
+    { field: 'x_kb_billing_period', value: 'MONTHLY' },
+    { field: 'x_package_items', value: '← NEW (see below)', key: true },
+  ], { headerBg: '#1a3a5f', borderColor: '#2a6aaf', width: 310 });
+
+  const taxRate = entityCard(400, 80, 'product.tax.rate', [
+    { field: 'VAT 15%', value: 'eff: 2024-07, gazette: SRO-190' },
+    { field: 'AIT 10%', value: 'eff: 2024-07, is_deduction: true' },
+    { field: 'get_applicable_taxes()', value: 'uses invoice date!' },
+  ], { headerBg: '#1a3a5f', borderColor: '#2a6aaf', width: 310 });
+
+  const acctMove = entityCard(400, 270, 'account.move (journal)', [
+    { field: 'x_kb_invoice_id', value: 'links to KB invoice', key: true },
+    { field: 'DR 1200 Receivable', value: '' },
+    { field: 'CR 1200 Revenue', value: 'Internet Services (4100)' },
+    { field: 'DR 180 Receivable', value: 'VAT on bill' },
+    { field: 'CR 180 VAT Payable', value: 'liability to NBR (2200)' },
+  ], { headerBg: '#1a3a5f', borderColor: '#2a6aaf', width: 310 });
+
+  // x_package_items callout
+  const pkgItems = entityCard(50, 430, 'x_package_items (JSON on product.product)', [
+    { field: '{ Bandwidth', value: 'qty:100, uom:MBPS, cat:1 }' },
+    { field: '{ Data Transfer', value: 'qty:unlimited, uom:GB, cat:2 }' },
+  ], { headerBg: '#0d2a1a', borderColor: '#4aaf5a', width: 660 });
+
+  // ── KILL BILL entities ──
+  const kbAcct = entityCard(800, 80, 'KB Account', [
+    { field: 'externalKey', value: 'XYZ-001 (= Odoo partner)', key: true },
+    { field: 'name', value: 'XYZ Corp' },
+    { field: 'currency', value: 'BDT' },
+  ], { headerBg: '#3d1f1f', borderColor: '#af4a4a', width: 240 });
+
+  const kbSub = entityCard(800, 240, 'KB Subscription', [
+    { field: 'planName', value: 'internet-100mbps-monthly', key: true },
+    { field: 'state', value: 'ACTIVE | BLOCKED | CANCELLED' },
+    { field: 'startDate', value: '2026-03-26' },
+    { field: 'billingPeriod', value: 'MONTHLY' },
+  ], { headerBg: '#3d1f1f', borderColor: '#af4a4a', width: 240 });
+
+  const kbInv = entityCard(800, 400, 'KB Invoice (auto-generated)', [
+    { field: 'amount', value: '1200 BDT — base only, no tax' },
+    { field: 'type', value: 'RECURRING (monthly)' },
+    { field: 'balance', value: '1200 (unpaid) → 0 (paid)' },
+  ], { headerBg: '#3d1f1f', borderColor: '#af4a4a', width: 240 });
+
+  // Plan box
+  const kbPlan = entityCard(1060, 240, 'KB Plan (in catalog XML)', [
+    { field: 'Plan A: recurring only', value: '1200 BDT/mo' },
+    { field: 'Plan B: OTC + recurring', value: '5000 + 1200/mo' },
+    { field: 'KB only knows price', value: 'not what to deliver' },
+  ], { headerBg: '#3d1f1f', borderColor: '#af4a4a', width: 230 });
+
+  // ── EVENT BRIDGE ──
+  const bridge = entityCard(50, 640, 'Kafka: kb.subscription.created', [
+    { field: 'planName', value: 'internet-100mbps-monthly', key: true },
+    { field: 'externalKey', value: 'XYZ-001', key: true },
+    { field: 'packageItems', value: '[bandwidth:100, data:unlimited]' },
+    { field: 'vatRate / aitRate', value: '15.0 / 10.0' },
+  ], { headerBg: '#1f3d2a', borderColor: '#4aaf5a', width: 660 });
+
+  // ── RTC-MANAGER entities ──
+  const rtcPurchase = entityCard(800, 640, 'PackagePurchase', [
+    { field: 'idPartner', value: '→ XYZ Corp (from externalKey)', fk: true },
+    { field: 'status', value: 'ACTIVE' },
+    { field: 'price / vat / ait', value: '1200 / 180 / 120' },
+    { field: 'autoRenewalStatus', value: 'true (monthly)' },
+    { field: 'expireDate', value: '2026-04-26' },
+  ], { headerBg: '#3d2d1f', borderColor: '#af8a4a', width: 240 });
+
+  const rtcAcct1 = entityCard(800, 840, 'PackageAccount #1', [
+    { field: 'name', value: 'Bandwidth' },
+    { field: 'balanceAfter', value: '100' },
+    { field: 'uom', value: 'MBPS' },
+  ], { headerBg: '#3d2d1f', borderColor: '#af8a4a', width: 220 });
+
+  const rtcAcct2 = entityCard(1060, 840, 'PackageAccount #2', [
+    { field: 'name', value: 'Data Transfer' },
+    { field: 'balanceAfter', value: '999999999 (unlimited)' },
+    { field: 'uom', value: 'GB' },
+  ], { headerBg: '#3d2d1f', borderColor: '#af8a4a', width: 230 });
+
+  // ── Relationships ──
+  // Odoo internal
+  arrow(tmpl.cx, tmpl.y + tmpl.h, variant.cx, variant.y, { label: '1:N variants' });
+  arrow(variant.x + variant.w, variant.cy, pkgItems.x + pkgItems.w, pkgItems.y, { label: 'defines', color: '#4aaf5a' });
+
+  // Cross-system: Odoo ↔ KB
+  arrow(tmpl.x + tmpl.w, tmpl.cy, kbAcct.x, kbAcct.cy + 10, { dashed: true, color: '#ffdb4a', label: 'externalKey', labelColor: '#ffdb4a' });
+  arrow(variant.x + variant.w, variant.cy, kbSub.x, kbSub.cy, { dashed: true, color: '#ffdb4a', label: 'x_kb_plan_name', labelColor: '#ffdb4a' });
+  arrow(acctMove.x + acctMove.w, acctMove.cy, kbInv.x, kbInv.cy, { dashed: true, color: '#ffdb4a', label: 'x_kb_invoice_id', labelColor: '#ffdb4a' });
+
+  // KB internal
+  arrow(kbAcct.cx, kbAcct.y + kbAcct.h, kbSub.cx, kbSub.y, { label: '1:N' });
+  arrow(kbSub.cx, kbSub.y + kbSub.h, kbInv.cx, kbInv.y, { label: 'generates' });
+  arrow(kbSub.x + kbSub.w, kbSub.cy, kbPlan.x, kbPlan.cy, { label: 'uses plan' });
+
+  // KB → Event Bridge
+  arrow(kbSub.cx, kbSub.y + kbSub.h + 30, bridge.x + bridge.w, bridge.cy, { color: '#4aaf5a', label: 'webhook event', thick: true });
+
+  // Event Bridge → RTC
+  arrow(bridge.x + bridge.w, bridge.cy, rtcPurchase.x, rtcPurchase.cy, { color: '#af8a4a', label: 'Kafka consumer', thick: true });
+
+  // RTC internal
+  arrow(rtcPurchase.cx - 30, rtcPurchase.y + rtcPurchase.h, rtcAcct1.cx, rtcAcct1.y, { label: '1:N accounts' });
+  arrow(rtcPurchase.cx + 60, rtcPurchase.y + rtcPurchase.h, rtcAcct2.cx, rtcAcct2.y, {});
+
+  // Event Bridge → Odoo accounting
+  arrow(bridge.cx, bridge.y, acctMove.cx, acctMove.y + acctMove.h, { color: '#6ab0ff', label: 'kb.invoice.created', thick: true });
+
+  return { w: 1340, h: 1000 };
+}
+
+// ═══════════════════════════════════════════════════════════
+// VIEW 2: PURCHASE FLOW
+// ═══════════════════════════════════════════════════════════
+function drawFlow() {
+  svg.innerHTML = '';
+
+  const colW = 260, colGap = 30;
+  const cols = [
+    { x: 40,  label: 'UI / API', color: '#7c83ff' },
+    { x: 340, label: 'KILL BILL', color: '#ff7a7a' },
+    { x: 640, label: 'EVENT BRIDGE', color: '#7aff8a' },
+    { x: 940, label: 'ODOO', color: '#6ab0ff' },
+    { x: 1240, label: 'RTC-MANAGER', color: '#ffbf6a' },
+  ];
+
+  // Column headers
+  cols.forEach(c => {
+    el('rect', { x: c.x, y: 10, width: colW, height: 30, rx: 6, fill: '#1a1c28', stroke: '#333', 'stroke-width': 1 });
+    txt(c.x + colW/2, 30, c.label, { fill: c.color, 'font-size': 13, 'font-weight': 700, 'text-anchor': 'middle' });
+  });
+
+  // Column lanes
+  cols.forEach(c => {
+    el('rect', { x: c.x, y: 44, width: colW, height: 960, rx: 0, fill: '#12141a', stroke: '#222', 'stroke-width': 1 });
+  });
+
+  let y = 60;
+  const gap = 16;
+  const stepW = 230;
+  const stepH = 50;
+
+  // ── Step 1: Select Customer ──
+  const s1 = flowStep(cols[0].x + 15, y, stepW, stepH, 'Select Customer\n(Odoo res.partner)', { stroke: '#7c83ff', fill: '#1a2040' });
+  y += stepH + gap;
+
+  // ── Step 2: Ensure KB Account ──
+  const s2 = flowStep(cols[0].x + 15, y, stepW, stepH, 'Ensure KB Account\n(create if not exists)', { stroke: '#7c83ff', fill: '#1a2040' });
+  arrow(s2.right, s2.cy, cols[1].x + 15, s2.cy, { color: '#ff7a7a', label: 'POST /accounts' });
+  const s2b = flowStep(cols[1].x + 15, y, stepW, stepH, 'Account created\nexternalKey: XYZ-001', { stroke: '#ff7a7a', fill: '#2a1515' });
+  y += stepH + gap;
+
+  // ── Step 3: Select Plan ──
+  const s3 = flowStep(cols[0].x + 15, y, stepW, stepH, 'Choose Plan\nA: recurring  B: OTC+recurring', { stroke: '#7c83ff', fill: '#1a2040' });
+  y += stepH + gap;
+
+  // ── Step 4: Confirm Purchase ──
+  const s4 = flowStep(cols[0].x + 15, y, stepW, 60, 'Confirm Purchase\nSubtotal: 1,200\nVAT 15%: 180 → Total: 1,380', { stroke: '#7c83ff', fill: '#1a2040' });
+  y += 60 + gap;
+
+  // ── Step 5: Create Subscription ──
+  const s5 = flowStep(cols[0].x + 15, y, stepW, stepH, 'POST /subscriptions\nplanName: internet-100mbps-monthly', { stroke: '#7c83ff', fill: '#1a2040' });
+  arrow(s5.right, s5.cy, cols[1].x + 15, s5.cy, { color: '#ff7a7a' });
+  const s5b = flowStep(cols[1].x + 15, y, stepW, stepH, 'Subscription ACTIVE\nInvoice #1: 1,200 BDT', { stroke: '#ff7a7a', fill: '#2a1515' });
+  y += stepH + gap;
+
+  // ── Step 6: KB fires webhook ──
+  const s6 = flowStep(cols[1].x + 15, y, stepW, stepH, 'Fires webhook:\nSUBSCRIPTION_CREATION', { stroke: '#ff7a7a', fill: '#2a1515' });
+  arrow(s6.right, s6.cy, cols[2].x + 15, s6.cy, { color: '#4aaf5a', thick: true });
+  const s6b = flowStep(cols[2].x + 15, y, stepW, stepH, 'Receives event\nLooks up planName in Odoo', { stroke: '#4aaf5a', fill: '#152a1a' });
+  y += stepH + gap;
+
+  // ── Step 7: Enrich from Odoo ──
+  const s7 = flowStep(cols[2].x + 15, y, stepW, 60, 'Enriches:\n→ x_package_items\n→ VAT 15%, AIT 10%', { stroke: '#4aaf5a', fill: '#152a1a' });
+  arrow(s7.right - stepW - 30, s7.cy, cols[3].x + 15 + stepW, s7.cy, { color: '#6ab0ff', label: 'lookup product + tax' });
+  const s7b = flowStep(cols[3].x + 15, y, stepW, 60, 'Returns:\npackageItems: [{100 MBPS},\n{unlimited GB}], VAT 15%', { stroke: '#6ab0ff', fill: '#15203a' });
+  y += 60 + gap;
+
+  // ── Step 8: Publish to Kafka ──
+  const s8 = flowStep(cols[2].x + 15, y, stepW, stepH, 'Publish to Kafka:\nkb.subscription.created', { stroke: '#4aaf5a', fill: '#152a1a' });
+  y += stepH + gap;
+
+  // ── Step 9: RTC consumes ──
+  arrow(s8.cx, s8.bottom, cols[4].x + 15 + stepW/2, y, { color: '#af8a4a', thick: true, label: 'Kafka consumer' });
+  const s9 = flowStep(cols[4].x + 15, y, stepW, 70, 'Creates:\nPackagePurchase (1200+180+120)\nPackageAccount: 100 MBPS\nPackageAccount: unlimited GB', { stroke: '#af8a4a', fill: '#2a2015', textColor: '#ffbf6a' });
+  y += 70 + gap;
+
+  // ── Step 10: Invoice event → Odoo ──
+  const s10label = flowStep(cols[1].x + 15, y, stepW, stepH, 'Fires webhook:\nINVOICE_CREATION', { stroke: '#ff7a7a', fill: '#2a1515' });
+  arrow(s10label.right, s10label.cy, cols[2].x + 15, s10label.cy, { color: '#4aaf5a' });
+  const s10b = flowStep(cols[2].x + 15, y, stepW, stepH, 'Publish to Kafka:\nkb.invoice.created', { stroke: '#4aaf5a', fill: '#152a1a' });
+  arrow(s10b.right, s10b.cy, cols[3].x + 15, s10b.cy, { color: '#6ab0ff', thick: true });
+  const s10c = flowStep(cols[3].x + 15, y, stepW, stepH, 'account.move created\nDR AR, CR Rev + CR VAT', { stroke: '#6ab0ff', fill: '#15203a' });
+  y += stepH + gap;
+
+  // ── Step 11: Payment ──
+  const s11 = flowStep(cols[0].x + 15, y, stepW, stepH, 'Customer pays 1,380 BDT\n(bKash / Bank / Cash)', { stroke: '#7c83ff', fill: '#1a2040' });
+  arrow(s11.right, s11.cy, cols[1].x + 15, s11.cy, { color: '#ff7a7a' });
+  const s11b = flowStep(cols[1].x + 15, y, stepW, stepH, 'Payment recorded\nInvoice balance → 0', { stroke: '#ff7a7a', fill: '#2a1515' });
+  arrow(s11b.right, s11b.cy, cols[2].x + 15, s11b.cy, { color: '#4aaf5a' });
+  const s11c = flowStep(cols[2].x + 15, y, stepW, stepH, 'kb.payment.success\n→ Kafka', { stroke: '#4aaf5a', fill: '#152a1a' });
+  arrow(s11c.right, s11c.cy, cols[3].x + 15, s11c.cy, { color: '#6ab0ff' });
+  const s11d = flowStep(cols[3].x + 15, y, stepW, stepH, 'account.payment\nDR Bank, CR AR', { stroke: '#6ab0ff', fill: '#15203a' });
+  y += stepH + gap;
+
+  // ── Step 12: Monthly renewal ──
+  txt(cols[1].x + 15 + stepW/2, y + 10, '─── Day 30: Auto-renewal ───', { fill: '#666', 'font-size': 11, 'text-anchor': 'middle' });
+  y += 24;
+  const s12 = flowStep(cols[1].x + 15, y, stepW, stepH, 'Invoice #2: 1,200 BDT\n(same cycle repeats)', { stroke: '#ff7a7a', fill: '#2a1515' });
+
+  return { w: 1540, h: y + stepH + 40 };
+}
+
+// ═══════════════════════════════════════════════════════════
+// VIEW SWITCHING + PAN/ZOOM (viewBox based)
+// ═══════════════════════════════════════════════════════════
+
+let contentW, contentH, zoomLevel;
+let vb = { x: 0, y: 0, w: 0, h: 0 };
+let isDragging = false, dragStartX, dragStartY, vbStartX, vbStartY;
+let currentView = 'entities';
+
+function showView(view) {
+  currentView = view;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[onclick="showView('${view}')"]`).classList.add('active');
+
+  let bounds;
+  if (view === 'entities') bounds = drawEntities();
+  else bounds = drawFlow();
+
+  contentW = bounds.w;
+  contentH = bounds.h;
+  fitToScreen();
+}
+
+function applyViewBox() {
+  const aspect = canvas.clientWidth / canvas.clientHeight;
+  vb.w = contentW / zoomLevel;
+  vb.h = vb.w / aspect;
+  svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  document.getElementById('zoom-level').textContent = Math.round(zoomLevel * 100) + '%';
+}
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  if (!e.ctrlKey && !e.metaKey) {
+    const s = 1.5;
+    vb.x += e.deltaX * (vb.w / canvas.clientWidth) * s;
+    vb.y += e.deltaY * (vb.h / canvas.clientHeight) * s;
+    applyViewBox(); return;
+  }
+  const f = e.deltaY > 0 ? 0.88 : 1.12;
+  const nz = zoomLevel * f;
+  if (nz < 0.05 || nz > 20) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = ((e.clientX - rect.left) / rect.width) * vb.w + vb.x;
+  const my = ((e.clientY - rect.top) / rect.height) * vb.h + vb.y;
+  zoomLevel = nz;
+  const aspect = canvas.clientWidth / canvas.clientHeight;
+  const nw = contentW / zoomLevel, nh = nw / aspect;
+  vb.x = mx - ((e.clientX - rect.left) / rect.width) * nw;
+  vb.y = my - ((e.clientY - rect.top) / rect.height) * nh;
+  vb.w = nw; vb.h = nh;
+  applyViewBox();
+}, { passive: false });
+
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return;
+  isDragging = true; dragStartX = e.clientX; dragStartY = e.clientY;
+  vbStartX = vb.x; vbStartY = vb.y; canvas.classList.add('dragging');
+});
+window.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  vb.x = vbStartX - (e.clientX - dragStartX) * (vb.w / canvas.clientWidth);
+  vb.y = vbStartY - (e.clientY - dragStartY) * (vb.h / canvas.clientHeight);
+  applyViewBox();
+});
+window.addEventListener('mouseup', () => { isDragging = false; canvas.classList.remove('dragging'); });
+window.addEventListener('resize', () => applyViewBox());
+
+window.zoomIn = () => { const cx = vb.x+vb.w/2, cy = vb.y+vb.h/2; zoomLevel = Math.min(20, zoomLevel*1.25); const a = canvas.clientWidth/canvas.clientHeight; vb.w = contentW/zoomLevel; vb.h = vb.w/a; vb.x = cx-vb.w/2; vb.y = cy-vb.h/2; applyViewBox(); };
+window.zoomOut = () => { const cx = vb.x+vb.w/2, cy = vb.y+vb.h/2; zoomLevel = Math.max(0.05, zoomLevel*0.8); const a = canvas.clientWidth/canvas.clientHeight; vb.w = contentW/zoomLevel; vb.h = vb.w/a; vb.x = cx-vb.w/2; vb.y = cy-vb.h/2; applyViewBox(); };
+window.resetView = () => { zoomLevel = 1; vb.x = 0; vb.y = 0; applyViewBox(); };
+window.fitToScreen = () => {
+  const a = canvas.clientWidth / canvas.clientHeight;
+  const ca = contentW / contentH;
+  zoomLevel = ca > a ? 0.95 : (contentW / (contentH * a)) * 0.95;
+  vb.w = contentW / zoomLevel; vb.h = vb.w / a;
+  vb.x = (contentW - vb.w) / 2; vb.y = (contentH - vb.h) / 2;
+  applyViewBox();
+};
+
+showView('entities');
+</script>
+</body>
+</html>

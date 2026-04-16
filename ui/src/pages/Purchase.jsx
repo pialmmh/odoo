@@ -190,6 +190,14 @@ export default function Purchase() {
     }
   };
 
+  if (!activeTenant) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Alert severity="warning">Please select a tenant from the top bar to continue.</Alert>
+      </Box>
+    );
+  }
+
   if (loading) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>;
   }

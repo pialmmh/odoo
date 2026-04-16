@@ -169,6 +169,12 @@ else
         wait_for 9081 "/api/odoo/health" 10 "APISIX"
     fi
 fi
+# Always ensure APISIX routes are configured (etcd loses data on restart)
+ROUTE_COUNT=$(curl -s http://localhost:9180/apisix/admin/routes -H "X-API-KEY: telcobright-apisix-admin-key" 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total',0))" 2>/dev/null || echo "0")
+if [ "$ROUTE_COUNT" = "0" ] && [ "$STATUS_ONLY" != "true" ]; then
+    warn "APISIX routes missing (etcd reset) — re-applying..."
+    "$SCRIPT_DIR/apisix/setup-routes.sh" > /dev/null 2>&1 && ok "APISIX routes restored" || fail "APISIX route setup failed"
+fi
 
 # ── 8. Kill Bill (port 18080) ──
 echo "Kill Bill (:18080)"

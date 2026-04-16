@@ -1,0 +1,23 @@
+.toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  top: 2px;
+  right: 2px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+.toggle.off       { background: var(--color-border-strong); }
+.toggle.off::after { right: auto; left: 2px; }

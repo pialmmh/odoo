@@ -44,5 +44,15 @@ curl -s -X PUT "$ADMIN/routes/4" -H "X-API-KEY: $KEY" -H "Content-Type: applicat
   -d "{\"name\":\"api-kb\",\"uri\":\"/api/kb/*\",\"methods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\",\"OPTIONS\"],\"upstream_id\":\"1\",\"plugins\":{\"cors\":$CORS,\"openid-connect\":$OIDC}}" > /dev/null
 echo "  ✓ Route: /api/kb/* (Keycloak JWT)"
 
+# Public: CRM health
+curl -s -X PUT "$ADMIN/routes/6" -H "X-API-KEY: $KEY" -H "Content-Type: application/json" \
+  -d "{\"name\":\"api-crm-health\",\"uri\":\"/api/crm/health\",\"methods\":[\"GET\"],\"upstream_id\":\"1\",\"priority\":10,\"plugins\":{\"cors\":$CORS}}" > /dev/null
+echo "  ✓ Route: /api/crm/health (public)"
+
+# Protected: EspoCRM APIs
+curl -s -X PUT "$ADMIN/routes/7" -H "X-API-KEY: $KEY" -H "Content-Type: application/json" \
+  -d "{\"name\":\"api-crm\",\"uri\":\"/api/crm/*\",\"methods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\",\"OPTIONS\"],\"upstream_id\":\"1\",\"priority\":0,\"plugins\":{\"cors\":$CORS,\"openid-connect\":$OIDC}}" > /dev/null
+echo "  ✓ Route: /api/crm/* (Keycloak JWT)"
+
 echo ""
 echo "Done. Verify: curl http://localhost:9081/api/odoo/health"

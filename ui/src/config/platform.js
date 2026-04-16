@@ -47,6 +47,12 @@ const config = {
     },
   },
 
+  // ── Feature flags ──
+  // Toggle optional integrations without code changes.
+  features: {
+    crm: import.meta.env.VITE_CRM_ENABLED === 'true',
+  },
+
   // ── Services (for launch-all.sh / status page) ──
   services: {
     odoo: { port: 7169 },
@@ -83,5 +89,8 @@ export function tenantPath(tenantSlug, path) {
   }
   return path; // subdomain mode — no prefix needed
 }
+
+/** Convenience re-export for feature flags. */
+export const FEATURES = config.features;
 
 export default config;

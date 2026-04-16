@@ -24,6 +24,10 @@ export const PERMISSIONS = {
   BILLING_VIEW: 'billing:view',
   BILLING_MANAGE: 'billing:manage',
 
+  // CRM
+  CRM_VIEW: 'crm:view',
+  CRM_EDIT: 'crm:edit',
+
   // Device Catalog
   CATALOG_VIEW: 'catalog:view',
   CATALOG_MANAGE: 'catalog:manage',
@@ -46,6 +50,8 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.CATALOG_VIEW,
     PERMISSIONS.ARTIFACT_VIEW,
     PERMISSIONS.SETTINGS_VIEW,
+    PERMISSIONS.CRM_VIEW,
+    PERMISSIONS.CRM_EDIT,
   ],
 
   operator: [
@@ -67,6 +73,7 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.BILLING_VIEW,
     PERMISSIONS.CATALOG_VIEW,
     PERMISSIONS.ARTIFACT_VIEW,
+    PERMISSIONS.CRM_VIEW,
   ],
 };
 
@@ -81,12 +88,13 @@ export const ROUTE_PERMISSIONS = {
   '/*/subscriptions':   [PERMISSIONS.BILLING_VIEW],
   '/*/invoices':        [PERMISSIONS.BILLING_VIEW],
   '/*/payments':        [PERMISSIONS.BILLING_VIEW],
-  '/*/catalog':         [PERMISSIONS.BILLING_VIEW],
   '/*/products':        [PERMISSIONS.BILLING_VIEW],
   '/*/pricing':         [PERMISSIONS.BILLING_VIEW],
   '/*/rate-history':    [PERMISSIONS.BILLING_VIEW],
   '/*/reports/ar':      [PERMISSIONS.BILLING_VIEW],
   '/*/artifacts':       [PERMISSIONS.ARTIFACT_VIEW],
+  '/*/crm':             [PERMISSIONS.CRM_VIEW],
+  '/*/crm/*':           [PERMISSIONS.CRM_VIEW],
   '/*/settings':        [PERMISSIONS.SETTINGS_VIEW],
   '/*/tenants':         [PERMISSIONS.USER_MANAGE],
 };
@@ -98,7 +106,6 @@ export const MENU_PERMISSIONS = {
   'Subscriptions':   [PERMISSIONS.BILLING_VIEW],
   'Invoices':        [PERMISSIONS.BILLING_VIEW],
   'Payments':        [PERMISSIONS.BILLING_VIEW],
-  'Catalog':         [PERMISSIONS.BILLING_VIEW],
   'Products':        [PERMISSIONS.BILLING_VIEW],
   'Pricing':         [PERMISSIONS.BILLING_VIEW],
   'Rate History':    [PERMISSIONS.BILLING_VIEW],
@@ -108,6 +115,8 @@ export const MENU_PERMISSIONS = {
   'Device Catalog':  [PERMISSIONS.CATALOG_VIEW],
   'SSH':             [PERMISSIONS.SSH_VIEW],
   'Artifacts':       [PERMISSIONS.ARTIFACT_VIEW],
+  'CRM':             [PERMISSIONS.CRM_VIEW],
+  'Leads':           [PERMISSIONS.CRM_VIEW],
   'RBAC':            [PERMISSIONS.USER_MANAGE],
   'Settings':        [PERMISSIONS.SETTINGS_VIEW],
   'Tenants':         [PERMISSIONS.USER_MANAGE],
@@ -129,6 +138,7 @@ export const ACTION_PERMISSIONS = {
   'catalog.delete':       [PERMISSIONS.CATALOG_MANAGE],
   'billing.create':       [PERMISSIONS.BILLING_MANAGE],
   'billing.edit':         [PERMISSIONS.BILLING_MANAGE],
+  'crm.edit':             [PERMISSIONS.CRM_EDIT],
 };
 
 // ── Helper functions ──

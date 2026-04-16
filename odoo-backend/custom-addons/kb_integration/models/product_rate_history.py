@@ -116,6 +116,46 @@ class ProductRateHistory(models.Model):
         return rate if rate else None
 
     @api.model
+    def get_current_rates_bulk(self, variant_ids=None, tmpl_ids=None, tier='standard'):
+        """Bulk-fetch current active dated rates keyed by variant/template id.
+
+        Returns { 'variants': {id: price}, 'templates': {id: price} }.
+        Only includes products that have a currently-active rate_history row.
+        Callers should fall back to list_price when a key is missing.
+        """
+        today = date.today()
+        base = [
+            ('effective_date', '<=', today),
+            ('pricelist_tier', '=', tier),
+            '|', ('end_date', '=', False), ('end_date', '>=', today),
+        ]
+        variant_map = {}
+        tmpl_map = {}
+
+        if variant_ids:
+            rows = self.search(
+                base + [('product_id', 'in', list(variant_ids))],
+                order='effective_date desc')
+            for r in rows:
+                vid = r.product_id.id
+                key = str(vid) if vid else None
+                if key and key not in variant_map:
+                    variant_map[key] = r.price
+
+        if tmpl_ids:
+            rows = self.search(
+                base + [('product_tmpl_id', 'in', list(tmpl_ids)),
+                        ('product_id', '=', False)],
+                order='effective_date desc')
+            for r in rows:
+                tid = r.product_tmpl_id.id
+                key = str(tid) if tid else None
+                if key and key not in tmpl_map:
+                    tmpl_map[key] = r.price
+
+        return {'variants': variant_map, 'templates': tmpl_map}
+
+    @api.model
     def get_price_history(self, product_tmpl_id=None, product_id=None, tier=None):
         """Get full price history for a product, newest first."""
         domain = []

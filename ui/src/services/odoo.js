@@ -70,6 +70,7 @@ export async function getProductVariants(domain = []) {
       'id', 'name', 'lst_price', 'product_tmpl_id', 'active',
       'product_template_attribute_value_ids',
       'x_kb_plan_name', 'x_kb_billing_period', 'x_kb_has_trial', 'x_kb_trial_days',
+      'x_package_items',
     ],
   });
 }
@@ -114,6 +115,16 @@ export async function getPricelistItems(pricelistId) {
         'min_quantity',
       ],
     });
+}
+
+// ── Dated Pricing (rate_history) ──
+
+export async function getCurrentRatesBulk(variantIds = [], tmplIds = [], tier = 'standard') {
+  return call('product.rate.history', 'get_current_rates_bulk', [], {
+    variant_ids: variantIds,
+    tmpl_ids: tmplIds,
+    tier,
+  });
 }
 
 // ── Sync Log ──
@@ -240,6 +251,15 @@ export async function getDocumentBinary(docId) {
 
 export async function updateProductTemplate(id, vals) {
   return call('product.template', 'write', [[id], vals]);
+}
+
+export async function createProductTemplate(vals) {
+  const id = await call('product.template', 'create', [vals]);
+  return id;
+}
+
+export async function deleteProductTemplate(id) {
+  return call('product.template', 'unlink', [[id]]);
 }
 
 export async function updateProductVariant(id, vals) {

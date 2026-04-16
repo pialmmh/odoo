@@ -14,6 +14,7 @@ import {
 } from '@mui/icons-material';
 import {
   getRateHistory, getProductTemplates, createRateEntry, updateRateEntry,
+  getProductVariantsByTemplate, getAttributeValues,
 } from '../services/odoo';
 
 const TIERS = [
@@ -28,16 +29,27 @@ function getTierStyle(tier) {
   return TIERS.find(t => t.value === tier) || TIERS[4];
 }
 
+// Build a human-readable label for a variant: "10 Mbps · Monthly" or fall back to variant name
+function formatVariantLabel(variant) {
+  const attrs = (variant._attrs || []).map(a => a.name).filter(Boolean);
+  if (attrs.length > 0) return attrs.join(' · ');
+  // Strip the template name prefix from "DIA (10 Mbps, Monthly)" → "(10 Mbps, Monthly)"
+  return variant.name || '';
+}
+
 // ── Add/Edit Rate Modal ──
 function RateModal({ open, onClose, rate, products, onSave }) {
   const [tab, setTab] = useState(0);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
+  const [variants, setVariants] = useState([]);
+  const [loadingVariants, setLoadingVariants] = useState(false);
 
   useEffect(() => {
     if (rate) {
       setForm({
         product_tmpl_id: rate.product_tmpl_id?.[0] || '',
+        product_id: rate.product_id?.[0] || '',
         price: rate.price || 0,
         pricelist_tier: rate.pricelist_tier || 'standard',
         effective_date: rate.effective_date || new Date().toISOString().split('T')[0],
@@ -49,6 +61,7 @@ function RateModal({ open, onClose, rate, products, onSave }) {
     } else {
       setForm({
         product_tmpl_id: '',
+        product_id: '',
         price: 0,
         pricelist_tier: 'standard',
         effective_date: new Date().toISOString().split('T')[0],
@@ -61,6 +74,35 @@ function RateModal({ open, onClose, rate, products, onSave }) {
     setTab(0);
   }, [rate, open]);
 
+  // Load variants (with attribute names) whenever the selected template changes
+  useEffect(() => {
+    if (!form.product_tmpl_id) {
+      setVariants([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setLoadingVariants(true);
+      try {
+        const vars = await getProductVariantsByTemplate(form.product_tmpl_id);
+        const allAttrIds = vars.flatMap(v => v.product_template_attribute_value_ids || []);
+        const uniqueIds = [...new Set(allAttrIds)];
+        const attrVals = uniqueIds.length > 0 ? await getAttributeValues(uniqueIds) : [];
+        const attrMap = Object.fromEntries(attrVals.map(v => [v.id, v]));
+        const enriched = vars.map(v => ({
+          ...v,
+          _attrs: (v.product_template_attribute_value_ids || []).map(id => attrMap[id]).filter(Boolean),
+        }));
+        if (!cancelled) setVariants(enriched);
+      } catch (e) {
+        console.error('Failed to load variants', e);
+        if (!cancelled) setVariants([]);
+      }
+      if (!cancelled) setLoadingVariants(false);
+    })();
+    return () => { cancelled = true; };
+  }, [form.product_tmpl_id]);
+
   const handleSave = async () => {
     if (!form.product_tmpl_id || !form.price) {
       alert('Product and price are required');
@@ -70,6 +112,7 @@ function RateModal({ open, onClose, rate, products, onSave }) {
     try {
       const vals = {
         product_tmpl_id: form.product_tmpl_id,
+        product_id: form.product_id || false,
         price: parseFloat(form.price),
         pricelist_tier: form.pricelist_tier,
         effective_date: form.effective_date,
@@ -114,9 +157,40 @@ function RateModal({ open, onClose, rate, products, onSave }) {
               <FormControl fullWidth size="small">
                 <InputLabel>Product</InputLabel>
                 <Select value={form.product_tmpl_id} label="Product"
-                  onChange={e => setForm(f => ({ ...f, product_tmpl_id: e.target.value }))}>
+                  onChange={e => setForm(f => ({ ...f, product_tmpl_id: e.target.value, product_id: '' }))}>
                   {products.map(p => (
                     <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth size="small" disabled={!form.product_tmpl_id || loadingVariants}>
+                <InputLabel>Variant {variants.length > 1 ? '(required — pick one)' : '(optional)'}</InputLabel>
+                <Select
+                  value={form.product_id || ''}
+                  label={`Variant ${variants.length > 1 ? '(required — pick one)' : '(optional)'}`}
+                  onChange={e => setForm(f => ({ ...f, product_id: e.target.value }))}
+                  renderValue={(selected) => {
+                    if (!selected) return <em>All variants (template-level)</em>;
+                    const v = variants.find(x => x.id === selected);
+                    return v ? formatVariantLabel(v) : `#${selected}`;
+                  }}
+                >
+                  <MenuItem value=""><em>All variants (template-level)</em></MenuItem>
+                  {variants.map(v => (
+                    <MenuItem key={v.id} value={v.id}>
+                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', alignItems: 'center' }}>
+                        {v._attrs && v._attrs.length > 0 ? (
+                          v._attrs.map(a => (
+                            <Chip key={a.id} label={a.name} size="small" variant="outlined"
+                              sx={{ fontSize: 11, height: 20 }} />
+                          ))
+                        ) : (
+                          <Typography variant="body2">{v.name}</Typography>
+                        )}
+                      </Box>
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -214,10 +288,12 @@ export default function RateHistory() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const filtered = rates.filter(r => {
+    const q = search.toLowerCase();
     const matchSearch = !search ||
-      (r.variant_display || '').toLowerCase().includes(search.toLowerCase()) ||
-      (r.product_tmpl_id?.[1] || '').toLowerCase().includes(search.toLowerCase()) ||
-      (r.reason || '').toLowerCase().includes(search.toLowerCase());
+      (r.variant_display || '').toLowerCase().includes(q) ||
+      (r.product_tmpl_id?.[1] || '').toLowerCase().includes(q) ||
+      (r.product_id?.[1] || '').toLowerCase().includes(q) ||
+      (r.reason || '').toLowerCase().includes(q);
     const matchTier = tierFilter === 'all' || r.pricelist_tier === tierFilter;
     const matchActive = activeFilter === 'all' ||
       (activeFilter === 'active' && r.is_active) ||
@@ -307,11 +383,22 @@ export default function RateHistory() {
                       <TableRow key={rate.id} hover>
                         <TableCell>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {rate.product_tmpl_id?.[1]}
+                            {rate.product_tmpl_id?.[1] || '-'}
                           </Typography>
-                          {rate.variant_display && rate.variant_display !== rate.product_tmpl_id?.[1] && (
-                            <Typography variant="caption" color="text.secondary" component="div">
-                              {rate.variant_display}
+                          {rate.product_id && rate.product_id[1] ? (
+                            <Typography variant="caption" color="text.secondary" component="div"
+                              sx={{ fontStyle: 'italic' }}>
+                              {/* Show the variant portion — Odoo variant names look like "Template (Attr1, Attr2)" */}
+                              {(() => {
+                                const name = rate.product_id[1];
+                                const match = name.match(/\(([^)]+)\)/);
+                                return match ? match[1] : name;
+                              })()}
+                            </Typography>
+                          ) : (
+                            <Typography variant="caption" color="text.disabled" component="div"
+                              sx={{ fontStyle: 'italic' }}>
+                              all variants
                             </Typography>
                           )}
                         </TableCell>

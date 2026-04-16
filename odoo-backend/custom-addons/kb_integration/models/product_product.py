@@ -24,6 +24,12 @@ class ProductProduct(models.Model):
         string='Trial Days', default=0,
         help='Trial duration in days')
 
+    x_package_items = fields.Text(
+        string='Package Items (JSON)',
+        help='Entitlement template. JSON array of items this variant delivers when a subscription is created. '
+             'Example: [{"type":"bandwidth","value":100,"unit":"MBPS"},{"type":"data","value":"unlimited","unit":"GB"}]. '
+             'Consumed by the event bridge to provision PackageAccount entitlements.')
+
     def write(self, vals):
         res = super().write(vals)
         if any(f in vals for f in ('x_kb_plan_name', 'x_kb_billing_period', 'x_kb_has_trial',

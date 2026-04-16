@@ -13,11 +13,99 @@ import {
 import {
   getProductTemplates, getProductCategories, getProductVariantsByTemplate,
   getAttributeValues, updateProductTemplate, updateProductVariant,
+  createProductTemplate, deleteProductTemplate,
 } from '../services/odoo';
 
 // ── Tab Panel ──
 function TabPanel({ children, value, index }) {
   return value === index ? <Box sx={{ pt: 2 }}>{children}</Box> : null;
+}
+
+// ── New Product Dialog ──
+function NewProductDialog({ open, onClose, categories, onCreated }) {
+  const [form, setForm] = useState({ name: '', list_price: 0, categ_id: '', description_sale: '' });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        name: '', list_price: 0,
+        categ_id: categories[0]?.id || '',
+        description_sale: '',
+      });
+    }
+  }, [open, categories]);
+
+  const handleCreate = async () => {
+    if (!form.name.trim()) {
+      alert('Product name is required');
+      return;
+    }
+    if (!form.categ_id) {
+      alert('Category is required');
+      return;
+    }
+    setSaving(true);
+    try {
+      await createProductTemplate({
+        name: form.name.trim(),
+        list_price: parseFloat(form.list_price) || 0,
+        categ_id: form.categ_id,
+        description_sale: form.description_sale,
+        sale_ok: true,
+        type: 'service',
+      });
+      onCreated?.();
+      onClose();
+    } catch (e) {
+      alert('Create failed: ' + e.message);
+    }
+    setSaving(false);
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>New Product</Typography>
+        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ pt: 2 }}>
+        <Grid container spacing={2} sx={{ pt: 1 }}>
+          <Grid item xs={12}>
+            <TextField fullWidth size="small" label="Product Name" required
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              placeholder="e.g. Internet 100Mbps DIA" />
+          </Grid>
+          <Grid item xs={8}>
+            <FormControl fullWidth size="small" required>
+              <InputLabel>Category</InputLabel>
+              <Select value={form.categ_id} label="Category"
+                onChange={e => setForm(f => ({ ...f, categ_id: e.target.value }))}>
+                {categories.map(c => <MenuItem key={c.id} value={c.id}>{c.complete_name || c.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={4}>
+            <TextField fullWidth size="small" label="Base Price (BDT)" type="number"
+              value={form.list_price}
+              onChange={e => setForm(f => ({ ...f, list_price: e.target.value }))} />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField fullWidth size="small" label="Sales Description" multiline rows={3}
+              value={form.description_sale}
+              onChange={e => setForm(f => ({ ...f, description_sale: e.target.value }))} />
+          </Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" onClick={handleCreate} disabled={saving}>
+          {saving ? 'Creating...' : 'Create Product'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 }
 
 // ── Product Edit/View Modal ──
@@ -65,6 +153,9 @@ function ProductModal({ open, onClose, product, categories, onSave }) {
     setSaving(true);
     try {
       await updateProductTemplate(product.id, {
+        name: form.name,
+        list_price: parseFloat(form.list_price) || 0,
+        categ_id: form.categ_id || false,
         x_kb_product_name: form.x_kb_product_name,
         x_kb_category: form.x_kb_category,
         description_sale: form.description_sale,
@@ -112,17 +203,21 @@ function ProductModal({ open, onClose, product, categories, onSave }) {
         <TabPanel value={tab} index={0}>
           <Grid container spacing={2}>
             <Grid item xs={8}>
-              <TextField fullWidth size="small" label="Product Name" value={form.name} disabled
+              <TextField fullWidth size="small" label="Product Name" value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 sx={{ mb: 2 }} />
             </Grid>
             <Grid item xs={4}>
               <TextField fullWidth size="small" label="Base Price (BDT)" type="number"
-                value={form.list_price} disabled sx={{ mb: 2 }} />
+                value={form.list_price}
+                onChange={e => setForm(f => ({ ...f, list_price: e.target.value }))}
+                sx={{ mb: 2 }} />
             </Grid>
             <Grid item xs={6}>
-              <FormControl fullWidth size="small" disabled>
+              <FormControl fullWidth size="small">
                 <InputLabel>Category</InputLabel>
-                <Select value={form.categ_id} label="Category">
+                <Select value={form.categ_id} label="Category"
+                  onChange={e => setForm(f => ({ ...f, categ_id: e.target.value }))}>
                   {categories.map(c => <MenuItem key={c.id} value={c.id}>{c.complete_name || c.name}</MenuItem>)}
                 </Select>
               </FormControl>
@@ -139,6 +234,14 @@ function ProductModal({ open, onClose, product, categories, onSave }) {
         </TabPanel>
 
         <TabPanel value={tab} index={1}>
+          <Alert severity="info" sx={{ mb: 2, py: 0.5 }}>
+            Edits here set the <strong>list price</strong> (base catalog price). For dated
+            price changes with an effective date and audit trail, use the <strong>Rate History</strong> page.
+            <br />
+            <strong>Package Items</strong> define what the customer receives when they purchase this variant
+            (bandwidth, data cap, etc.) — JSON format, e.g.&nbsp;
+            <code>{`[{"type":"bandwidth","value":100,"unit":"MBPS"}]`}</code>
+          </Alert>
           {loadingVariants ? <CircularProgress size={24} /> : (
             <TableContainer>
               <Table size="small">
@@ -147,8 +250,9 @@ function ProductModal({ open, onClose, product, categories, onSave }) {
                     <TableCell sx={{ fontWeight: 600 }}>Variant</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Attributes</TableCell>
                     <TableCell sx={{ fontWeight: 600 }} align="right">Price (BDT)</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>KB Plan</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Billing</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Package Items (JSON)</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Plan Code</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Billing Period</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -166,10 +270,43 @@ function ProductModal({ open, onClose, product, categories, onSave }) {
                           ))}
                         </Box>
                       </TableCell>
-                      <TableCell align="right">
-                        <Typography sx={{ fontWeight: 700, color: 'primary.main' }}>
-                          ৳{v.lst_price?.toLocaleString()}
-                        </Typography>
+                      <TableCell align="right" sx={{ width: 140 }}>
+                        <TextField
+                          size="small"
+                          type="number"
+                          variant="standard"
+                          defaultValue={v.lst_price || 0}
+                          inputProps={{ 'aria-label': `Price for ${v.name}`, style: { textAlign: 'right', fontWeight: 700 } }}
+                          onBlur={e => {
+                            const newPrice = parseFloat(e.target.value) || 0;
+                            if (newPrice !== v.lst_price) {
+                              handleVariantKbSave(v.id, 'lst_price', newPrice);
+                            }
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ width: 240 }}>
+                        <TextField
+                          size="small"
+                          variant="standard"
+                          fullWidth
+                          placeholder='[{"type":"bandwidth","value":100,"unit":"MBPS"}]'
+                          defaultValue={v.x_package_items || ''}
+                          inputProps={{
+                            'aria-label': `Package items for ${v.name}`,
+                            style: { fontFamily: 'monospace', fontSize: 11 },
+                          }}
+                          onBlur={e => {
+                            const newVal = e.target.value.trim();
+                            if (newVal === (v.x_package_items || '')) return;
+                            // Validate JSON if not empty
+                            if (newVal) {
+                              try { JSON.parse(newVal); }
+                              catch { alert('Invalid JSON in Package Items'); return; }
+                            }
+                            handleVariantKbSave(v.id, 'x_package_items', newVal || false);
+                          }}
+                        />
                       </TableCell>
                       <TableCell>
                         <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
@@ -187,23 +324,23 @@ function ProductModal({ open, onClose, product, categories, onSave }) {
 
         <TabPanel value={tab} index={2}>
           <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
-            Billing catalog mapping for this product
+            Billing plan mapping for this product
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={8}>
-              <TextField fullWidth size="small" label="Billing Product Name"
+              <TextField fullWidth size="small" label="Billing Plan Name"
                 placeholder="e.g. Internet-100Mbps"
                 value={form.x_kb_product_name}
                 onChange={e => setForm(f => ({ ...f, x_kb_product_name: e.target.value }))} />
             </Grid>
             <Grid item xs={4}>
               <FormControl fullWidth size="small">
-                <InputLabel>Billing Category</InputLabel>
-                <Select value={form.x_kb_category || ''} label="Billing Category"
+                <InputLabel>Plan Type</InputLabel>
+                <Select value={form.x_kb_category || ''} label="Plan Type"
                   onChange={e => setForm(f => ({ ...f, x_kb_category: e.target.value }))}>
                   <MenuItem value="">Not Set</MenuItem>
-                  <MenuItem value="BASE">BASE</MenuItem>
-                  <MenuItem value="ADD_ON">ADD_ON</MenuItem>
+                  <MenuItem value="BASE">Base Plan</MenuItem>
+                  <MenuItem value="ADD_ON">Add-on</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -212,14 +349,14 @@ function ProductModal({ open, onClose, product, categories, onSave }) {
           {variants.length > 0 && (
             <Box sx={{ mt: 3 }}>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Variant → KB Plan Mapping
+                Variant → Plan Code Mapping
               </Typography>
               <TableContainer>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 600 }}>Variant</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>KB Plan Name</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Plan Code</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Billing Period</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Trial</TableCell>
                     </TableRow>
@@ -285,6 +422,18 @@ export default function Products() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(15);
   const [editProduct, setEditProduct] = useState(null);
+  const [newDialogOpen, setNewDialogOpen] = useState(false);
+
+  const handleDelete = async (product, e) => {
+    e.stopPropagation();
+    if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
+    try {
+      await deleteProductTemplate(product.id);
+      loadData();
+    } catch (err) {
+      alert('Delete failed: ' + err.message);
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -330,10 +479,14 @@ export default function Products() {
         <Box>
           <Typography variant="h6">Products</Typography>
           <Typography variant="body2" color="text.secondary">
-            {products.length} services &middot; Odoo catalog
+            {products.length} services in catalog
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="contained" size="small" startIcon={<AddIcon />}
+            onClick={() => setNewDialogOpen(true)}>
+            New Product
+          </Button>
           <Tooltip title="Refresh">
             <IconButton onClick={loadData} size="small"><RefreshIcon /></IconButton>
           </Tooltip>
@@ -375,7 +528,7 @@ export default function Products() {
                     <TableCell sx={{ fontWeight: 600 }}>Category</TableCell>
                     <TableCell sx={{ fontWeight: 600 }} align="right">Base Price</TableCell>
                     <TableCell sx={{ fontWeight: 600 }} align="center">Variants</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>KB Product</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Billing Plan</TableCell>
                     <TableCell sx={{ fontWeight: 600 }} align="center">Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -420,6 +573,12 @@ export default function Products() {
                               <EditIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton size="small" onClick={e => handleDelete(product, e)}
+                              sx={{ color: 'error.main' }}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     );
@@ -454,6 +613,14 @@ export default function Products() {
         product={editProduct}
         categories={categories}
         onSave={loadData}
+      />
+
+      {/* New Product Dialog */}
+      <NewProductDialog
+        open={newDialogOpen}
+        onClose={() => setNewDialogOpen(false)}
+        categories={categories}
+        onCreated={loadData}
       />
     </Box>
   );

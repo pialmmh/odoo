@@ -1,0 +1,12 @@
+/* Telcobright tenant — overrides primary + sidebar only. */
+
+body.theme-tenant-telcobright {
+  --color-primary: #1565C0;
+  --color-primary-hover: #003c8f;
+  --color-primary-bg: #e3f2fd;
+  --color-primary-text: #003c8f;
+
+  --color-sidebar-bg: #0d2c4d;
+  --color-sidebar-active-bg: var(--color-primary);
+  --color-sidebar-active-text: #ffffff;
+}

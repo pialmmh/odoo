@@ -12,6 +12,12 @@ killbill:
   username: admin
   password: password
 
+integrations:
+  crm:
+    enabled:  ${CRM_ENABLED:false}
+    base-url: ${CRM_BASE_URL:http://127.0.0.1:7170}
+    api-key:  ${CRM_API_KEY:}
+
 spring:
   application:
     name: platform-api

@@ -1,0 +1,21 @@
+/* Channel / mode chip — small, flat, uppercase. */
+
+.chip {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.chip-voice { background: #dcfce7; color: #065f46; }
+.chip-sms   { background: #dbeafe; color: #1e40af; }
+.chip-email { background: #ede9fe; color: #5b21b6; }
+.chip-im    { background: #fef3c7; color: #92400e; }
+
+body.theme-dark .chip-voice { background: #14532d; color: #86efac; }
+body.theme-dark .chip-sms   { background: #1e3a8a; color: #bfdbfe; }
+body.theme-dark .chip-email { background: #4c1d95; color: #ddd6fe; }
+body.theme-dark .chip-im    { background: #78350f; color: #fde68a; }

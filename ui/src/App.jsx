@@ -12,7 +12,6 @@ import Customers from './pages/Customers';
 import CustomerDetail from './pages/CustomerDetail';
 import Subscriptions from './pages/Subscriptions';
 import Invoices from './pages/Invoices';
-import Catalog from './pages/Catalog';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import Pricing from './pages/Pricing';
@@ -27,6 +26,8 @@ import InfraSSH from './pages/infra/InfraSSH';
 import ArtifactsMain from './pages/artifacts/ArtifactsMain';
 import RBACManagement from './pages/RBACManagement';
 import Purchase from './pages/Purchase';
+import CrmIndex from './pages/crm/CrmIndex';
+import { FEATURES } from './config/platform';
 
 /** Block access to tenant URLs the user is not authorized for */
 function TenantAuthGuard() {
@@ -54,7 +55,6 @@ function TenantRoutes() {
       <Route path="subscriptions" element={<Subscriptions />} />
       <Route path="invoices" element={<Invoices />} />
       <Route path="payments" element={<Payments />} />
-      <Route path="catalog" element={<Catalog />} />
       <Route path="products" element={<Products />} />
       <Route path="products/:id" element={<ProductDetail />} />
       <Route path="pricing" element={<Pricing />} />
@@ -67,6 +67,7 @@ function TenantRoutes() {
       <Route path="artifacts" element={<ArtifactsMain />} />
       <Route path="purchase" element={<Purchase />} />
       <Route path="rbac" element={<RBACManagement />} />
+      {FEATURES.crm && <Route path="crm/*" element={<CrmIndex />} />}
       {isSuper && <Route path="tenants" element={<Tenants />} />}
       <Route path="*" element={<Navigate to="" replace />} />
     </Route>

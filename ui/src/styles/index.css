@@ -1,0 +1,25 @@
+/* Design-system entry point.
+ * Import this once from main.jsx; the rest of the app uses var(--token) +
+ * MUI theme references (no direct hex). */
+
+@import './tokens.css';
+@import './theme-light.css';
+@import './theme-dark.css';
+@import './themes-tenant/tenant-btcl.css';
+@import './themes-tenant/tenant-telcobright.css';
+
+@import './components/badge.css';
+@import './components/chip.css';
+@import './components/avatar.css';
+@import './components/toggle.css';
+@import './components/action-btn.css';
+
+/* Default body surface — MUI CssBaseline also sets this from the theme,
+ * but this ensures the CSS-variable path works even before React mounts. */
+body {
+  background-color: var(--color-bg-app);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

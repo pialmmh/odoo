@@ -1,0 +1,13 @@
+/* BTCL tenant — overrides primary + sidebar only.
+ * Semantic tokens (success/warning/danger) stay universal. */
+
+body.theme-tenant-btcl {
+  --color-primary: #00A651;
+  --color-primary-hover: #007a3b;
+  --color-primary-bg: #e8f7ee;
+  --color-primary-text: #007a3b;
+
+  --color-sidebar-bg: #003d1a;
+  --color-sidebar-active-bg: var(--color-primary);
+  --color-sidebar-active-text: #ffffff;
+}

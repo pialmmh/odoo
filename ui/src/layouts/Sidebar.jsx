@@ -8,7 +8,6 @@ import {
   People as PeopleIcon,
   Subscriptions as SubIcon,
   Receipt as InvoiceIcon,
-  Inventory as CatalogIcon,
   Business as TenantIcon,
   Assessment as ARIcon,
   Payments as PaymentsIcon,
@@ -22,12 +21,14 @@ import {
   Inventory2 as ArtifactIcon,
   AdminPanelSettings as RBACIcon,
   AddShoppingCart as PurchaseIcon,
+  ContactPhone as CrmIcon,
+  PersonAdd as LeadsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { useTenant } from '../context/TenantContext';
 import { useRBAC } from '../hooks/useRBAC';
-import config from '../config/platform';
+import config, { FEATURES } from '../config/platform';
 
 const DRAWER_WIDTH = 240;
 
@@ -54,7 +55,6 @@ export default function Sidebar() {
     { text: 'Invoices', icon: <InvoiceIcon />, path: `${base}/invoices` },
     { text: 'Payments', icon: <PaymentsIcon />, path: `${base}/payments` },
     { text: 'Products', icon: <ProductsIcon />, path: `${base}/products` },
-    { text: 'Catalog', icon: <CatalogIcon />, path: `${base}/catalog` },
     { text: 'Pricing', icon: <PricingIcon />, path: `${base}/pricing` },
     { text: 'Rate History', icon: <HistoryIcon />, path: `${base}/rate-history` },
     { text: 'AR Report', icon: <ARIcon />, path: `${base}/reports/ar` },
@@ -69,6 +69,12 @@ export default function Sidebar() {
     // ── Artifacts ──
     { section: 'Artifacts' },
     { text: 'Artifacts', icon: <ArtifactIcon />, path: `${base}/artifacts` },
+
+    // ── CRM (feature-flagged) ──
+    ...(FEATURES.crm ? [
+      { section: 'CRM' },
+      { text: 'Leads', icon: <LeadsIcon />, path: `${base}/crm/leads` },
+    ] : []),
 
     // ── Admin ──
     { section: 'Admin' },
