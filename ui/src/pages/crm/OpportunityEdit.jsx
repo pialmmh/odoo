@@ -180,8 +180,15 @@ export default function OpportunityEdit() {
 
               <Grid item xs={12}>
                 <Lbl>Description</Lbl>
-                <TextField fullWidth size="small" multiline rows={3}
-                  value={form.description} onChange={e => set({ description: e.target.value })} />
+                <TextField
+                  fullWidth
+                  size="small"
+                  multiline
+                  minRows={6}
+                  maxRows={15}
+                  value={form.description}
+                  onChange={e => set({ description: e.target.value })}
+                />
               </Grid>
             </Grid>
           </Panel>

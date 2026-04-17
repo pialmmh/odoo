@@ -292,9 +292,16 @@ export default function ConvertDialog({ open, lead, onClose, onConverted }) {
                   </FormControl>
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField fullWidth size="small" label="Description" multiline rows={2}
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Description"
+                    multiline
+                    minRows={5}
+                    maxRows={12}
                     value={opp.description || ''}
-                    onChange={e => setOpp({ ...opp, description: e.target.value })} />
+                    onChange={e => setOpp({ ...opp, description: e.target.value })}
+                  />
                 </Grid>
               </Grid>
             </SectionPaper>
