@@ -11,6 +11,13 @@ import AccountEdit from './AccountEdit';
 import Opportunities from './Opportunities';
 import OpportunityDetail from './OpportunityDetail';
 import OpportunityEdit from './OpportunityEdit';
+import Cases       from './Cases';
+import CaseDetail  from './CaseDetail';
+import CaseEdit    from './CaseEdit';
+import Tasks       from './Tasks';
+import TaskDetail  from './TaskDetail';
+import TaskEdit    from './TaskEdit';
+import Calendar    from './Calendar';
 
 export default function CrmIndex() {
   return (
@@ -36,6 +43,18 @@ export default function CrmIndex() {
       <Route path="opportunities/new"      element={<OpportunityEdit />} />
       <Route path="opportunities/:id"      element={<OpportunityDetail />} />
       <Route path="opportunities/:id/edit" element={<OpportunityEdit />} />
+
+      <Route path="cases"          element={<Cases />} />
+      <Route path="cases/new"      element={<CaseEdit />} />
+      <Route path="cases/:id"      element={<CaseDetail />} />
+      <Route path="cases/:id/edit" element={<CaseEdit />} />
+
+      <Route path="tasks"          element={<Tasks />} />
+      <Route path="tasks/new"      element={<TaskEdit />} />
+      <Route path="tasks/:id"      element={<TaskDetail />} />
+      <Route path="tasks/:id/edit" element={<TaskEdit />} />
+
+      <Route path="calendar"       element={<Calendar />} />
 
       <Route path="*" element={<Navigate to="leads" replace />} />
     </Routes>

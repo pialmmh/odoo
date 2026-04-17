@@ -26,6 +26,9 @@ import {
   Person as ContactsIcon,
   Business as AccountsIcon,
   TrendingUp as OpportunitiesIcon,
+  SupportAgent as CasesIcon,
+  TaskAlt as TasksIcon,
+  CalendarMonth as CalendarIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -80,6 +83,9 @@ export default function Sidebar() {
       { text: 'Contacts',      icon: <ContactsIcon />,      path: `${base}/crm/contacts` },
       { text: 'Accounts',      icon: <AccountsIcon />,      path: `${base}/crm/accounts` },
       { text: 'Opportunities', icon: <OpportunitiesIcon />, path: `${base}/crm/opportunities` },
+      { text: 'Cases',         icon: <CasesIcon />,         path: `${base}/crm/cases` },
+      { text: 'Tasks',         icon: <TasksIcon />,         path: `${base}/crm/tasks` },
+      { text: 'Calendar',      icon: <CalendarIcon />,      path: `${base}/crm/calendar` },
     ] : []),
 
     // ── Admin ──

@@ -60,6 +60,23 @@ export const createOpportunity  = (data)   => post('/Opportunity', data);
 export const updateOpportunity  = (id, d)  => put(`/Opportunity/${id}`, d);
 export const deleteOpportunity  = (id)     => del(`/Opportunity/${id}`);
 
+// ── Case helpers ──
+export const createCase = (data)   => post('/Case', data);
+export const listCases  = (params) => get('/Case', params);
+export const getCase    = (id)     => get(`/Case/${id}`);
+export const updateCase = (id, d)  => put(`/Case/${id}`, d);
+export const deleteCase = (id)     => del(`/Case/${id}`);
+
+// ── Task helpers ──
+export const listTasks  = (params) => get('/Task', params);
+export const getTask    = (id)     => get(`/Task/${id}`);
+export const updateTask = (id, d)  => put(`/Task/${id}`, d);
+export const deleteTask = (id)     => del(`/Task/${id}`);
+
+// ── Meeting / Call (for calendar) ──
+export const listMeetings = (params) => get('/Meeting', params);
+export const listCalls    = (params) => get('/Call', params);
+
 // ── Current user (cached) — needed to populate assignedUserId on creates ──
 let _currentUser = null;
 export async function getCurrentUser() {
@@ -124,3 +141,16 @@ export const OPPORTUNITY_PROBABILITY_MAP = {
   'Closed Won': 100,
   'Closed Lost': 0,
 };
+
+// ── Case enum values (from Case.json) ──
+export const CASE_STATUSES   = ['New', 'Assigned', 'Pending', 'Closed', 'Rejected', 'Duplicate'];
+export const CASE_PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
+export const CASE_TYPES      = ['', 'Question', 'Incident', 'Problem'];
+
+// ── Task enum values (from Task.json) ──
+export const TASK_STATUSES   = ['Not Started', 'Started', 'Completed', 'Canceled', 'Deferred'];
+export const TASK_PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
+
+// ── Meeting / Call enum values ──
+export const MEETING_STATUSES = ['Planned', 'Held', 'Not Held'];
+export const CALL_STATUSES    = ['Planned', 'Held', 'Not Held'];
