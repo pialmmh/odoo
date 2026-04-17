@@ -249,12 +249,10 @@ export default function LeadDetail() {
             {isConvertable && (
               <Button
                 variant="contained"
+                color="primary"
                 size="small"
                 onClick={() => setConvertOpen(true)}
                 sx={{
-                  bgcolor: '#6366f1',
-                  color: 'common.white',
-                  '&:hover': { bgcolor: '#4f46e5' },
                   borderTopLeftRadius: 0,
                   borderBottomLeftRadius: 0,
                   fontWeight: 500,

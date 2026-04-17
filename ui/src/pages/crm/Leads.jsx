@@ -144,19 +144,16 @@ export default function Leads() {
         </Box>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           {/* Create button — cloned from EspoCRM list.js setupCreateButton():
-              'Create <Scope>' label, fa-plus icon, default style, title Ctrl+Space. */}
+              'Create <Scope>' label, fa-plus icon, title Ctrl+Space.
+              Uses theme primary so tenant color overrides flow through. */}
           <Button
             variant="contained"
+            color="primary"
             size="small"
             startIcon={<AddIcon />}
             onClick={openNew}
             title="Ctrl+Space"
-            sx={{
-              bgcolor: 'grey.900',
-              color: 'common.white',
-              fontWeight: 600,
-              '&:hover': { bgcolor: 'grey.800' },
-            }}
+            sx={{ fontWeight: 600 }}
           >
             Create Lead
           </Button>
