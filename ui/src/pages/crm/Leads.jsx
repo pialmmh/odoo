@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Card, Chip, CircularProgress, Alert, TextField,
   InputAdornment, Button, IconButton, Tooltip, Table, TableBody, TableCell,
@@ -44,6 +44,7 @@ const COLUMNS = [
 export default function Leads() {
   const { canAction } = useRBAC();
   const canEdit = canAction('crm.edit');
+  const navigate = useNavigate();
 
   const [leads, setLeads] = useState([]);
   const [total, setTotal] = useState(0);
@@ -97,12 +98,16 @@ export default function Leads() {
     const handler = (e) => {
       if (e.ctrlKey && e.code === 'Space' && !dialogOpen) {
         e.preventDefault();
-        openNew();
+        navigate('new');
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dialogOpen]);
+
+  // Create navigates to the full-page form (matches EspoCRM #Lead/create).
+  const openNewPage = () => navigate('new');
 
   const handleDelete = async (lead, e) => {
     e.stopPropagation();
@@ -151,7 +156,7 @@ export default function Leads() {
             color="primary"
             size="small"
             startIcon={<AddIcon />}
-            onClick={openNew}
+            onClick={openNewPage}
             title="Ctrl+Space"
             sx={{ fontWeight: 600 }}
           >

@@ -17,7 +17,6 @@ import {
   LEAD_NOT_ACTUAL_STATUSES,
 } from '../../services/crm';
 import { useRBAC } from '../../hooks/useRBAC';
-import LeadDialog from './LeadDialog';
 import ConvertDialog from './ConvertDialog';
 import StreamPanel from './StreamPanel';
 import { FieldRow, Panel } from './LeadPanelPrimitives';
@@ -38,7 +37,6 @@ export default function LeadDetail() {
   const [lead, setLead]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
-  const [editOpen, setEditOpen]       = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [menuAnchor, setMenuAnchor]   = useState(null);
   const [neighborIds, setNeighborIds] = useState({ prev: null, next: null });
@@ -173,7 +171,7 @@ export default function LeadDetail() {
             <Button
               variant="contained"
               size="small"
-              onClick={() => setEditOpen(true)}
+              onClick={() => navigate('edit')}
               sx={{
                 bgcolor: 'grey.900', color: 'common.white',
                 borderTopRightRadius: 0, borderBottomRightRadius: 0,
@@ -360,12 +358,6 @@ export default function LeadDetail() {
         <Box>{side}</Box>
       </Box>
 
-      <LeadDialog
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        lead={lead}
-        onSaved={load}
-      />
       <ConvertDialog
         open={convertOpen}
         lead={lead}
