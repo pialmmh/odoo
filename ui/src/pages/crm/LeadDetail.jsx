@@ -8,9 +8,13 @@ import {
   Edit as EditIcon, Delete as DeleteIcon, SyncAlt as ConvertIcon,
   MoreHoriz as MoreIcon,
   ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon,
+  Favorite as FollowIcon, FavoriteBorder as UnfollowIcon,
+  ContentCopy as DuplicateIcon,
 } from '@mui/icons-material';
 import {
-  getLead, deleteLead, listLeads, LEAD_NOT_ACTUAL_STATUSES,
+  getLead, deleteLead, listLeads, createLead,
+  followEntity, unfollowEntity,
+  LEAD_NOT_ACTUAL_STATUSES,
 } from '../../services/crm';
 import { useRBAC } from '../../hooks/useRBAC';
 import LeadDialog from './LeadDialog';
@@ -81,6 +85,37 @@ export default function LeadDetail() {
     }
   };
 
+  const handleFollowToggle = async () => {
+    setMenuAnchor(null);
+    try {
+      if (lead.isFollowed) await unfollowEntity('Lead', id);
+      else                 await followEntity('Lead', id);
+      load();
+    } catch (e) {
+      alert('Follow toggle failed: ' + (e?.response?.data?.message || e.message));
+    }
+  };
+
+  const handleDuplicate = async () => {
+    setMenuAnchor(null);
+    try {
+      // Strip id + audit fields, prepend "Copy of " to the name hint.
+      const {
+        id: _id, createdAt, modifiedAt, createdById, modifiedById,
+        createdByName, modifiedByName, isFollowed, followersIds, followersNames,
+        convertedAt, createdAccountId, createdAccountName,
+        createdContactId, createdContactName,
+        createdOpportunityId, createdOpportunityName,
+        status, ...rest
+      } = lead;
+      const copy = { ...rest, status: 'New' };
+      const created = await createLead(copy);
+      if (created?.id) navigate(`../${created.id}`);
+    } catch (e) {
+      alert('Duplicate failed: ' + (e?.response?.data?.message || e.message));
+    }
+  };
+
   const isConvertable = lead?.status && !LEAD_NOT_ACTUAL_STATUSES.includes(lead.status);
   const hasConvertedTo = lead?.createdAccountId || lead?.createdContactId || lead?.createdOpportunityId;
 
@@ -134,29 +169,25 @@ export default function LeadDetail() {
         borderRadius: 1,
       }}>
         <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
-          {canEdit && (
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => setEditOpen(true)}
-              sx={{
-                bgcolor: 'grey.900', color: 'common.white',
-                borderTopRightRadius: 0, borderBottomRightRadius: 0,
-                '&:hover': { bgcolor: 'grey.800' },
-                minWidth: 64,
-              }}
-            >
-              Edit
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => setEditOpen(true)}
+            sx={{
+              bgcolor: 'grey.900', color: 'common.white',
+              borderTopRightRadius: 0, borderBottomRightRadius: 0,
+              '&:hover': { bgcolor: 'grey.800' },
+              minWidth: 64,
+            }}
+          >
+            Edit
+          </Button>
           <IconButton
             size="small"
             onClick={e => setMenuAnchor(e.currentTarget)}
             sx={{
-              border: 1, borderColor: 'divider',
-              borderLeft: canEdit ? 0 : 1,
-              borderTopLeftRadius: canEdit ? 0 : 4,
-              borderBottomLeftRadius: canEdit ? 0 : 4,
+              border: 1, borderColor: 'divider', borderLeft: 0,
+              borderTopLeftRadius: 0, borderBottomLeftRadius: 0,
               borderRadius: 1,
               bgcolor: 'background.paper',
               px: 1,
@@ -165,16 +196,22 @@ export default function LeadDetail() {
             <MoreIcon fontSize="small" />
           </IconButton>
           <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
-            {canEdit && isConvertable && (
+            <MenuItem onClick={handleFollowToggle}>
+              {lead.isFollowed
+                ? <><FollowIcon fontSize="small" color="warning" sx={{ mr: 1 }} /> Unfollow</>
+                : <><UnfollowIcon fontSize="small" sx={{ mr: 1 }} /> Follow</>}
+            </MenuItem>
+            {isConvertable && (
               <MenuItem onClick={() => { setMenuAnchor(null); setConvertOpen(true); }}>
                 <ConvertIcon fontSize="small" sx={{ mr: 1 }} /> Convert
               </MenuItem>
             )}
-            {canEdit && (
-              <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-                <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Delete
-              </MenuItem>
-            )}
+            <MenuItem onClick={handleDuplicate}>
+              <DuplicateIcon fontSize="small" sx={{ mr: 1 }} /> Duplicate
+            </MenuItem>
+            <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+              <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Remove
+            </MenuItem>
           </Menu>
         </Box>
 

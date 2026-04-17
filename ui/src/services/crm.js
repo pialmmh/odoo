@@ -27,6 +27,11 @@ export const post = (path, data)   => api.post(path, data).then(r => r.data);
 export const put  = (path, data)   => api.put(path, data).then(r => r.data);
 export const del  = (path)         => api.delete(path).then(r => r.data);
 
+// ── Follow / Unfollow (works for any entity) ──
+// EspoCRM: PUT /{entity}/{id}/subscription  /  DELETE same
+export const followEntity   = (entity, id) => put(`/${entity}/${id}/subscription`);
+export const unfollowEntity = (entity, id) => del(`/${entity}/${id}/subscription`);
+
 // ── Lead helpers ──
 export const listLeads  = (params) => get('/Lead', params);
 export const getLead    = (id)     => get(`/Lead/${id}`);

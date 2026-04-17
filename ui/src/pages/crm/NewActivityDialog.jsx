@@ -11,6 +11,7 @@ import {
 import {
   createMeeting, createCall, createTask, getCurrentUser,
 } from '../../services/crm';
+import AttendeePicker from './AttendeePicker';
 
 // Mirrors EspoCRM's quick-create modal for Meeting / Call / Task — see
 // application/Espo/Modules/Crm/Resources/layouts/{Meeting,Call,Task}/detailSmall.json
@@ -95,6 +96,10 @@ export default function NewActivityDialog({
     getCurrentUser().then(setUser).catch(() => {});
     const start = defaultStart();
     const end   = new Date(start); end.setHours(end.getHours() + 1);
+    // If the lead is the parent, seed it as a Lead attendee.
+    const leads = parentType === 'Lead' && parentId
+      ? [{ id: parentId, name: parentName || 'Lead' }]
+      : [];
     if (kind === 'Meeting') {
       setForm({
         name: '', status: 'Planned',
@@ -102,6 +107,7 @@ export default function NewActivityDialog({
         endDate:   fmtDate(end),   endTime:   fmtTime(end),
         duration: 3600,
         reminders: [],
+        users: [], contacts: [], leads,
         description: '',
       });
     } else if (kind === 'Call') {
@@ -112,6 +118,7 @@ export default function NewActivityDialog({
         endDate:   fmtDate(ed),    endTime:   fmtTime(ed),
         duration: 900,
         reminders: [],
+        users: [], contacts: [], leads,
         description: '',
       });
     } else if (kind === 'Task') {
@@ -122,7 +129,7 @@ export default function NewActivityDialog({
         description: '',
       });
     }
-  }, [open, kind]);
+  }, [open, kind, parentType, parentId, parentName]);
 
   // When dateStart changes, preserve duration and recompute dateEnd
   const setStart = (date, time) => {
@@ -178,15 +185,26 @@ export default function NewActivityDialog({
         status: form.status,
         reminders: form.reminders || [],
       };
+      // Attendees (Meeting/Call only)
+      const attendees = (kind === 'Meeting' || kind === 'Call') ? {
+        usersIds:    (form.users    || []).map(u => u.id),
+        usersNames:  Object.fromEntries((form.users    || []).map(u => [u.id, u.name])),
+        contactsIds:(form.contacts || []).map(c => c.id),
+        contactsNames: Object.fromEntries((form.contacts || []).map(c => [c.id, c.name])),
+        leadsIds:   (form.leads    || []).map(l => l.id),
+        leadsNames: Object.fromEntries((form.leads    || []).map(l => [l.id, l.name])),
+      } : {};
       if (kind === 'Meeting') {
         await createMeeting({
           ...base,
+          ...attendees,
           dateStart: toEspoDT(form.startDate, form.startTime),
           dateEnd:   toEspoDT(form.endDate,   form.endTime),
         });
       } else if (kind === 'Call') {
         await createCall({
           ...base,
+          ...attendees,
           dateStart: toEspoDT(form.startDate, form.startTime),
           dateEnd:   toEspoDT(form.endDate,   form.endTime),
           direction: form.direction,
@@ -456,17 +474,28 @@ export default function NewActivityDialog({
                 </Typography>
 
                 <Field label="Users">
-                  <TextField size="small" fullWidth placeholder="Select" disabled />
+                  <AttendeePicker
+                    entity="User"
+                    value={form.users || []}
+                    onChange={v => setForm(f => ({ ...f, users: v }))}
+                    placeholder="Select"
+                  />
                 </Field>
                 <Field label="Contacts">
-                  <TextField size="small" fullWidth placeholder="Select" disabled />
+                  <AttendeePicker
+                    entity="Contact"
+                    value={form.contacts || []}
+                    onChange={v => setForm(f => ({ ...f, contacts: v }))}
+                    placeholder="Select"
+                  />
                 </Field>
-                <Field label={`${parentType === 'Lead' ? 'Leads' : 'Related'}`} last>
-                  {parentType === 'Lead' && parentName ? (
-                    <Chip label={parentName} size="small" sx={{ mb: 0.5 }} />
-                  ) : (
-                    <TextField size="small" fullWidth placeholder="Select" disabled />
-                  )}
+                <Field label="Leads" last>
+                  <AttendeePicker
+                    entity="Lead"
+                    value={form.leads || []}
+                    onChange={v => setForm(f => ({ ...f, leads: v }))}
+                    placeholder="Select"
+                  />
                 </Field>
               </>
             )}
