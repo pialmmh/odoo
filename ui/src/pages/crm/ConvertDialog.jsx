@@ -126,7 +126,13 @@ export default function ConvertDialog({ open, lead, onClose, onConverted }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={false}
+      fullWidth
+      PaperProps={{ sx: { width: '92vw', maxWidth: 1600 } }}
+    >
       <DialogTitle sx={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         fontWeight: 700, fontSize: 18,
