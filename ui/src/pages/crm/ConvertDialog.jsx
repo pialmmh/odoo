@@ -69,6 +69,22 @@ export default function ConvertDialog({ open, lead, onClose, onConverted }) {
       setErr('Select at least one record type to create');
       return;
     }
+
+    // ── Client-side required-field checks ──
+    // Mirrors EspoCRM entityDefs required flags so the user gets a clean
+    // error before the server's generic validationFailure response.
+    const missing = [];
+    if (selected.Account     && !acc.name?.trim())             missing.push('Account: Name');
+    if (selected.Contact     && !con.lastName?.trim())         missing.push('Contact: Last Name');
+    if (selected.Opportunity) {
+      if (!opp.name?.trim())            missing.push('Opportunity: Name');
+      if (opp.amount == null || opp.amount === '') missing.push('Opportunity: Amount');
+      if (!opp.closeDate)               missing.push('Opportunity: Close Date');
+    }
+    if (missing.length) {
+      setErr(`Required: ${missing.join(', ')}`);
+      return;
+    }
     setSaving(true);
     setErr(null);
     setDuplicates(null);
@@ -257,9 +273,15 @@ export default function ConvertDialog({ open, lead, onClose, onConverted }) {
             >
               <Grid container spacing={2}>
                 <Grid item xs={12}>
-                  <TextField fullWidth size="small" label="Name" required
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Name"
+                    required
                     value={opp.name || ''}
-                    onChange={e => setOpp({ ...opp, name: e.target.value })} />
+                    onChange={e => setOpp({ ...opp, name: e.target.value })}
+                    error={selected.Opportunity && !opp.name?.trim()}
+                  />
                 </Grid>
                 <Grid item xs={4}>
                   <FormControl fullWidth size="small">
@@ -271,9 +293,21 @@ export default function ConvertDialog({ open, lead, onClose, onConverted }) {
                   </FormControl>
                 </Grid>
                 <Grid item xs={4}>
-                  <TextField fullWidth size="small" label="Amount" type="number" required
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Amount"
+                    type="number"
+                    required
                     value={opp.amount ?? ''}
-                    onChange={e => setOpp({ ...opp, amount: e.target.value })} />
+                    onChange={e => setOpp({ ...opp, amount: e.target.value })}
+                    error={selected.Opportunity && (opp.amount == null || opp.amount === '')}
+                    helperText={
+                      selected.Opportunity && (opp.amount == null || opp.amount === '')
+                        ? 'Required (0 if unknown)'
+                        : undefined
+                    }
+                  />
                 </Grid>
                 <Grid item xs={4}>
                   <TextField fullWidth size="small" label="Close Date" type="date" required
