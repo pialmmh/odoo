@@ -195,22 +195,20 @@ function Column({ stage, items, total }) {
         px: 1.25, py: 1,
         borderTopLeftRadius: 8, borderTopRightRadius: 8,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        bgcolor: toneColor(theme, tone),
-        color: theme.palette.getContrastText(toneColor(theme, tone)),
-        boxShadow: `inset 0 -1px 0 ${alpha('#000', 0.12)}`,
+        bgcolor: alpha(toneColor(theme, tone), theme.palette.mode === 'dark' ? 0.22 : 0.14),
+        borderBottom: `1px solid ${alpha(toneColor(theme, tone), 0.25)}`,
       })}>
         <Box sx={{ minWidth: 0 }}>
-          <Typography sx={{
+          <Typography sx={(theme) => ({
             fontWeight: 700, fontSize: 12, letterSpacing: 0.4,
             textTransform: 'uppercase',
-            color: 'inherit',
-          }}>
+            color: toneColor(theme, tone),
+          })}>
             {stage}
           </Typography>
           <Typography variant="caption" sx={{
             fontSize: 11,
-            color: 'inherit',
-            opacity: 0.85,
+            color: 'text.secondary',
           }}>
             {sum ? `${sum.toLocaleString()} · ` : ''}{OPPORTUNITY_PROBABILITY_MAP[stage]}%
           </Typography>
@@ -218,9 +216,8 @@ function Column({ stage, items, total }) {
         <Chip size="small" label={total}
           sx={(theme) => ({
             height: 22, minWidth: 32, fontWeight: 700, fontSize: 11,
-            bgcolor: alpha('#fff', 0.25),
+            bgcolor: toneColor(theme, tone),
             color: theme.palette.getContrastText(toneColor(theme, tone)),
-            border: `1px solid ${alpha('#fff', 0.35)}`,
             '& .MuiChip-label': { px: 1 },
           })} />
       </Box>
