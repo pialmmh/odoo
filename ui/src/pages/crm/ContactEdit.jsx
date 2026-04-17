@@ -168,7 +168,7 @@ export default function ContactEdit() {
         </Box>
 
         <Box>
-          <Panel dense>
+          <Panel title="Overview" dense>
             <Lbl required>Assigned User</Lbl>
             {form.assignedUserName ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, border: 1, borderColor: 'divider', borderRadius: 1, px: 1, py: 0.75, mb: 2.5 }}>

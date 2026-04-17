@@ -109,7 +109,7 @@ export default function OpportunityDetail() {
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 320px' }, gap: 2 }}>
         <Box sx={{ minWidth: 0 }}>
-          <Panel>
+          <Panel title="Overview">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
               <FieldRow label="Name"    value={row.name} />
               <FieldRow kind="account" label="Account" value={row.accountName} />
@@ -130,7 +130,7 @@ export default function OpportunityDetail() {
         </Box>
 
         <Box>
-          <Panel dense>
+          <Panel title="Overview" dense>
             <FieldRow label="Assigned User" value={row.assignedUserName} />
             <FieldRow label="Teams" value={(row.teamsNames && Object.values(row.teamsNames).join(', ')) || null} />
             <FieldRow label="Weighted Amount"

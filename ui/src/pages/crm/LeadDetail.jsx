@@ -310,7 +310,7 @@ export default function LeadDetail() {
   // ── Side (right) panels ──
   const side = (
     <>
-      <Panel dense>
+      <Panel title="Overview" dense>
         <FieldRow label="Assigned User" value={lead.assignedUserName} />
         <FieldRow label="Teams" value={
           lead.teamsNames ? Object.values(lead.teamsNames).join(', ') : null

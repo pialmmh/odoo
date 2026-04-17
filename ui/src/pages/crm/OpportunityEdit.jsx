@@ -108,7 +108,7 @@ export default function OpportunityEdit() {
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 320px' }, gap: 2 }}>
         <Box sx={{ minWidth: 0 }}>
-          <Panel>
+          <Panel title="Overview">
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <Lbl required>Name</Lbl>
@@ -195,7 +195,7 @@ export default function OpportunityEdit() {
         </Box>
 
         <Box>
-          <Panel dense>
+          <Panel title="Overview" dense>
             <Lbl required>Assigned User</Lbl>
             {form.assignedUserName ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, border: 1, borderColor: 'divider', borderRadius: 1, px: 1, py: 0.75, mb: 2.5 }}>

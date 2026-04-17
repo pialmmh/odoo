@@ -324,7 +324,7 @@ export default function LeadEdit() {
 
         {/* Side */}
         <Box>
-          <Panel dense>
+          <Panel title="Overview" dense>
             <Lbl required>Assigned User</Lbl>
             {form.assignedUserName ? (
               <Box sx={{

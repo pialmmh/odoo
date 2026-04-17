@@ -122,7 +122,7 @@ export default function ContactDetail() {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 320px' }, gap: 2 }}>
         <Box sx={{ minWidth: 0 }}>
           {/* Single combined panel per detail.json — Contact has just one panel with 4 rows */}
-          <Panel>
+          <Panel title="Overview">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
               <FieldRow kind="person"  label="Name"       value={row.name} />
               <FieldRow kind="account" label="Accounts"   value={(row.accountsNames && Object.values(row.accountsNames).join(', ')) || row.accountName} />
@@ -141,7 +141,7 @@ export default function ContactDetail() {
         </Box>
 
         <Box>
-          <Panel dense>
+          <Panel title="Overview" dense>
             <FieldRow label="Assigned User" value={row.assignedUserName} />
             <FieldRow label="Teams" value={(row.teamsNames && Object.values(row.teamsNames).join(', ')) || null} />
             <FieldRow label="Do Not Call" value={row.doNotCall ? 'Yes' : null} />

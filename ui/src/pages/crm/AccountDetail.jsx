@@ -132,7 +132,7 @@ export default function AccountDetail() {
         </Box>
 
         <Box>
-          <Panel dense>
+          <Panel title="Overview" dense>
             <FieldRow label="Assigned User" value={row.assignedUserName} />
             <FieldRow label="Teams" value={(row.teamsNames && Object.values(row.teamsNames).join(', ')) || null} />
             <FieldRow label="SIC Code" value={row.sicCode} />
