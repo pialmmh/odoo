@@ -38,9 +38,20 @@ export default function ConvertDialog({ open, lead, onClose, onConverted }) {
       .then(data => {
         setAcc(data.Account || {});
         setCon(data.Contact || {});
+        // Default Opportunity name to the lead/contact full name + account
+        // so reps don't start with an empty field. EspoCRM's server-side
+        // convertFields only maps amount + leadSource.
+        const leadFullName =
+          lead.name ||
+          [lead.firstName, lead.lastName].filter(Boolean).join(' ').trim();
+        const defaultOppName =
+          lead.accountName && leadFullName
+            ? `${lead.accountName} — ${leadFullName}`
+            : (leadFullName || lead.accountName || '');
         setOpp({
           ...(data.Opportunity || {}),
-          stage: data.Opportunity?.stage || 'Prospecting',
+          name:      data.Opportunity?.name      || defaultOppName,
+          stage:     data.Opportunity?.stage     || 'Prospecting',
           closeDate: data.Opportunity?.closeDate || new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
         });
       })
@@ -66,15 +77,36 @@ export default function ConvertDialog({ open, lead, onClose, onConverted }) {
       onConverted?.();
       onClose();
     } catch (e) {
-      const status = e?.response?.status;
-      const body = e?.response?.data;
-      if (status === 409 && body?.reason === 'duplicate') {
-        setDuplicates(body.data || []);
+      const status  = e?.response?.status;
+      const body    = e?.response?.data;
+      const headers = e?.response?.headers || {};
+      // EspoCRM signals duplicate-check via status 409 + X-Status-Reason header;
+      // body is a plain array of { id, name, _entityType }.
+      const isDuplicate = status === 409 &&
+        (Array.isArray(body) || headers['x-status-reason'] === 'duplicate');
+      if (isDuplicate) {
+        setDuplicates(Array.isArray(body) ? body : (body?.data || []));
       } else {
-        setErr(body?.message || e.message || 'Convert failed');
+        setErr(formatEspoError(body) || e.message || 'Convert failed');
       }
     }
     setSaving(false);
+  };
+
+  // EspoCRM validation errors come back as
+  //   { messageTranslation: { label: "validationFailure", data: { field, type } } }
+  // — translate to something readable.
+  const formatEspoError = (body) => {
+    if (!body) return null;
+    if (typeof body === 'string') return body;
+    if (body.message) return body.message;
+    const mt = body.messageTranslation;
+    if (mt?.label === 'validationFailure' && mt.data?.field) {
+      const rec = mt.scope ? `${mt.scope}.` : '';
+      return `Validation failed: ${rec}${mt.data.field} is ${mt.data.type || 'invalid'}.`;
+    }
+    if (mt?.label) return mt.label;
+    return null;
   };
 
   return (
