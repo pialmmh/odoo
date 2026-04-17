@@ -92,6 +92,18 @@ export default function Leads() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Ctrl+Space = create new lead (mirrors EspoCRM's keyboard shortcut).
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.ctrlKey && e.code === 'Space' && !dialogOpen) {
+        e.preventDefault();
+        openNew();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [dialogOpen]);
+
   const handleDelete = async (lead, e) => {
     e.stopPropagation();
     const name = lead.name || `${lead.firstName || ''} ${lead.lastName || ''}`.trim();
@@ -130,12 +142,24 @@ export default function Leads() {
             {total} {total === 1 ? 'lead' : 'leads'} total
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          {canEdit && (
-            <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={openNew}>
-              New Lead
-            </Button>
-          )}
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          {/* Create button — cloned from EspoCRM list.js setupCreateButton():
+              'Create <Scope>' label, fa-plus icon, default style, title Ctrl+Space. */}
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={openNew}
+            title="Ctrl+Space"
+            sx={{
+              bgcolor: 'grey.900',
+              color: 'common.white',
+              fontWeight: 600,
+              '&:hover': { bgcolor: 'grey.800' },
+            }}
+          >
+            Create Lead
+          </Button>
           <Tooltip title="Columns">
             <IconButton onClick={e => setColMenu(e.currentTarget)} size="small">
               <ViewColumnIcon />
@@ -189,7 +213,7 @@ export default function Leads() {
                     {shownCols.map(col => (
                       <TableCell key={col.key} sx={{ fontWeight: 600 }}>{col.label}</TableCell>
                     ))}
-                    {canEdit && <TableCell align="center" sx={{ fontWeight: 600 }}>Actions</TableCell>}
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -257,27 +281,25 @@ export default function Leads() {
                           );
                           return <TableCell key={col.key}>{lead[col.key] || '—'}</TableCell>;
                         })}
-                        {canEdit && (
-                          <TableCell align="center">
-                            <Tooltip title="Edit">
-                              <IconButton size="small" onClick={e => openEdit(lead, e)}>
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete">
-                              <IconButton size="small" onClick={e => handleDelete(lead, e)}
-                                sx={{ color: 'error.main' }}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                        )}
+                        <TableCell align="center">
+                          <Tooltip title="Edit">
+                            <IconButton size="small" onClick={e => openEdit(lead, e)}>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton size="small" onClick={e => handleDelete(lead, e)}
+                              sx={{ color: 'error.main' }}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
                   {leads.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={shownCols.length + (canEdit ? 1 : 0)} align="center" sx={{ py: 4 }}>
+                      <TableCell colSpan={shownCols.length + 1} align="center" sx={{ py: 4 }}>
                         <Typography color="text.secondary">No leads found</Typography>
                       </TableCell>
                     </TableRow>
