@@ -79,10 +79,11 @@ export default function ConvertDialog({ open, lead, onClose, onConverted }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          Convert Lead{lead?.name ? ` — ${lead.name}` : ''}
-        </Typography>
+      <DialogTitle sx={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        fontWeight: 700, fontSize: 18,
+      }}>
+        Convert Lead{lead?.name ? ` — ${lead.name}` : ''}
         <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
       </DialogTitle>
 

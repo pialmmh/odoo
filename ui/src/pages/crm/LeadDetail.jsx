@@ -264,7 +264,7 @@ export default function LeadDetail() {
       )}
 
       <ActivitiesPanel
-        entityType="Lead" id={lead.id}
+        entityType="Lead" id={lead.id} parentName={lead.name}
         refreshKey={sideRefresh}
         onRefresh={() => setSideRefresh(n => n + 1)}
       />
@@ -273,7 +273,7 @@ export default function LeadDetail() {
         refreshKey={sideRefresh}
       />
       <TasksPanel
-        entityType="Lead" id={lead.id}
+        entityType="Lead" id={lead.id} parentName={lead.name}
         refreshKey={sideRefresh}
         onRefresh={() => setSideRefresh(n => n + 1)}
       />

@@ -75,10 +75,11 @@ export default function LeadDialog({ open, onClose, lead, onSaved }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          {isEdit ? 'Edit Lead' : 'New Lead'}
-        </Typography>
+      <DialogTitle sx={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        fontWeight: 700, fontSize: 18,
+      }}>
+        {isEdit ? 'Edit Lead' : 'New Lead'}
         <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
       </DialogTitle>
 

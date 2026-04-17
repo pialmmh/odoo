@@ -66,7 +66,7 @@ function ItemList({ loading, items, emptyText = 'No Data' }) {
 }
 
 // ── Activities panel (upcoming) ─────────────────────────────────────────
-export function ActivitiesPanel({ entityType, id, refreshKey, onRefresh }) {
+export function ActivitiesPanel({ entityType, id, parentName, refreshKey, onRefresh }) {
   const [items, setItems]       = useState([]);
   const [loading, setLoading]   = useState(true);
   const [dialog, setDialog]     = useState(null);   // 'Meeting' | 'Call' | 'Task' | null
@@ -128,6 +128,7 @@ export function ActivitiesPanel({ entityType, id, refreshKey, onRefresh }) {
         kind={dialog}
         parentType={entityType}
         parentId={id}
+        parentName={parentName}
         onClose={() => setDialog(null)}
         onCreated={handleCreated}
       />
@@ -158,7 +159,7 @@ export function HistoryPanel({ entityType, id, refreshKey }) {
 }
 
 // ── Tasks panel ────────────────────────────────────────────────────────
-export function TasksPanel({ entityType, id, refreshKey, onRefresh }) {
+export function TasksPanel({ entityType, id, parentName, refreshKey, onRefresh }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState(false);
@@ -191,6 +192,7 @@ export function TasksPanel({ entityType, id, refreshKey, onRefresh }) {
         kind="Task"
         parentType={entityType}
         parentId={id}
+        parentName={parentName}
         onClose={() => setDialog(false)}
         onCreated={() => onRefresh?.()}
       />
