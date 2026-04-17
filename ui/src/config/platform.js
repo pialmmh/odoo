@@ -39,7 +39,6 @@ const config = {
 
   // ── Auth ──
   auth: {
-    mode: 'keycloak',          // 'keycloak' or 'legacy'
     keycloak: {
       url: 'http://localhost:7104',
       realm: 'telcobright',
@@ -51,6 +50,12 @@ const config = {
   // Toggle optional integrations without code changes.
   features: {
     crm: import.meta.env.VITE_CRM_ENABLED === 'true',
+  },
+
+  crmKanban: {
+    maxPerColumn: Number(import.meta.env.VITE_CRM_KANBAN_MAX_PER_COLUMN) || 100000,
+    // Default period for the Opportunity pipeline: 1w | 1m | 3m | 6m | 1y | 2y | all
+    defaultPeriod: import.meta.env.VITE_CRM_KANBAN_DEFAULT_PERIOD || '1y',
   },
 
   // ── Services (for launch-all.sh / status page) ──

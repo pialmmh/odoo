@@ -8,9 +8,13 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon, Add as AddIcon, Delete as DeleteIcon,
-  Refresh as RefreshIcon,
+  Refresh as RefreshIcon, ViewList as ListIcon, ViewKanban as KanbanIcon,
 } from '@mui/icons-material';
+import { ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { listOpportunities, deleteOpportunity, OPPORTUNITY_STAGES } from '../../services/crm';
+import OpportunityKanban, { PERIODS } from './OpportunityKanban';
+import PLATFORM from '../../config/platform';
 
 // Columns mirror layouts/Opportunity/list.json
 const COLUMNS = [
@@ -42,6 +46,10 @@ export default function Opportunities() {
   const [stageFilter, setStageFilter] = useState('all');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [view, setView] = useState('kanban');
+  const defaultPeriod = PLATFORM.crmKanban?.defaultPeriod || '1y';
+  const initialPeriod = PERIODS.some(p => p.key === defaultPeriod) ? defaultPeriod : '1y';
+  const [periodKey, setPeriodKey] = useState(initialPeriod);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,7 +74,7 @@ export default function Opportunities() {
     setLoading(false);
   }, [page, rowsPerPage, search, stageFilter]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (view === 'list') load(); }, [load, view]);
 
   const handleDelete = async (row, e) => {
     e.stopPropagation();
@@ -80,19 +88,70 @@ export default function Opportunities() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box>
           <Typography variant="h6">Opportunities</Typography>
-          <Typography variant="body2" color="text.secondary">{total} total</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {view === 'list' ? `${total} total` : 'Sales pipeline'}
+          </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          {view === 'kanban' && (
+            <Box sx={(theme) => ({
+              display: 'flex', alignItems: 'center', gap: 0.25,
+              bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.08 : 0.05),
+              borderRadius: 999, p: 0.5, mr: 0.5,
+            })}>
+              {PERIODS.map(p => {
+                const selected = p.key === periodKey;
+                return (
+                  <Box key={p.key} component="button" type="button"
+                    onClick={() => setPeriodKey(p.key)}
+                    sx={(theme) => ({
+                      border: 0, cursor: 'pointer', outline: 0,
+                      px: 1.25, py: 0.5, borderRadius: 999,
+                      fontSize: 12, fontWeight: 600, lineHeight: 1,
+                      bgcolor: selected ? theme.palette.primary.main : 'transparent',
+                      color: selected ? theme.palette.primary.contrastText : theme.palette.text.secondary,
+                      transition: 'background 120ms, color 120ms',
+                      '&:hover': !selected ? {
+                        color: theme.palette.text.primary,
+                      } : {},
+                    })}>
+                    {p.label}
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+          <ToggleButtonGroup size="small" exclusive value={view}
+            onChange={(_, v) => v && setView(v)}
+            sx={(theme) => ({
+              '& .MuiToggleButton-root': {
+                textTransform: 'none', fontWeight: 600, px: 1.5,
+                color: 'text.secondary',
+                borderColor: theme.palette.divider,
+              },
+              '& .MuiToggleButton-root.Mui-selected': {
+                bgcolor: theme.palette.primary.main,
+                color: theme.palette.primary.contrastText,
+                borderColor: theme.palette.primary.main,
+                '&:hover': { bgcolor: theme.palette.primary.dark },
+              },
+            })}>
+            <ToggleButton value="kanban"><KanbanIcon fontSize="small" sx={{ mr: 0.5 }} />Pipeline</ToggleButton>
+            <ToggleButton value="list"><ListIcon fontSize="small" sx={{ mr: 0.5 }} />List</ToggleButton>
+          </ToggleButtonGroup>
           <Button variant="contained" color="primary" size="small" startIcon={<AddIcon />}
             onClick={() => navigate('new')} sx={{ fontWeight: 600 }}>
             Create Opportunity
           </Button>
-          <Tooltip title="Refresh">
-            <IconButton onClick={load} size="small"><RefreshIcon /></IconButton>
-          </Tooltip>
+          {view === 'list' && (
+            <Tooltip title="Refresh">
+              <IconButton onClick={load} size="small"><RefreshIcon /></IconButton>
+            </Tooltip>
+          )}
         </Box>
       </Box>
 
+      {view === 'kanban' ? <OpportunityKanban periodKey={periodKey} /> : (<>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
@@ -171,6 +230,7 @@ export default function Opportunities() {
           </>
         )}
       </Card>
+      </>)}
     </Box>
   );
 }
