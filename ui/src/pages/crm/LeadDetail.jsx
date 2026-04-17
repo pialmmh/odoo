@@ -5,10 +5,10 @@ import {
   Alert, Chip, Link as MuiLink, Breadcrumbs, Grid,
 } from '@mui/material';
 import {
-  Edit as EditIcon, Delete as DeleteIcon, SyncAlt as ConvertIcon,
+  Edit as EditIcon, Delete as DeleteIcon,
   MoreHoriz as MoreIcon,
   ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon,
-  Favorite as FollowIcon, FavoriteBorder as UnfollowIcon,
+  RssFeed as FollowIcon,
   ContentCopy as DuplicateIcon,
 } from '@mui/icons-material';
 import {
@@ -168,70 +168,102 @@ export default function LeadDetail() {
         bgcolor: 'background.default',
         borderRadius: 1,
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
-          <Button
-            variant="contained"
-            size="small"
-            onClick={() => setEditOpen(true)}
-            sx={{
-              bgcolor: 'grey.900', color: 'common.white',
-              borderTopRightRadius: 0, borderBottomRightRadius: 0,
-              '&:hover': { bgcolor: 'grey.800' },
-              minWidth: 64,
-            }}
-          >
-            Edit
-          </Button>
-          <IconButton
-            size="small"
-            onClick={e => setMenuAnchor(e.currentTarget)}
-            sx={{
-              border: 1, borderColor: 'divider', borderLeft: 0,
-              borderTopLeftRadius: 0, borderBottomLeftRadius: 0,
-              borderRadius: 1,
-              bgcolor: 'background.paper',
-              px: 1,
-            }}
-          >
-            <MoreIcon fontSize="small" />
-          </IconButton>
-          <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
-            <MenuItem onClick={handleFollowToggle}>
-              {lead.isFollowed
-                ? <><FollowIcon fontSize="small" color="warning" sx={{ mr: 1 }} /> Unfollow</>
-                : <><UnfollowIcon fontSize="small" sx={{ mr: 1 }} /> Follow</>}
-            </MenuItem>
-            {isConvertable && (
-              <MenuItem onClick={() => { setMenuAnchor(null); setConvertOpen(true); }}>
-                <ConvertIcon fontSize="small" sx={{ mr: 1 }} /> Convert
+        <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => setEditOpen(true)}
+              sx={{
+                bgcolor: 'grey.900', color: 'common.white',
+                borderTopRightRadius: 0, borderBottomRightRadius: 0,
+                '&:hover': { bgcolor: 'grey.800' },
+                minWidth: 64,
+              }}
+            >
+              Edit
+            </Button>
+            <IconButton
+              size="small"
+              onClick={e => setMenuAnchor(e.currentTarget)}
+              sx={{
+                border: 1, borderColor: 'divider', borderLeft: 0,
+                borderTopLeftRadius: 0, borderBottomLeftRadius: 0,
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                px: 1,
+              }}
+            >
+              <MoreIcon fontSize="small" />
+            </IconButton>
+            <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
+              <MenuItem onClick={handleDuplicate}>
+                <DuplicateIcon fontSize="small" sx={{ mr: 1 }} /> Duplicate
               </MenuItem>
-            )}
-            <MenuItem onClick={handleDuplicate}>
-              <DuplicateIcon fontSize="small" sx={{ mr: 1 }} /> Duplicate
-            </MenuItem>
-            <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-              <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Remove
-            </MenuItem>
-          </Menu>
+              <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+                <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Remove
+              </MenuItem>
+            </Menu>
+          </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton
-            size="small"
-            disabled={!neighborIds.prev}
-            onClick={() => neighborIds.prev && navigate(`../${neighborIds.prev}`)}
-            title="Previous Entry"
-          >
-            <ChevronLeftIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            disabled={!neighborIds.next}
-            onClick={() => neighborIds.next && navigate(`../${neighborIds.next}`)}
-            title="Next Entry"
-          >
-            <ChevronRightIcon fontSize="small" />
-          </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex' }}>
+            <IconButton
+              size="small"
+              disabled={!neighborIds.prev}
+              onClick={() => neighborIds.prev && navigate(`../${neighborIds.prev}`)}
+              title="Previous Entry"
+            >
+              <ChevronLeftIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              disabled={!neighborIds.next}
+              onClick={() => neighborIds.next && navigate(`../${neighborIds.next}`)}
+              title="Next Entry"
+            >
+              <ChevronRightIcon fontSize="small" />
+            </IconButton>
+          </Box>
+
+          {/* Follow + Convert button group (right side) */}
+          <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
+            <Button
+              variant={lead.isFollowed ? 'contained' : 'outlined'}
+              color={lead.isFollowed ? 'success' : 'inherit'}
+              size="small"
+              startIcon={<FollowIcon fontSize="small" />}
+              onClick={handleFollowToggle}
+              sx={{
+                borderColor: 'divider',
+                color: lead.isFollowed ? 'common.white' : 'text.secondary',
+                bgcolor: lead.isFollowed ? 'success.main' : 'background.paper',
+                fontWeight: 500,
+                borderTopRightRadius: isConvertable ? 0 : undefined,
+                borderBottomRightRadius: isConvertable ? 0 : undefined,
+              }}
+            >
+              {lead.isFollowed ? 'Followed' : 'Follow'}
+            </Button>
+            {isConvertable && (
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => setConvertOpen(true)}
+                sx={{
+                  bgcolor: '#6366f1',
+                  color: 'common.white',
+                  '&:hover': { bgcolor: '#4f46e5' },
+                  borderTopLeftRadius: 0,
+                  borderBottomLeftRadius: 0,
+                  fontWeight: 500,
+                }}
+              >
+                Convert
+              </Button>
+            )}
+          </Box>
         </Box>
       </Box>
     </>
