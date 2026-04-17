@@ -34,6 +34,22 @@ export const createLead = (data)   => post('/Lead', data);
 export const updateLead = (id, d)  => put(`/Lead/${id}`, d);
 export const deleteLead = (id)     => del(`/Lead/${id}`);
 
+// ── Stream (Notes on a record) ──
+export const getStream = (entityType, id, params) =>
+  get(`/${entityType}/${id}/stream`, params);
+
+export const postNote = (entityType, id, text) =>
+  post('/Note', { parentType: entityType, parentId: id, type: 'Post', post: text });
+
+// ── Activities (upcoming) + History (past) + Tasks ──
+// EspoCRM path: /Activities/{scope}/{id}/{activities|history}
+export const getActivities = (entityType, id) =>
+  get(`/Activities/${entityType}/${id}/activities`);
+export const getHistory = (entityType, id) =>
+  get(`/Activities/${entityType}/${id}/history`);
+export const getRelatedTasks = (entityType, id, params) =>
+  get(`/${entityType}/${id}/tasks`, params);
+
 // ── Lead → Convert flow ──
 // Mirrors EspoCRM's /Lead/action/getConvertAttributes + /Lead/action/convert
 export const getConvertAttributes = (id) =>
