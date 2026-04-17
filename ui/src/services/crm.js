@@ -34,6 +34,21 @@ export const createLead = (data)   => post('/Lead', data);
 export const updateLead = (id, d)  => put(`/Lead/${id}`, d);
 export const deleteLead = (id)     => del(`/Lead/${id}`);
 
+// ── Current user (cached) — needed to populate assignedUserId on creates ──
+let _currentUser = null;
+export async function getCurrentUser() {
+  if (_currentUser) return _currentUser;
+  const resp = await get('/App/user');
+  _currentUser = resp?.user || null;
+  return _currentUser;
+}
+
+// ── Activity creates (Meeting / Call / Task / Email) ──
+export const createMeeting = (data) => post('/Meeting', data);
+export const createCall    = (data) => post('/Call', data);
+export const createTask    = (data) => post('/Task', data);
+export const createEmail   = (data) => post('/Email', data);
+
 // ── Stream (Notes on a record) ──
 export const getStream = (entityType, id, params) =>
   get(`/${entityType}/${id}/stream`, params);

@@ -6,10 +6,11 @@ import {
 } from '@mui/material';
 import {
   Edit as EditIcon, Delete as DeleteIcon, SyncAlt as ConvertIcon,
-  MoreVert as MoreIcon, ArrowBack as BackIcon,
+  MoreHoriz as MoreIcon,
+  ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import {
-  getLead, deleteLead, LEAD_NOT_ACTUAL_STATUSES,
+  getLead, deleteLead, listLeads, LEAD_NOT_ACTUAL_STATUSES,
 } from '../../services/crm';
 import { useRBAC } from '../../hooks/useRBAC';
 import LeadDialog from './LeadDialog';
@@ -36,6 +37,8 @@ export default function LeadDetail() {
   const [editOpen, setEditOpen]       = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [menuAnchor, setMenuAnchor]   = useState(null);
+  const [neighborIds, setNeighborIds] = useState({ prev: null, next: null });
+  const [sideRefresh, setSideRefresh] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +52,23 @@ export default function LeadDetail() {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Prev/next in the same default ordering the list uses.
+  useEffect(() => {
+    let live = true;
+    listLeads({ maxSize: 200, orderBy: 'createdAt', order: 'desc', select: 'id' })
+      .then(res => {
+        if (!live) return;
+        const list = res.list || [];
+        const idx = list.findIndex(r => r.id === id);
+        setNeighborIds({
+          prev: idx > 0 ? list[idx - 1].id : null,
+          next: idx >= 0 && idx < list.length - 1 ? list[idx + 1].id : null,
+        });
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [id]);
 
   const handleDelete = async () => {
     setMenuAnchor(null);
@@ -83,35 +103,66 @@ export default function LeadDetail() {
   // ── Header area ──
   const header = (
     <>
-      <Breadcrumbs sx={{ mb: 1 }}>
+      <Breadcrumbs sx={{ mb: 0.5 }}>
         <MuiLink component={RouterLink} to=".." underline="hover">Enquiries</MuiLink>
         <Typography color="text.primary">{lead.name}</Typography>
       </Breadcrumbs>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-          <IconButton size="small" onClick={() => navigate('..')}><BackIcon /></IconButton>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
-              {lead.name || '(unnamed)'}
-            </Typography>
-            {lead.title && (
-              <Typography variant="body2" color="text.secondary" noWrap>
-                {lead.title}{lead.accountName ? ` · ${lead.accountName}` : ''}
-              </Typography>
-            )}
-          </Box>
-        </Box>
+      <Box sx={{ minWidth: 0, mb: 1.5 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
+          {lead.name || '(unnamed)'}
+        </Typography>
+        {lead.title && (
+          <Typography variant="body2" color="text.secondary" noWrap>
+            {lead.title}{lead.accountName ? ` · ${lead.accountName}` : ''}
+          </Typography>
+        )}
+      </Box>
 
-        <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+      {/* Action bar — mirrors record/detail.tpl:
+          left:  btn-group { Edit } + kebab
+          right: btn-group { prev / next } */}
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 2,
+        gap: 2,
+        px: 1.5,
+        py: 1,
+        bgcolor: 'background.default',
+        borderRadius: 1,
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
           {canEdit && (
-            <Button variant="contained" size="small" startIcon={<EditIcon />}
-              onClick={() => setEditOpen(true)}>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => setEditOpen(true)}
+              sx={{
+                bgcolor: 'grey.900', color: 'common.white',
+                borderTopRightRadius: 0, borderBottomRightRadius: 0,
+                '&:hover': { bgcolor: 'grey.800' },
+                minWidth: 64,
+              }}
+            >
               Edit
             </Button>
           )}
-          <IconButton size="small" onClick={e => setMenuAnchor(e.currentTarget)}>
-            <MoreIcon />
+          <IconButton
+            size="small"
+            onClick={e => setMenuAnchor(e.currentTarget)}
+            sx={{
+              border: 1, borderColor: 'divider',
+              borderLeft: canEdit ? 0 : 1,
+              borderTopLeftRadius: canEdit ? 0 : 4,
+              borderBottomLeftRadius: canEdit ? 0 : 4,
+              borderRadius: 1,
+              bgcolor: 'background.paper',
+              px: 1,
+            }}
+          >
+            <MoreIcon fontSize="small" />
           </IconButton>
           <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
             {canEdit && isConvertable && (
@@ -125,6 +176,25 @@ export default function LeadDetail() {
               </MenuItem>
             )}
           </Menu>
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <IconButton
+            size="small"
+            disabled={!neighborIds.prev}
+            onClick={() => neighborIds.prev && navigate(`../${neighborIds.prev}`)}
+            title="Previous Entry"
+          >
+            <ChevronLeftIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            disabled={!neighborIds.next}
+            onClick={() => neighborIds.next && navigate(`../${neighborIds.next}`)}
+            title="Next Entry"
+          >
+            <ChevronRightIcon fontSize="small" />
+          </IconButton>
         </Box>
       </Box>
     </>
@@ -193,9 +263,20 @@ export default function LeadDetail() {
         </Panel>
       )}
 
-      <ActivitiesPanel entityType="Lead" id={lead.id} />
-      <HistoryPanel    entityType="Lead" id={lead.id} />
-      <TasksPanel      entityType="Lead" id={lead.id} />
+      <ActivitiesPanel
+        entityType="Lead" id={lead.id}
+        refreshKey={sideRefresh}
+        onRefresh={() => setSideRefresh(n => n + 1)}
+      />
+      <HistoryPanel
+        entityType="Lead" id={lead.id}
+        refreshKey={sideRefresh}
+      />
+      <TasksPanel
+        entityType="Lead" id={lead.id}
+        refreshKey={sideRefresh}
+        onRefresh={() => setSideRefresh(n => n + 1)}
+      />
     </>
   );
 
