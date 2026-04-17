@@ -39,6 +39,27 @@ export const createLead = (data)   => post('/Lead', data);
 export const updateLead = (id, d)  => put(`/Lead/${id}`, d);
 export const deleteLead = (id)     => del(`/Lead/${id}`);
 
+// ── Contact helpers ──
+export const listContacts  = (params) => get('/Contact', params);
+export const getContact    = (id)     => get(`/Contact/${id}`);
+export const createContact = (data)   => post('/Contact', data);
+export const updateContact = (id, d)  => put(`/Contact/${id}`, d);
+export const deleteContact = (id)     => del(`/Contact/${id}`);
+
+// ── Account helpers ──
+export const listAccounts  = (params) => get('/Account', params);
+export const getAccount    = (id)     => get(`/Account/${id}`);
+export const createAccount = (data)   => post('/Account', data);
+export const updateAccount = (id, d)  => put(`/Account/${id}`, d);
+export const deleteAccount = (id)     => del(`/Account/${id}`);
+
+// ── Opportunity helpers ──
+export const listOpportunities  = (params) => get('/Opportunity', params);
+export const getOpportunity     = (id)     => get(`/Opportunity/${id}`);
+export const createOpportunity  = (data)   => post('/Opportunity', data);
+export const updateOpportunity  = (id, d)  => put(`/Opportunity/${id}`, d);
+export const deleteOpportunity  = (id)     => del(`/Opportunity/${id}`);
+
 // ── Current user (cached) — needed to populate assignedUserId on creates ──
 let _currentUser = null;
 export async function getCurrentUser() {

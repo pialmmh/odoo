@@ -23,6 +23,9 @@ import {
   AddShoppingCart as PurchaseIcon,
   ContactPhone as CrmIcon,
   PersonAdd as LeadsIcon,
+  Person as ContactsIcon,
+  Business as AccountsIcon,
+  TrendingUp as OpportunitiesIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -73,7 +76,10 @@ export default function Sidebar() {
     // ── CRM (feature-flagged) ──
     ...(FEATURES.crm ? [
       { section: 'CRM' },
-      { text: 'Leads', icon: <LeadsIcon />, path: `${base}/crm/leads` },
+      { text: 'Leads',         icon: <LeadsIcon />,         path: `${base}/crm/leads` },
+      { text: 'Contacts',      icon: <ContactsIcon />,      path: `${base}/crm/contacts` },
+      { text: 'Accounts',      icon: <AccountsIcon />,      path: `${base}/crm/accounts` },
+      { text: 'Opportunities', icon: <OpportunitiesIcon />, path: `${base}/crm/opportunities` },
     ] : []),
 
     // ── Admin ──
@@ -124,8 +130,8 @@ export default function Sidebar() {
         '& .MuiDrawer-paper': {
           width: DRAWER_WIDTH,
           boxSizing: 'border-box',
-          bgcolor: '#fff',
-          borderRight: '1px solid #e5e7eb',
+          bgcolor: 'background.paper',
+          borderRight: (theme) => `1px solid ${theme.palette.divider}`,
         },
       }}
     >
@@ -154,24 +160,13 @@ export default function Sidebar() {
       <List sx={{ px: 1, pt: 0.5, overflow: 'auto' }}>
         {visibleItems.map((item, idx) => {
           if (item.section) {
+            const neutral = item.section === 'Admin';
             return (
-              <Typography
-                key={`sec-${item.section}`}
-                variant="overline"
-                sx={{
-                  display: 'block',
-                  px: 1.5,
-                  pt: idx === 0 ? 0.5 : 1.5,
-                  pb: 0.3,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: 1.2,
-                  color: 'text.secondary',
-                  lineHeight: 1,
-                }}
-              >
-                {item.section}
-              </Typography>
+              <Box key={`sec-${item.section}`} sx={{ mt: idx === 0 ? 0 : 0.5 }}>
+                <span className={`sidebar-section${neutral ? ' sidebar-section--neutral' : ''}`}>
+                  {item.section}
+                </span>
+              </Box>
             );
           }
 
@@ -190,7 +185,7 @@ export default function Sidebar() {
                 '&:hover': { bgcolor: brand.sidebar.hoverBg },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 32, color: isActive(item.path) ? 'primary.main' : '#6b7280' }}>
+              <ListItemIcon sx={{ minWidth: 32, color: isActive(item.path) ? 'primary.main' : 'text.secondary' }}>
                 {item.icon}
               </ListItemIcon>
               <ListItemText
