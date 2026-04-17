@@ -24,14 +24,15 @@ import MessageBody from './MessageBody';
 import ComposeDialog from './ComposeDialog';
 
 // System folders map — mirror EspoCRM's special values.
+// `tone` maps to theme palette key so colors adapt to light/dark/tenant.
 const SYSTEM_FOLDERS = [
-  { id: 'all',       name: 'All',      icon: <AllIcon fontSize="small" /> },
-  { id: 'inbox',     name: 'Inbox',    icon: <InboxIcon fontSize="small" /> },
+  { id: 'all',       name: 'All',       icon: <AllIcon fontSize="small" /> },
+  { id: 'inbox',     name: 'Inbox',     tone: '#2563eb', icon: <InboxIcon fontSize="small" /> },
   { id: 'important', name: 'Important', icon: <StarIcon fontSize="small" /> },
-  { id: 'sent',      name: 'Sent',     icon: <SentIcon fontSize="small" /> },
-  { id: 'drafts',    name: 'Drafts',   icon: <DraftsIcon fontSize="small" /> },
-  { id: 'archive',   name: 'Archive',  icon: <ArchiveIcon fontSize="small" /> },
-  { id: 'trash',     name: 'Trash',    icon: <TrashIcon fontSize="small" /> },
+  { id: 'sent',      name: 'Sent',      tone: '#0ea5e9', icon: <SentIcon fontSize="small" /> },
+  { id: 'drafts',    name: 'Drafts',    icon: <DraftsIcon fontSize="small" /> },
+  { id: 'archive',   name: 'Archive',   icon: <ArchiveIcon fontSize="small" /> },
+  { id: 'trash',     name: 'Trash',     icon: <TrashIcon fontSize="small" /> },
 ];
 
 function buildFolderWhere(folderId) {
@@ -240,22 +241,36 @@ export default function Emails() {
           borderRadius: 1.5, p: 0.5,
         })}>
           <List dense disablePadding>
-            {SYSTEM_FOLDERS.map(f => (
-              <ListItemButton key={f.id} selected={folderId === f.id}
-                onClick={() => { setFolderId(f.id); setViewId(null); setSelectedIds(new Set()); }}
-                sx={(theme) => ({
-                  borderRadius: 1, mb: 0.25,
-                  '&.Mui-selected': {
-                    bgcolor: alpha(theme.palette.primary.main, 0.12),
-                    color: theme.palette.primary.main,
-                    '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
-                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.18) },
-                  },
-                })}>
-                <ListItemIcon sx={{ minWidth: 32 }}>{f.icon}</ListItemIcon>
-                <ListItemText primary={f.name} primaryTypographyProps={{ fontSize: 13, fontWeight: 600 }} />
-              </ListItemButton>
-            ))}
+            {SYSTEM_FOLDERS.map(f => {
+              const selected = folderId === f.id;
+              const tone = f.tone;
+              return (
+                <ListItemButton key={f.id} selected={selected}
+                  onClick={() => { setFolderId(f.id); setViewId(null); setSelectedIds(new Set()); }}
+                  sx={(theme) => ({
+                    borderRadius: 1, mb: 0.25,
+                    '&.Mui-selected': tone ? {
+                      bgcolor: alpha(tone, 0.14),
+                      '&:hover': { bgcolor: alpha(tone, 0.22) },
+                    } : {
+                      bgcolor: alpha(theme.palette.primary.main, 0.12),
+                      color: theme.palette.primary.main,
+                      '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
+                      '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.18) },
+                    },
+                  })}>
+                  <ListItemIcon sx={{ minWidth: 32, color: tone || undefined }}>
+                    {f.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={f.name}
+                    primaryTypographyProps={{
+                      fontSize: 13,
+                      fontWeight: selected ? 700 : 600,
+                      color: selected && tone ? tone : undefined,
+                    }} />
+                </ListItemButton>
+              );
+            })}
             {folders.length > 0 && (
               <>
                 <Divider sx={{ my: 1 }} />
