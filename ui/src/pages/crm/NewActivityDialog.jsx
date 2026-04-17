@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import {
   Close as CloseIcon, Minimize as MinimizeIcon,
-  Add as AddIcon,
+  Add as AddIcon, ClearOutlined as RemoveIcon,
 } from '@mui/icons-material';
 import {
   createMeeting, createCall, createTask, getCurrentUser,
@@ -26,6 +26,22 @@ import {
 //                      description
 //     Right side card: assigned user (avatar), teams, attendees (leads
 //                      pre-filled with current lead)
+
+// Reminder enum (entityDefs/Reminder.json)
+const REMINDER_TYPES   = ['Popup', 'Email'];
+const REMINDER_SECONDS = [0, 60, 120, 300, 600, 900, 1800, 3600, 7200, 18000, 86400, 604800];
+const stringifySeconds = (s) => {
+  if (!s) return 'on time';
+  const d = Math.floor(s / 86400);
+  let r = s % 86400;
+  const h = Math.floor(r / 3600); r = r % 3600;
+  const m = Math.floor(r / 60);
+  const parts = [];
+  if (d) parts.push(`${d}d`);
+  if (h) parts.push(`${h}h`);
+  if (m) parts.push(`${m}m`);
+  return parts.join(' ') + ' before';
+};
 
 const MEETING_STATUS = ['Planned', 'Held', 'Not Held'];
 const CALL_STATUS    = ['Planned', 'Held', 'Not Held'];
@@ -85,6 +101,7 @@ export default function NewActivityDialog({
         startDate: fmtDate(start), startTime: fmtTime(start),
         endDate:   fmtDate(end),   endTime:   fmtTime(end),
         duration: 3600,
+        reminders: [],
         description: '',
       });
     } else if (kind === 'Call') {
@@ -94,12 +111,14 @@ export default function NewActivityDialog({
         startDate: fmtDate(start), startTime: fmtTime(start),
         endDate:   fmtDate(ed),    endTime:   fmtTime(ed),
         duration: 900,
+        reminders: [],
         description: '',
       });
     } else if (kind === 'Task') {
       setForm({
         name: '', status: 'Not Started', priority: 'Normal',
         dateDue: '',
+        reminders: [],
         description: '',
       });
     }
@@ -157,6 +176,7 @@ export default function NewActivityDialog({
         assignedUserId: user?.id,
         description: form.description || '',
         status: form.status,
+        reminders: form.reminders || [],
       };
       if (kind === 'Meeting') {
         await createMeeting({
@@ -355,9 +375,48 @@ export default function NewActivityDialog({
             </Field>
 
             <Field label="Reminders">
-              <IconButton size="small" disabled sx={{ border: 1, borderColor: 'divider' }}>
-                <AddIcon fontSize="small" />
-              </IconButton>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-start' }}>
+                {(form.reminders || []).map((r, i) => (
+                  <Box key={i} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <FormControl size="small" sx={{ minWidth: 100 }}>
+                      <Select value={r.type}
+                        onChange={e => setForm(f => ({
+                          ...f,
+                          reminders: f.reminders.map((x, idx) => idx === i ? { ...x, type: e.target.value } : x),
+                        }))}>
+                        {REMINDER_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                      <Select value={r.seconds}
+                        onChange={e => setForm(f => ({
+                          ...f,
+                          reminders: f.reminders.map((x, idx) => idx === i ? { ...x, seconds: Number(e.target.value) } : x),
+                        }))}>
+                        {REMINDER_SECONDS.map(s => (
+                          <MenuItem key={s} value={s}>{stringifySeconds(s)}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <IconButton size="small" title="Remove"
+                      onClick={() => setForm(f => ({
+                        ...f,
+                        reminders: f.reminders.filter((_, idx) => idx !== i),
+                      }))}>
+                      <RemoveIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))}
+                <IconButton size="small"
+                  title="Add reminder"
+                  onClick={() => setForm(f => ({
+                    ...f,
+                    reminders: [...(f.reminders || []), { type: 'Popup', seconds: 300 }],
+                  }))}
+                  sx={{ border: 1, borderColor: 'divider' }}>
+                  <AddIcon fontSize="small" />
+                </IconButton>
+              </Box>
             </Field>
 
             <Field label="Description" last>
