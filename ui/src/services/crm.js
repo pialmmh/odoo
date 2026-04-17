@@ -77,6 +77,47 @@ export const deleteTask = (id)     => del(`/Task/${id}`);
 export const listMeetings = (params) => get('/Meeting', params);
 export const listCalls    = (params) => get('/Call', params);
 
+// ── Email ──
+export const listEmails    = (params) => get('/Email', params);
+export const getEmail      = (id)     => get(`/Email/${id}`);
+export const updateEmail   = (id, d)  => put(`/Email/${id}`, d);
+export const deleteEmail   = (id)     => del(`/Email/${id}`);
+export const sendEmailMsg  = (data)   => post('/Email', { ...data, status: 'Sending' });
+export const saveEmailDraft = (data) => {
+  if (data.id) return put(`/Email/${data.id}`, { ...data, status: 'Draft' });
+  return post('/Email', { ...data, status: 'Draft' });
+};
+export const emailMassUpdate = (ids, data) =>
+  post('/Email/action/massUpdate', { ids, data });
+export const markEmailsRead = (ids, isRead) => emailMassUpdate(ids, { isRead });
+export const moveEmailsToFolder = (ids, folderId) => emailMassUpdate(ids, { folderId });
+export const linkEmailToParent = (id, parentType, parentId, parentName) =>
+  put(`/Email/${id}`, { parentType, parentId, parentName });
+
+// ── EmailFolder (custom user folders) ──
+export const listEmailFolders = (params) => get('/EmailFolder', { maxSize: 200, ...params });
+
+// ── Attachments (two-step: POST metadata+base64, then use id in email) ──
+export const uploadAttachment = async (file, relatedType = 'Email', field = 'attachments') => {
+  const base64 = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+  return post('/Attachment', {
+    name: file.name,
+    type: file.type,
+    size: file.size,
+    role: 'Attachment',
+    relatedType,
+    field,
+    file: base64,
+  });
+};
+export const attachmentDownloadUrl = (attachmentId) =>
+  `/api/crm/Attachment/file/${attachmentId}`;
+
 // ── Current user (cached) — needed to populate assignedUserId on creates ──
 let _currentUser = null;
 export async function getCurrentUser() {

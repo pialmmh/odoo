@@ -29,6 +29,10 @@ import {
   SupportAgent as CasesIcon,
   TaskAlt as TasksIcon,
   CalendarMonth as CalendarIcon,
+  Email as EmailsIcon,
+  Campaign as CampaignIcon,
+  Phone as VoiceIcon,
+  Policy as PolicyIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -86,6 +90,11 @@ export default function Sidebar() {
       { text: 'Cases',         icon: <CasesIcon />,         path: `${base}/crm/cases` },
       { text: 'Tasks',         icon: <TasksIcon />,         path: `${base}/crm/tasks` },
       { text: 'Calendar',      icon: <CalendarIcon />,      path: `${base}/crm/calendar` },
+      { text: 'Emails',        icon: <EmailsIcon />,        path: `${base}/crm/emails` },
+
+      { section: 'Campaign' },
+      { text: 'Voice Campaigns', icon: <VoiceIcon />,    path: `${base}/crm/campaign/voice` },
+      { text: 'Voice Policies',  icon: <PolicyIcon />,   path: `${base}/crm/campaign/voice/policies` },
     ] : []),
 
     // ── Admin ──
@@ -99,6 +108,10 @@ export default function Sidebar() {
     const loc = location.pathname;
     if (path === `${base}/`) return loc === `${base}/` || loc === `${base}`;
     if (path === `${base}/infra`) return loc === `${base}/infra`;
+    // Voice Campaigns parent vs Voice Policies sibling: don't highlight parent
+    // when on /policies child.
+    if (path === `${base}/crm/campaign/voice`)
+      return loc.startsWith(path) && !loc.startsWith(`${path}/policies`);
     return loc.startsWith(path);
   };
 

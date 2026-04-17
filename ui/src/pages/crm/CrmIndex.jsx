@@ -18,6 +18,12 @@ import Tasks       from './Tasks';
 import TaskDetail  from './TaskDetail';
 import TaskEdit    from './TaskEdit';
 import Calendar    from './Calendar';
+import Emails      from './emails/Emails';
+
+import VoiceCampaigns      from './campaign/voice/VoiceCampaigns';
+import VoiceCampaignEdit   from './campaign/voice/VoiceCampaignEdit';
+import VoiceCampaignDetail from './campaign/voice/VoiceCampaignDetail';
+import VoicePolicies       from './campaign/voice/VoicePolicies';
 
 export default function CrmIndex() {
   return (
@@ -55,6 +61,15 @@ export default function CrmIndex() {
       <Route path="tasks/:id/edit" element={<TaskEdit />} />
 
       <Route path="calendar"       element={<Calendar />} />
+
+      <Route path="emails"         element={<Emails />} />
+      <Route path="emails/:id"     element={<Emails />} />
+
+      <Route path="campaign/voice"             element={<VoiceCampaigns />} />
+      <Route path="campaign/voice/new"         element={<VoiceCampaignEdit />} />
+      <Route path="campaign/voice/:id"         element={<VoiceCampaignDetail />} />
+      <Route path="campaign/voice/:id/edit"    element={<VoiceCampaignEdit />} />
+      <Route path="campaign/voice/policies"    element={<VoicePolicies />} />
 
       <Route path="*" element={<Navigate to="leads" replace />} />
     </Routes>
