@@ -1,0 +1,24 @@
+tenant:
+  name: Telcobright
+  slug: telcobright
+  profile: prod
+  environment: production
+
+branding:
+  display-name: Telcobright
+  short-name: TB
+  theme: green
+
+killbill:
+  url: http://killbill.internal:18080
+  api-key: bob
+  api-secret: lazar
+  username: admin
+  password: ${KB_PASSWORD}
+
+catalog:
+  url: http://odoo.internal:7169
+  db: odoo_billing
+  partner-id: 1
+
+products: {}

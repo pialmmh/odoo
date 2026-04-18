@@ -19,7 +19,7 @@ export default function MainLayout() {
   }, [tenantSlug, tenants, activeTenant]);
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f6fa' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <Sidebar />
       <TopBar />
       <Box component="main" sx={{ flexGrow: 1, p: 3, ml: 0 }}>

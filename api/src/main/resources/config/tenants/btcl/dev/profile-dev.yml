@@ -1,0 +1,24 @@
+tenant:
+  name: BTCL
+  slug: btcl
+  profile: dev
+  environment: development
+
+branding:
+  display-name: BTCL
+  short-name: TB
+  theme: green
+
+killbill:
+  url: http://127.0.0.1:18080
+  api-key: btcl
+  api-secret: btcl-secret
+  username: admin
+  password: password
+
+catalog:
+  url: http://127.0.0.1:7169
+  db: odoo_billing
+  partner-id: 8
+
+products: {}

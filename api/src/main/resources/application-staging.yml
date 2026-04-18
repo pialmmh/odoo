@@ -1,0 +1,18 @@
+# =============================================================================
+# STAGING profile — this PC, production-like.
+# Activate by setting `spring.profiles.active: staging` in application.yml.
+# =============================================================================
+
+integrations:
+  crm:
+    enabled: true
+
+    # Points at the btcl/staging EspoCRM install
+    # (espocrm/tools/deploy/tenant-conf/btcl/staging.yml). Use 'btcl.localhost'
+    # so bootstrap.php routes to the btcl tenant DB rather than master.
+    base-url: http://btcl.localhost:7081
+
+    admin-user:     admin
+    admin-password: admin
+
+    api-key: ''

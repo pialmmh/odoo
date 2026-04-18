@@ -15,6 +15,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 
 /**
  * Thin forwarder to EspoCRM REST. Injects X-Api-Key and passes method/path/qs/body 1:1.
@@ -44,9 +45,26 @@ public class EspoClient {
         }
 
         HttpRequest.Builder rb = HttpRequest.newBuilder(URI.create(url))
-                .header("X-Api-Key", props.getApiKey())
                 .header(HttpHeaders.ACCEPT, accept != null ? accept : MediaType.APPLICATION_JSON_VALUE)
                 .timeout(Duration.ofSeconds(30));
+
+        // Auth: prefer admin Basic (works for admin endpoints too); fall back
+        // to X-Api-Key if configured. See EspoProperties for why.
+        String adminUser = props.getAdminUser();
+        String adminPassword = props.getAdminPassword();
+        if (adminUser != null && !adminUser.isEmpty()
+                && adminPassword != null && !adminPassword.isEmpty()) {
+            String token = Base64.getEncoder().encodeToString(
+                    (adminUser + ":" + adminPassword).getBytes(StandardCharsets.UTF_8));
+            rb.header(HttpHeaders.AUTHORIZATION, "Basic " + token);
+        } else if (props.getApiKey() != null && !props.getApiKey().isEmpty()) {
+            rb.header("X-Api-Key", props.getApiKey());
+        }
+
+        // Note: for multi-tenant routing (bootstrap.php uses Host's subdomain
+        // prefix), set base-url directly — e.g. http://btcl.localhost:7081 —
+        // rather than overriding the Host header. Java's HttpClient treats
+        // Host as a restricted header.
 
         HttpRequest.BodyPublisher pub = (body == null || body.isEmpty())
                 ? HttpRequest.BodyPublishers.noBody()

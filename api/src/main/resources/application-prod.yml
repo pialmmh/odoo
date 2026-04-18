@@ -1,0 +1,24 @@
+# =============================================================================
+# PROD profile — real production server.
+# Activate by setting `spring.profiles.active: prod` in application.yml.
+#
+# DO NOT commit real production credentials to this repo. Use one of:
+#   - an untracked application-prod-local.yml next to the jar (Spring Boot
+#     picks it up automatically and it overrides this file's keys)
+#   - a CI-managed secrets file deployed separately
+# =============================================================================
+
+integrations:
+  crm:
+    enabled: true
+
+    # Real prod Espo endpoint (use the Host header form of the tenant, e.g.
+    # btcl.<domain> so bootstrap.php routes to the right tenant DB).
+    base-url: https://crm.btcliptelephony.gov.bd
+
+    # Placeholders — override in application-prod-local.yml (gitignored)
+    # before running. If these stay empty, CRM admin endpoints will 401.
+    admin-user:     REPLACE_ME
+    admin-password: REPLACE_ME
+
+    api-key: ''

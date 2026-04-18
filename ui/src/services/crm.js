@@ -74,8 +74,11 @@ export const updateTask = (id, d)  => put(`/Task/${id}`, d);
 export const deleteTask = (id)     => del(`/Task/${id}`);
 
 // ── Meeting / Call (for calendar) ──
-export const listMeetings = (params) => get('/Meeting', params);
-export const listCalls    = (params) => get('/Call', params);
+export const listMeetings   = (params) => get('/Meeting', params);
+export const getMeeting     = (id)     => get(`/Meeting/${id}`);
+export const updateMeeting  = (id, d)  => put(`/Meeting/${id}`, d);
+export const deleteMeeting  = (id)     => del(`/Meeting/${id}`);
+export const listCalls      = (params) => get('/Call', params);
 
 // ── Email ──
 export const listEmails    = (params) => get('/Email', params);
@@ -195,3 +198,96 @@ export const TASK_PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
 // ── Meeting / Call enum values ──
 export const MEETING_STATUSES = ['Planned', 'Held', 'Not Held'];
 export const CALL_STATUSES    = ['Planned', 'Held', 'Not Held'];
+
+// ── Admin: Users, Teams, Roles, Auth Log/Tokens, Action History, API Users ──
+// Users — Espo entity: User. Types: regular | admin | api | portal | system | super-admin.
+export const listUsers   = (params) => get('/User',  params);
+export const getUser     = (id)     => get(`/User/${id}`);
+export const createUser  = (data)   => post('/User',    data);
+export const updateUser  = (id, d)  => put(`/User/${id}`, d);
+export const deleteUser  = (id)     => del(`/User/${id}`);
+
+// Teams
+export const listTeams   = (params) => get('/Team',  params);
+export const getTeam     = (id)     => get(`/Team/${id}`);
+export const createTeam  = (data)   => post('/Team',    data);
+export const updateTeam  = (id, d)  => put(`/Team/${id}`, d);
+export const deleteTeam  = (id)     => del(`/Team/${id}`);
+
+// Roles
+export const listRoles   = (params) => get('/Role',  params);
+export const getRole     = (id)     => get(`/Role/${id}`);
+export const createRole  = (data)   => post('/Role',    data);
+export const updateRole  = (id, d)  => put(`/Role/${id}`, d);
+export const deleteRole  = (id)     => del(`/Role/${id}`);
+
+// Auth Log (login history, read-only)
+export const listAuthLog = (params) => get('/AuthLogRecord', params);
+
+// Auth Tokens (active sessions; can be deleted to revoke)
+export const listAuthTokens = (params) => get('/AuthToken', params);
+export const revokeAuthToken = (id)   => del(`/AuthToken/${id}`);
+
+// Action History (log of user actions, read-only)
+export const listActionHistory = (params) => get('/ActionHistoryRecord', params);
+
+// API Users — stored as User with type='api'
+export const listApiUsers  = (params) => listUsers({
+  ...params,
+  'where[0][type]': 'equals',
+  'where[0][attribute]': 'type',
+  'where[0][value]': 'api',
+});
+
+// Settings: GET /Settings returns all config, PATCH /Settings with partial updates.
+export const getSettings    = ()     => get('/Settings');
+export const updateSettings = (data) => api.patch('/Settings', data).then((r) => r.data);
+
+// Messaging CRUD entities
+export const listInboundEmails = (params) => get('/InboundEmail', params);
+export const getInboundEmail   = (id)     => get(`/InboundEmail/${id}`);
+export const createInboundEmail = (data)  => post('/InboundEmail', data);
+export const updateInboundEmail = (id, d) => put(`/InboundEmail/${id}`, d);
+export const deleteInboundEmail = (id)    => del(`/InboundEmail/${id}`);
+
+export const listEmailAccounts = (params) => get('/EmailAccount', params);
+export const getEmailAccount   = (id)     => get(`/EmailAccount/${id}`);
+export const createEmailAccount = (data)  => post('/EmailAccount', data);
+export const updateEmailAccount = (id, d) => put(`/EmailAccount/${id}`, d);
+export const deleteEmailAccount = (id)    => del(`/EmailAccount/${id}`);
+
+export const listEmailFilters  = (params) => get('/EmailFilter', params);
+export const createEmailFilter = (data)   => post('/EmailFilter', data);
+export const updateEmailFilter = (id, d)  => put(`/EmailFilter/${id}`, d);
+export const deleteEmailFilter = (id)     => del(`/EmailFilter/${id}`);
+
+export const listGroupEmailFolders  = (params) => get('/GroupEmailFolder', params);
+export const createGroupEmailFolder = (data)   => post('/GroupEmailFolder', data);
+export const updateGroupEmailFolder = (id, d)  => put(`/GroupEmailFolder/${id}`, d);
+export const deleteGroupEmailFolder = (id)     => del(`/GroupEmailFolder/${id}`);
+
+export const listEmailTemplates  = (params) => get('/EmailTemplate', params);
+export const getEmailTemplate    = (id)     => get(`/EmailTemplate/${id}`);
+export const createEmailTemplate = (data)   => post('/EmailTemplate', data);
+export const updateEmailTemplate = (id, d)  => put(`/EmailTemplate/${id}`, d);
+export const deleteEmailTemplate = (id)     => del(`/EmailTemplate/${id}`);
+
+// Enums
+export const SMTP_SECURITY    = ['', 'SSL', 'TLS'];
+export const IMAP_SECURITY    = ['', 'SSL', 'TLS'];
+export const INBOUND_STATUS   = ['Active', 'Inactive'];
+export const EMAIL_FILTER_ACTIONS = ['Skip', 'Move to Folder', 'None'];
+
+// Link-picker list endpoints used by the User edit form
+export const listWorkingTimeCalendars = (params) =>
+  get('/WorkingTimeCalendar', { maxSize: 50, orderBy: 'name', order: 'asc', ...params });
+export const listLayoutSets = (params) =>
+  get('/LayoutSet', { maxSize: 50, orderBy: 'name', order: 'asc', ...params });
+
+export const USER_TYPES = ['regular', 'admin', 'portal', 'api', 'system', 'super-admin'];
+export const USER_SALUTATIONS = ['', 'Mr.', 'Mrs.', 'Ms.', 'Dr.'];
+export const USER_GENDERS = ['', 'Male', 'Female', 'Neutral'];
+export const AUTH_METHODS = ['', 'ApiKey', 'Hmac'];
+export const ASSIGNMENT_PERMISSIONS = ['all', 'team', 'no'];
+export const SCOPE_LEVELS = ['all', 'team', 'own', 'no'];
+export const ACTION_LEVELS = ['yes', 'no'];

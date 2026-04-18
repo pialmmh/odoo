@@ -6,7 +6,6 @@ import { TenantProvider } from './context/TenantContext';
 import { NotificationProvider } from './components/ErrorNotification';
 import MainLayout from './layouts/MainLayout';
 import TenantSelector from './pages/TenantSelector';
-import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import CustomerDetail from './pages/CustomerDetail';
@@ -75,21 +74,11 @@ function TenantRoutes() {
 }
 
 function AppRoutes() {
-  const { isLoggedIn, authMode } = useAuth();
+  const { isLoggedIn } = useAuth();
 
-  if (!isLoggedIn) {
-    // In legacy mode, show login page
-    if (authMode !== 'keycloak') {
-      return (
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      );
-    }
-    // In KC mode, login-required already handled it — should not reach here
-    return null;
-  }
+  // Keycloak is configured with login-required, so if we reach here
+  // unauthenticated something went wrong — render nothing rather than loop.
+  if (!isLoggedIn) return null;
 
   return (
     <Routes>

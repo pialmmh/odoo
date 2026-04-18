@@ -17,6 +17,11 @@ import CaseEdit    from './CaseEdit';
 import Tasks       from './Tasks';
 import TaskDetail  from './TaskDetail';
 import TaskEdit    from './TaskEdit';
+import Meetings    from './Meetings';
+import MeetingEdit from './MeetingEdit';
+import MeetingsDashboard from './meetings/MeetingsDashboard';
+import MeetingControl    from './meetings/MeetingControl';
+import MeetingRoomsAdmin from './meetings/MeetingRoomsAdmin';
 import Calendar    from './Calendar';
 import Emails      from './emails/Emails';
 
@@ -24,6 +29,20 @@ import VoiceCampaigns      from './campaign/voice/VoiceCampaigns';
 import VoiceCampaignEdit   from './campaign/voice/VoiceCampaignEdit';
 import VoiceCampaignDetail from './campaign/voice/VoiceCampaignDetail';
 import VoicePolicies       from './campaign/voice/VoicePolicies';
+
+import AdminIndex    from './admin/AdminIndex';
+import AdminStub     from './admin/AdminStub';
+import Users         from './admin/users/Users';
+import UserEdit      from './admin/users/UserEdit';
+import Teams         from './admin/users/Teams';
+import Roles         from './admin/users/Roles';
+import AuthLog       from './admin/users/AuthLog';
+import AuthTokens    from './admin/users/AuthTokens';
+import ActionHistory from './admin/users/ActionHistory';
+import ApiUsers      from './admin/users/ApiUsers';
+import OutboundEmails from './admin/messaging/OutboundEmails';
+import InboundEmails  from './admin/messaging/InboundEmails';
+import Sms            from './admin/messaging/Sms';
 
 export default function CrmIndex() {
   return (
@@ -60,6 +79,14 @@ export default function CrmIndex() {
       <Route path="tasks/:id"      element={<TaskDetail />} />
       <Route path="tasks/:id/edit" element={<TaskEdit />} />
 
+      <Route path="meetings"                element={<Meetings />} />
+      <Route path="meetings/dashboard"      element={<MeetingsDashboard />} />
+      <Route path="meetings/rooms"          element={<MeetingRoomsAdmin />} />
+      <Route path="meetings/new"            element={<MeetingEdit />} />
+      <Route path="meetings/:id"            element={<MeetingEdit />} />
+      <Route path="meetings/:id/edit"       element={<MeetingEdit />} />
+      <Route path="meetings/:id/control"    element={<MeetingControl />} />
+
       <Route path="calendar"       element={<Calendar />} />
 
       <Route path="emails"         element={<Emails />} />
@@ -70,6 +97,21 @@ export default function CrmIndex() {
       <Route path="campaign/voice/:id"         element={<VoiceCampaignDetail />} />
       <Route path="campaign/voice/:id/edit"    element={<VoiceCampaignEdit />} />
       <Route path="campaign/voice/policies"    element={<VoicePolicies />} />
+
+      <Route path="admin"                element={<AdminIndex />} />
+      <Route path="admin/users"          element={<Users />} />
+      <Route path="admin/users/new"      element={<UserEdit />} />
+      <Route path="admin/users/:id/edit" element={<UserEdit />} />
+      <Route path="admin/teams"          element={<Teams />} />
+      <Route path="admin/roles"          element={<Roles />} />
+      <Route path="admin/authLog"        element={<AuthLog />} />
+      <Route path="admin/authTokens"     element={<AuthTokens />} />
+      <Route path="admin/actionHistory"  element={<ActionHistory />} />
+      <Route path="admin/apiUsers"       element={<ApiUsers />} />
+      <Route path="admin/outboundEmails" element={<OutboundEmails />} />
+      <Route path="admin/inboundEmails"  element={<InboundEmails />} />
+      <Route path="admin/sms"            element={<Sms />} />
+      <Route path="admin/:key"           element={<AdminStub />} />
 
       <Route path="*" element={<Navigate to="leads" replace />} />
     </Routes>

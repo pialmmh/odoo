@@ -13,6 +13,7 @@
 @import './components/avatar.css';
 @import './components/toggle.css';
 @import './components/action-btn.css';
+@import './components/sidebar-section.css';
 
 /* Default body surface — MUI CssBaseline also sets this from the theme,
  * but this ensures the CSS-variable path works even before React mounts. */

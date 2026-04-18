@@ -28,11 +28,15 @@ import {
   TrendingUp as OpportunitiesIcon,
   SupportAgent as CasesIcon,
   TaskAlt as TasksIcon,
+  VideoCall as MeetingsIcon,
+  Dashboard as MeetingDashIcon,
+  MeetingRoom as RoomsIcon,
   CalendarMonth as CalendarIcon,
   Email as EmailsIcon,
   Campaign as CampaignIcon,
   Phone as VoiceIcon,
   Policy as PolicyIcon,
+  Tune as AdminToolsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -89,8 +93,12 @@ export default function Sidebar() {
       { text: 'Opportunities', icon: <OpportunitiesIcon />, path: `${base}/crm/opportunities` },
       { text: 'Cases',         icon: <CasesIcon />,         path: `${base}/crm/cases` },
       { text: 'Tasks',         icon: <TasksIcon />,         path: `${base}/crm/tasks` },
+      { text: 'Meetings',      icon: <MeetingsIcon />,      path: `${base}/crm/meetings` },
+      { text: 'Meeting Dashboard', icon: <MeetingDashIcon />, path: `${base}/crm/meetings/dashboard` },
+      { text: 'Rooms (Admin)', icon: <RoomsIcon />,         path: `${base}/crm/meetings/rooms` },
       { text: 'Calendar',      icon: <CalendarIcon />,      path: `${base}/crm/calendar` },
       { text: 'Emails',        icon: <EmailsIcon />,        path: `${base}/crm/emails` },
+      { text: 'Administration', icon: <AdminToolsIcon />,    path: `${base}/crm/admin` },
 
       { section: 'Campaign' },
       { text: 'Voice Campaigns', icon: <VoiceIcon />,    path: `${base}/crm/campaign/voice` },

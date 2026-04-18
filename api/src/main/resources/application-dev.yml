@@ -1,0 +1,27 @@
+# =============================================================================
+# DEV profile — local development on this machine.
+# Activated by `spring.profiles.active: dev` in application.yml.
+# =============================================================================
+
+integrations:
+  crm:
+    enabled: true
+
+    # Use 'localhost' (not 127.0.0.1) — our multi-tenant bootstrap.php in
+    # espocrm resolves tenant from the HTTP Host header. A Host of
+    # "127.0.0.1:7080" would match '127' as the tenant slug (regex
+    # ^([a-z0-9_-]+)\.) and 404. 'localhost:7080' has no dotted prefix →
+    # slug=master → the control DB. For a specific tenant, use
+    # e.g. http://btcl.localhost:7080.
+    base-url: http://localhost:7080
+
+    # Admin Basic auth — the working path for User/Role/Team/Settings and
+    # other admin-scope endpoints. EspoCRM's X-Api-Key only accepts
+    # type=api users, which fail the $user->isAdmin() gate.
+    # Obtain via:
+    #   espocrm/tools/deploy/post_install_scripts/enable_api_permission.sh
+    admin-user:     admin
+    admin-password: admin
+
+    # X-Api-Key fallback — only used when admin-user is blank.
+    api-key: ''

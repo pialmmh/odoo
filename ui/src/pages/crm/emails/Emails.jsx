@@ -25,11 +25,12 @@ import ComposeDialog from './ComposeDialog';
 
 // System folders map — mirror EspoCRM's special values.
 // `tone` maps to theme palette key so colors adapt to light/dark/tenant.
+// `tone` is a theme palette key so it adapts to light/dark/tenant automatically.
 const SYSTEM_FOLDERS = [
   { id: 'all',       name: 'All',       icon: <AllIcon fontSize="small" /> },
-  { id: 'inbox',     name: 'Inbox',     tone: '#2563eb', icon: <InboxIcon fontSize="small" /> },
+  { id: 'inbox',     name: 'Inbox',     tone: 'primary', icon: <InboxIcon fontSize="small" /> },
   { id: 'important', name: 'Important', icon: <StarIcon fontSize="small" /> },
-  { id: 'sent',      name: 'Sent',      tone: '#0ea5e9', icon: <SentIcon fontSize="small" /> },
+  { id: 'sent',      name: 'Sent',      tone: 'info',    icon: <SentIcon fontSize="small" /> },
   { id: 'drafts',    name: 'Drafts',    icon: <DraftsIcon fontSize="small" /> },
   { id: 'archive',   name: 'Archive',   icon: <ArchiveIcon fontSize="small" /> },
   { id: 'trash',     name: 'Trash',     icon: <TrashIcon fontSize="small" /> },
@@ -243,30 +244,38 @@ export default function Emails() {
           <List dense disablePadding>
             {SYSTEM_FOLDERS.map(f => {
               const selected = folderId === f.id;
-              const tone = f.tone;
               return (
                 <ListItemButton key={f.id} selected={selected}
                   onClick={() => { setFolderId(f.id); setViewId(null); setSelectedIds(new Set()); }}
-                  sx={(theme) => ({
-                    borderRadius: 1, mb: 0.25,
-                    '&.Mui-selected': tone ? {
-                      bgcolor: alpha(tone, 0.14),
-                      '&:hover': { bgcolor: alpha(tone, 0.22) },
-                    } : {
-                      bgcolor: alpha(theme.palette.primary.main, 0.12),
-                      color: theme.palette.primary.main,
-                      '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
-                      '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.18) },
-                    },
+                  sx={(theme) => {
+                    const tone = f.tone ? theme.palette[f.tone]?.main : null;
+                    return {
+                      borderRadius: 1, mb: 0.25,
+                      '&.Mui-selected': tone ? {
+                        bgcolor: alpha(tone, 0.14),
+                        '&:hover': { bgcolor: alpha(tone, 0.22) },
+                      } : {
+                        bgcolor: alpha(theme.palette.primary.main, 0.12),
+                        color: theme.palette.primary.main,
+                        '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
+                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.18) },
+                      },
+                    };
+                  }}>
+                  <ListItemIcon sx={(theme) => ({
+                    minWidth: 32,
+                    color: f.tone ? theme.palette[f.tone]?.main : undefined,
                   })}>
-                  <ListItemIcon sx={{ minWidth: 32, color: tone || undefined }}>
                     {f.icon}
                   </ListItemIcon>
-                  <ListItemText primary={f.name}
+                  <ListItemText
+                    primary={f.name}
                     primaryTypographyProps={{
                       fontSize: 13,
                       fontWeight: selected ? 700 : 600,
-                      color: selected && tone ? tone : undefined,
+                      sx: (theme) => ({
+                        color: selected && f.tone ? theme.palette[f.tone]?.main : undefined,
+                      }),
                     }} />
                 </ListItemButton>
               );

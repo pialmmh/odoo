@@ -1,0 +1,38 @@
+/* Sidebar section header chip — reusable category label in navigation drawers.
+ * Consumes only tokens so light/dark/tenant themes recolor it automatically. */
+
+.sidebar-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 12px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--color-primary);
+}
+
+.sidebar-section::before {
+  content: '';
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background-color: var(--color-primary);
+}
+
+.sidebar-section::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-border-subtle);
+}
+
+/* Variant: neutral — no primary tint (e.g. Admin). */
+.sidebar-section--neutral {
+  color: var(--color-text-muted);
+}
+.sidebar-section--neutral::before {
+  background-color: var(--color-border-strong);
+}

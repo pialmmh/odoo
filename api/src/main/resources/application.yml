@@ -12,15 +12,28 @@ killbill:
   username: admin
   password: password
 
-integrations:
-  crm:
-    enabled:  ${CRM_ENABLED:false}
-    base-url: ${CRM_BASE_URL:http://127.0.0.1:7170}
-    api-key:  ${CRM_API_KEY:}
+# ── Environment-specific config (CRM integration, etc.) lives in
+#    application-<profile>.yml files. Select the profile below.
+#    Shipped profiles: mustafa | dev | staging | prod.
+# ── Multi-tenant bootstrap ──
+# Enable tenants and select which profile to load for each.
+# Profile files live at: config/tenants/{name}/{profile}/profile-{profile}.yml
+orchestrix:
+  tenants:
+    - name: telcobright
+      enabled: true
+      profile: dev
+    - name: btcl
+      enabled: true
+      profile: dev
 
 spring:
   application:
     name: platform-api
+  profiles:
+    # Hardcoded here to avoid env-var surprises. To change env, edit this line
+    # (or create application-<profile>.yml).
+    active: mustafa
   security:
     oauth2:
       resourceserver:

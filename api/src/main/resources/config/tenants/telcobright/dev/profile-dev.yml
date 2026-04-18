@@ -1,0 +1,28 @@
+tenant:
+  name: Telcobright
+  slug: telcobright
+  profile: dev
+  environment: development
+
+branding:
+  display-name: Telcobright
+  short-name: TB
+  theme: green
+
+# Billing engine (Kill Bill) credentials for this tenant
+killbill:
+  url: http://127.0.0.1:18080
+  api-key: bob
+  api-secret: lazar
+  username: admin
+  password: password
+
+# Catalog backend (Odoo) scope for this tenant
+catalog:
+  url: http://127.0.0.1:7169
+  db: odoo_billing
+  partner-id: 1
+
+# Product mapping — UI-visible plan name → Odoo product variant
+# (populate in later task #7)
+products: {}
