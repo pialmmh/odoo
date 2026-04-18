@@ -42,7 +42,7 @@ function makeTheme({ label, primary, secondary, sidebar, infra, bg, text }) {
         error: { main: '#c9302c' },
         info: { main: '#0288d1' },
         background: { default: bg?.default || '#f5f6fa', paper: bg?.paper || '#ffffff' },
-        text: { primary: text?.primary || '#2c2c2c', secondary: text?.secondary || '#626262' },
+        text: { primary: text?.primary || '#0f172a', secondary: text?.secondary || '#334155' },
       },
       typography: baseTypography,
       spacing: 7,

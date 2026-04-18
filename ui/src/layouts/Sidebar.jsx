@@ -221,12 +221,12 @@ export default function Sidebar() {
                 '&:hover': { bgcolor: brand.sidebar.hoverBg },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 32, color: isActive(item.path) ? 'primary.main' : 'text.secondary' }}>
+              <ListItemIcon sx={{ minWidth: 32, color: isActive(item.path) ? 'primary.main' : 'text.primary' }}>
                 {item.icon}
               </ListItemIcon>
               <ListItemText
                 primary={item.text}
-                primaryTypographyProps={{ fontSize: 13, fontWeight: isActive(item.path) ? 600 : 400 }}
+                primaryTypographyProps={{ fontSize: 13, fontWeight: isActive(item.path) ? 700 : 600, color: 'text.primary' }}
               />
             </ListItemButton>
           );
