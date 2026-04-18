@@ -18,7 +18,10 @@ import {
   ArrowDropDown as CaretIcon, Close as CloseIcon,
 } from '@mui/icons-material';
 import { getMeeting } from '../../../services/crm';
-import { requestToken, joinSession, initPublisher } from './ovSession';
+import {
+  requestToken, joinSession, enableLocalMedia,
+  attachLocalCamera, setMic, setCam, setScreenShare,
+} from './lkSession';
 import { STAGE_COLOR, deriveStage, fmtDT } from './lifecycle';
 import ContextPanel from './ContextPanel';
 import { INTERCEPT_MODES } from './InterceptDialog';
@@ -66,12 +69,14 @@ export default function MeetingRoom() {
   const [displayName, setDisplayName] = useState(rules ? '(admin)' : '');
   const [elapsed, setElapsed] = useState(0);
 
-  // OV session + participants
-  const sessionRef = useRef(null);
-  const publisherRef = useRef(null);
+  // LiveKit room + participants
+  const roomRef = useRef(null);
   const previewVideoRef = useRef(null);
   const localVideoRef = useRef(null);
-  const [remotes, setRemotes] = useState([]);
+  // Remote tiles keyed by participant identity — merge video tracks with
+  // participant metadata. Audio attaches invisibly; screen-share tracks
+  // replace camera in the same slot.
+  const [remotes, setRemotes] = useState([]); // [{ identity, name, videoTrack, audioTrack }]
   const [sidebar, setSidebar] = useState(null); // 'people' | 'chat' | 'context'
   const [moreAnchor, setMoreAnchor] = useState(null);
 
@@ -105,32 +110,43 @@ export default function MeetingRoom() {
   }, [phase]);
 
   const join = useCallback(async () => {
-    if (id === 'demo') { setPhase('in-room'); return; } // skip OV for demo
+    if (id === 'demo') { setPhase('in-room'); return; } // skip LiveKit for demo
     setPhase('connecting');
     try {
       const tok = await requestToken(id, {
         identity: displayName || 'guest',
         role: interceptMode ? `ADMIN_${interceptMode.toUpperCase()}` : 'PUBLISHER',
       });
-      if (!tok?.token) {
-        setErr('OpenVidu backend is not wired yet. UI-only mode: you can explore the room layout, but no real session will start.');
+      if (!tok?.token || !tok?.wsUrl) {
+        setErr('LiveKit backend is not wired yet. UI-only mode: you can explore the room layout, but no real session will start.');
         setPhase('in-room'); // still enter for UI testing
         return;
       }
-      const { session } = await joinSession({
+      const { room } = await joinSession({
         token: tok.token,
-        onStreamCreated:   (r) => setRemotes((ps) => [...ps, r]),
-        onStreamDestroyed: (r) => setRemotes((ps) => ps.filter((x) => x.id !== r.id)),
-        onSessionDisconnected: () => setPhase('ended'),
+        wsUrl: tok.wsUrl,
+        onTrackSubscribed: (t) => {
+          setRemotes((ps) => mergeRemote(ps, t));
+        },
+        onTrackUnsubscribed: ({ id: trackId }) => {
+          setRemotes((ps) => ps.map((r) => (
+            r.videoTrackId === trackId ? { ...r, videoTrack: null, videoTrackId: null } :
+            r.audioTrackId === trackId ? { ...r, audioTrack: null, audioTrackId: null } : r
+          )).filter((r) => r.videoTrack || r.audioTrack));
+        },
+        onParticipantDisconnected: ({ identity }) => {
+          setRemotes((ps) => ps.filter((r) => r.identity !== identity));
+        },
+        onDisconnected: () => setPhase('ended'),
       });
-      sessionRef.current = session;
+      roomRef.current = room;
+
+      // Silent-monitor admins don't publish anything; others enable per rules.
       if (!rules || rules.camAllowed || rules.micAllowed) {
-        const publisher = await initPublisher(session.openvidu, {
+        await enableLocalMedia(room, {
           audio: rules ? rules.micAllowed && micOn : micOn,
           video: rules ? rules.camAllowed && camOn : camOn,
         });
-        await session.publish(publisher);
-        publisherRef.current = publisher;
       }
       setPhase('in-room');
     } catch (e) {
@@ -140,30 +156,38 @@ export default function MeetingRoom() {
   }, [id, displayName, micOn, camOn, interceptMode, rules]);
 
   const leave = useCallback(() => {
-    sessionRef.current?.disconnect();
-    sessionRef.current = null;
-    publisherRef.current = null;
+    roomRef.current?.disconnect();
+    roomRef.current = null;
     setPhase('ended');
   }, []);
-  useEffect(() => () => sessionRef.current?.disconnect(), []);
+  useEffect(() => () => roomRef.current?.disconnect(), []);
 
+  // Attach local camera to the in-room <video>
   useEffect(() => {
-    if (phase === 'in-room' && publisherRef.current && localVideoRef.current) {
-      publisherRef.current.addVideoElement(localVideoRef.current);
+    if (phase === 'in-room' && roomRef.current && localVideoRef.current) {
+      attachLocalCamera(roomRef.current, localVideoRef.current);
     }
   }, [phase]);
 
-  const toggleMic = () => {
+  const toggleMic = async () => {
     if (rules && !rules.micAllowed) { setSnack('Microphone disabled in this intercept mode'); return; }
     const next = !micOn;
-    publisherRef.current?.publishAudio(next);
+    if (roomRef.current) await setMic(roomRef.current, next);
     setMicOn(next);
   };
-  const toggleCam = () => {
+  const toggleCam = async () => {
     if (rules && !rules.camAllowed) { setSnack('Camera disabled in this intercept mode'); return; }
     const next = !camOn;
-    publisherRef.current?.publishVideo(next);
+    if (roomRef.current) await setCam(roomRef.current, next);
     setCamOn(next);
+  };
+  const toggleShareReal = async () => {
+    const next = !sharing;
+    if (roomRef.current) {
+      try { await setScreenShare(roomRef.current, next); }
+      catch (e) { setSnack('Screen share failed: ' + (e?.message || 'unknown')); return; }
+    }
+    setSharing(next);
   };
 
   if (phase === 'loading') {
@@ -244,7 +268,10 @@ export default function MeetingRoom() {
   };
   const tiles = [
     ...(selfTile ? [selfTile] : []),
-    ...remotes.map((r) => ({ id: r.id, subscriber: r.subscriber, name: r.participant?.identity || 'Participant' })),
+    ...remotes.map((r) => ({
+      id: r.identity, name: r.name || r.identity,
+      videoTrack: r.videoTrack, audioTrack: r.audioTrack,
+    })),
   ];
   // Mock tiles when no real session is connected, so the grid demonstrates
   if (tiles.length === 0 || id === 'demo') {
@@ -342,7 +369,7 @@ export default function MeetingRoom() {
           icon={camOn ? <VideoIcon /> : <VideoOffIcon />} onClick={toggleCam} hasCaret />
         <PillBtn label={sharing ? 'Stop share' : 'Share'} active={!sharing}
           icon={sharing ? <StopShareIcon /> : <ShareIcon />}
-          onClick={() => { setSharing(!sharing); setSnack(sharing ? 'Stopped sharing' : 'Screen share — backend TBD'); }} />
+          onClick={toggleShareReal} />
         <PillBtn label={recording ? 'Stop rec' : 'Record'} active={!recording}
           danger={recording}
           icon={recording ? <RecStopIcon /> : <RecIcon />}
@@ -422,9 +449,19 @@ function PillBtn({ label, icon, onClick, active = true, disabled, danger, hasCar
 
 function VideoTile({ tile, localVideoRef, muted }) {
   const remoteRef = useRef(null);
+  const audioRef = useRef(null);
+  // LiveKit: attach video track to <video>, audio track to hidden <audio>.
+  // Both are detached on unmount / track replacement to avoid leaks.
   useEffect(() => {
-    if (tile.subscriber && remoteRef.current) tile.subscriber.addVideoElement(remoteRef.current);
-  }, [tile.subscriber]);
+    const vt = tile.videoTrack;
+    if (vt && remoteRef.current) vt.attach(remoteRef.current);
+    return () => { if (vt && remoteRef.current) vt.detach(remoteRef.current); };
+  }, [tile.videoTrack]);
+  useEffect(() => {
+    const at = tile.audioTrack;
+    if (at && audioRef.current) at.attach(audioRef.current);
+    return () => { if (at && audioRef.current) at.detach(audioRef.current); };
+  }, [tile.audioTrack]);
 
   return (
     <Box sx={{
@@ -447,12 +484,15 @@ function VideoTile({ tile, localVideoRef, muted }) {
           </Typography>
         </Box>
       ) : (
-        <video
-          ref={tile.isLocal ? localVideoRef : remoteRef}
-          autoPlay playsInline muted={tile.isLocal}
-          style={{ width: '100%', height: '100%', objectFit: 'cover',
-            transform: tile.isLocal ? 'scaleX(-1)' : 'none' }}
-        />
+        <>
+          <video
+            ref={tile.isLocal ? localVideoRef : remoteRef}
+            autoPlay playsInline muted={tile.isLocal}
+            style={{ width: '100%', height: '100%', objectFit: 'cover',
+              transform: tile.isLocal ? 'scaleX(-1)' : 'none' }}
+          />
+          {!tile.isLocal && <audio ref={audioRef} autoPlay />}
+        </>
       )}
       <Box sx={{
         position: 'absolute', bottom: 6, left: 8,
@@ -516,6 +556,25 @@ function ChatPanel() {
       </Box>
     </Box>
   );
+}
+
+// Merge a newly-subscribed LiveKit track into the remotes[] list, keyed by
+// participant identity so video + audio collapse into one tile.
+function mergeRemote(prev, t) {
+  const identity = t.participant.identity;
+  const existing = prev.find((r) => r.identity === identity);
+  const patch = t.kind === 'video'
+    ? { videoTrack: t.track, videoTrackId: t.id }
+    : { audioTrack: t.track, audioTrackId: t.id };
+  if (existing) {
+    return prev.map((r) => (r.identity === identity ? { ...r, ...patch } : r));
+  }
+  const meta = t.participant.metadata || {};
+  return [...prev, {
+    identity,
+    name: meta.displayName || meta.name || identity,
+    ...patch,
+  }];
 }
 
 function formatElapsed(s) {
