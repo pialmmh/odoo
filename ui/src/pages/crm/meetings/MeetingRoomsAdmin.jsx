@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import InterceptDialog from './InterceptDialog';
 import {
   Box, Typography, Card, CardContent, Chip, CircularProgress, Alert,
   Button, IconButton, Tooltip, Table, TableBody, TableCell, TableContainer,
@@ -9,17 +10,20 @@ import {
 import {
   Refresh as RefreshIcon, Stop as ForceEndIcon, Block as ExpireIcon,
   Settings as ControlIcon, Shield as LockdownIcon,
+  Visibility as InterceptIcon,
 } from '@mui/icons-material';
 import { listMeetings } from '../../../services/crm';
 import { STAGES, STAGE_COLOR, TERMINAL, ACTIONS, deriveStage, dispatchAction, fmtDT } from './lifecycle';
 
 export default function MeetingRoomsAdmin() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [snack, setSnack] = useState(null);
   const [now, setNow] = useState(new Date());
   const [lockdown, setLockdown] = useState(false);
+  const [interceptTarget, setInterceptTarget] = useState(null);
 
   // Quota placeholders — will come from /api/crm/meetings/quota once backend is ready.
   const quota = {
@@ -142,6 +146,11 @@ export default function MeetingRoomsAdmin() {
                     <TableCell><Typography variant="caption">{fmtDT(m.dateEnd)}</Typography></TableCell>
                     <TableCell><Typography variant="caption">{m.roomParticipantCount ?? '—'}</Typography></TableCell>
                     <TableCell align="right">
+                      <Tooltip title="Intercept / join as admin">
+                        <IconButton size="small" color="primary" onClick={() => setInterceptTarget(m)}>
+                          <InterceptIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Open control panel">
                         <IconButton size="small" component={RouterLink} to={`../meetings/${m.id}/control`}>
                           <ControlIcon fontSize="small" />
@@ -165,6 +174,13 @@ export default function MeetingRoomsAdmin() {
           </TableContainer>
         </Card>
       )}
+
+      <InterceptDialog open={!!interceptTarget} meeting={interceptTarget}
+        onClose={() => setInterceptTarget(null)}
+        onConfirm={(mode) => {
+          const m = interceptTarget; setInterceptTarget(null);
+          navigate(`../meetings/${m.id}/room?mode=${mode}`);
+        }} />
 
       <Snackbar open={!!snack} autoHideDuration={2500} onClose={() => setSnack(null)} message={snack} />
     </Box>

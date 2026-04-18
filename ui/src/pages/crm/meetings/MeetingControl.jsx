@@ -118,8 +118,10 @@ export default function MeetingControl() {
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="contained" color="success" size="small"
+            onClick={() => navigate(`../meetings/${id}/room`)}>Join Room</Button>
           {stage !== STAGES.LIVE && (
-            <Button variant="contained" color="success" size="small" startIcon={<StartIcon />}
+            <Button variant="outlined" color="success" size="small" startIcon={<StartIcon />}
               onClick={() => act(ACTIONS.START)}>Start</Button>
           )}
           {stage === STAGES.LIVE && (

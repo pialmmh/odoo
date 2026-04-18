@@ -96,6 +96,7 @@ export default function Sidebar() {
       { text: 'Meetings',      icon: <MeetingsIcon />,      path: `${base}/crm/meetings` },
       { text: 'Meeting Dashboard', icon: <MeetingDashIcon />, path: `${base}/crm/meetings/dashboard` },
       { text: 'Rooms (Admin)', icon: <RoomsIcon />,         path: `${base}/crm/meetings/rooms` },
+      { text: 'Demo Room',     icon: <MeetingsIcon />,      path: `${base}/crm/meetings/demo/room` },
       { text: 'Calendar',      icon: <CalendarIcon />,      path: `${base}/crm/calendar` },
       { text: 'Emails',        icon: <EmailsIcon />,        path: `${base}/crm/emails` },
       { text: 'Administration', icon: <AdminToolsIcon />,    path: `${base}/crm/admin` },
@@ -200,7 +201,15 @@ export default function Sidebar() {
           return (
             <ListItemButton
               key={item.text}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                // If we're on a deeper sub-path of this item (e.g. on
+                // /cases/new and clicking "Cases"), replace the history
+                // entry. This drops abandoned create/edit drafts from
+                // the back-history so browser-back can't resurrect them.
+                const loc = location.pathname;
+                const onSubPath = loc !== item.path && loc.startsWith(item.path + '/');
+                navigate(item.path, onSubPath ? { replace: true } : undefined);
+              }}
               selected={isActive(item.path)}
               sx={{
                 borderRadius: '6px', mb: 0.3, py: 0.4,

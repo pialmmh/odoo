@@ -21,6 +21,7 @@ import Meetings    from './Meetings';
 import MeetingEdit from './MeetingEdit';
 import MeetingsDashboard from './meetings/MeetingsDashboard';
 import MeetingControl    from './meetings/MeetingControl';
+import MeetingRoom       from './meetings/MeetingRoom';
 import MeetingRoomsAdmin from './meetings/MeetingRoomsAdmin';
 import Calendar    from './Calendar';
 import Emails      from './emails/Emails';
@@ -86,6 +87,7 @@ export default function CrmIndex() {
       <Route path="meetings/:id"            element={<MeetingEdit />} />
       <Route path="meetings/:id/edit"       element={<MeetingEdit />} />
       <Route path="meetings/:id/control"    element={<MeetingControl />} />
+      <Route path="meetings/:id/room"       element={<MeetingRoom />} />
 
       <Route path="calendar"       element={<Calendar />} />
 

@@ -160,7 +160,9 @@ function MeetingCard({ m, now, onAct, navigate, variant }) {
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
           {variant === 'live' && (
             <>
-              <Button size="small" variant="contained" startIcon={<ControlIcon />}
+              <Button size="small" variant="contained" color="success" startIcon={<VideoIcon />}
+                onClick={() => navigate(`../meetings/${m.id}/room`)}>Join</Button>
+              <Button size="small" startIcon={<ControlIcon />}
                 onClick={() => navigate(`../meetings/${m.id}/control`)}>Control</Button>
               <Button size="small" color="error" startIcon={<EndIcon />}
                 onClick={() => onAct(m, ACTIONS.END)}>End</Button>
@@ -171,7 +173,7 @@ function MeetingCard({ m, now, onAct, navigate, variant }) {
           {variant === 'upcoming' && (
             <>
               <Button size="small" variant="contained" startIcon={<StartIcon />}
-                onClick={() => onAct(m, ACTIONS.START)}>Start</Button>
+                onClick={async () => { await onAct(m, ACTIONS.START); navigate(`../meetings/${m.id}/room`); }}>Start</Button>
               <Button size="small" startIcon={<CopyIcon />}
                 onClick={() => onAct(m, ACTIONS.COPY_LINK)}>Copy link</Button>
               <IconButton size="small" onClick={(e) => setAnchor(e.currentTarget)}>
