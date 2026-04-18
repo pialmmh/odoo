@@ -7,7 +7,9 @@ import {
 import {
   Edit as EditIcon, Delete as DeleteIcon, MoreHoriz as MoreIcon,
   ContentCopy as DuplicateIcon, RssFeed as FollowIcon,
+  Person as ContactIcon,
 } from '@mui/icons-material';
+import EntityHeaderCard from './EntityHeaderCard';
 import { getContact, deleteContact, createContact, followEntity, unfollowEntity } from '../../services/crm';
 import { FieldRow, Panel } from './LeadPanelPrimitives';
 import StreamPanel from './StreamPanel';
@@ -75,19 +77,11 @@ export default function ContactDetail() {
 
   return (
     <Box>
-      <Breadcrumbs sx={{ mb: 0.5 }}>
-        <MuiLink component={RouterLink} to=".." underline="hover">Contacts</MuiLink>
-        <Typography color="text.primary">{row.name}</Typography>
-      </Breadcrumbs>
-
-      <Box sx={{ mb: 1.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>{row.name}</Typography>
-        {row.title && (
-          <Typography variant="body2" color="text.secondary" noWrap>
-            {row.title}{row.accountName ? ` · ${row.accountName}` : ''}
-          </Typography>
-        )}
-      </Box>
+      <EntityHeaderCard
+        icon={<ContactIcon />} entityLabel="Contacts" backTo=".."
+        title={row.name}
+        subtitle={row.title ? `${row.title}${row.accountName ? ` · ${row.accountName}` : ''}` : null}
+      />
 
       {/* Action bar */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 2, px: 1.5, py: 1, bgcolor: 'background.default', borderRadius: 1 }}>

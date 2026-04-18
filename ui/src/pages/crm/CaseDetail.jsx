@@ -7,7 +7,9 @@ import {
 import {
   Delete as DeleteIcon, MoreHoriz as MoreIcon,
   ContentCopy as DuplicateIcon, RssFeed as FollowIcon,
+  SupportAgent as CaseIcon,
 } from '@mui/icons-material';
+import EntityHeaderCard from './EntityHeaderCard';
 import {
   getCase, deleteCase, createCase, followEntity, unfollowEntity,
 } from '../../services/crm';
@@ -79,18 +81,11 @@ export default function CaseDetail() {
 
   return (
     <Box>
-      <Breadcrumbs sx={{ mb: 0.5 }}>
-        <MuiLink component={RouterLink} to=".." underline="hover">Cases</MuiLink>
-        <Typography color="text.primary">{row.name}</Typography>
-      </Breadcrumbs>
-      <Box sx={{ mb: 1.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
-          {row.name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          #{row.number || '—'}{row.accountName ? ` · ${row.accountName}` : ''}
-        </Typography>
-      </Box>
+      <EntityHeaderCard
+        icon={<CaseIcon />} entityLabel="Cases" backTo=".."
+        title={row.name}
+        subtitle={`#${row.number || '—'}${row.accountName ? ` · ${row.accountName}` : ''}`}
+      />
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 2, px: 1.5, py: 1, bgcolor: 'background.default', borderRadius: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'stretch' }}>

@@ -226,7 +226,7 @@ export default function Sidebar() {
               </ListItemIcon>
               <ListItemText
                 primary={item.text}
-                primaryTypographyProps={{ fontSize: 13, fontWeight: isActive(item.path) ? 700 : 600, color: 'text.primary' }}
+                primaryTypographyProps={{ fontSize: 13, fontWeight: isActive(item.path) ? 600 : 500, color: 'text.primary' }}
               />
             </ListItemButton>
           );

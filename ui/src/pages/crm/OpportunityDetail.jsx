@@ -7,7 +7,9 @@ import {
 import {
   Delete as DeleteIcon, MoreHoriz as MoreIcon,
   ContentCopy as DuplicateIcon, RssFeed as FollowIcon,
+  TrendingUp as OppIcon,
 } from '@mui/icons-material';
+import EntityHeaderCard from './EntityHeaderCard';
 import { getOpportunity, deleteOpportunity, createOpportunity, followEntity, unfollowEntity } from '../../services/crm';
 import { FieldRow, Panel } from './LeadPanelPrimitives';
 import StreamPanel from './StreamPanel';
@@ -74,14 +76,10 @@ export default function OpportunityDetail() {
 
   return (
     <Box>
-      <Breadcrumbs sx={{ mb: 0.5 }}>
-        <MuiLink component={RouterLink} to=".." underline="hover">Opportunities</MuiLink>
-        <Typography color="text.primary">{row.name}</Typography>
-      </Breadcrumbs>
-      <Box sx={{ mb: 1.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>{row.name}</Typography>
-        {row.accountName && <Typography variant="body2" color="text.secondary">{row.accountName}</Typography>}
-      </Box>
+      <EntityHeaderCard
+        icon={<OppIcon />} entityLabel="Opportunities" backTo=".."
+        title={row.name} subtitle={row.accountName || null}
+      />
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 2, px: 1.5, py: 1, bgcolor: 'background.default', borderRadius: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'stretch' }}>

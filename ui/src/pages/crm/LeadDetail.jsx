@@ -10,7 +10,9 @@ import {
   ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon,
   RssFeed as FollowIcon,
   ContentCopy as DuplicateIcon,
+  PersonAdd as LeadIcon,
 } from '@mui/icons-material';
+import EntityHeaderCard from './EntityHeaderCard';
 import {
   getLead, deleteLead, listLeads, createLead,
   followEntity, unfollowEntity,
@@ -136,21 +138,11 @@ export default function LeadDetail() {
   // ── Header area ──
   const header = (
     <>
-      <Breadcrumbs sx={{ mb: 0.5 }}>
-        <MuiLink component={RouterLink} to=".." underline="hover">Enquiries</MuiLink>
-        <Typography color="text.primary">{lead.name}</Typography>
-      </Breadcrumbs>
-
-      <Box sx={{ minWidth: 0, mb: 1.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
-          {lead.name || '(unnamed)'}
-        </Typography>
-        {lead.title && (
-          <Typography variant="body2" color="text.secondary" noWrap>
-            {lead.title}{lead.accountName ? ` · ${lead.accountName}` : ''}
-          </Typography>
-        )}
-      </Box>
+      <EntityHeaderCard
+        icon={<LeadIcon />} entityLabel="Enquiries" backTo=".."
+        title={lead.name}
+        subtitle={lead.title ? `${lead.title}${lead.accountName ? ` · ${lead.accountName}` : ''}` : null}
+      />
 
       {/* Action bar — mirrors record/detail.tpl:
           left:  btn-group { Edit } + kebab

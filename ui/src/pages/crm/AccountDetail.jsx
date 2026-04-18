@@ -7,7 +7,9 @@ import {
 import {
   Delete as DeleteIcon, MoreHoriz as MoreIcon,
   ContentCopy as DuplicateIcon, RssFeed as FollowIcon,
+  Business as AccountIcon,
 } from '@mui/icons-material';
+import EntityHeaderCard from './EntityHeaderCard';
 import { getAccount, deleteAccount, createAccount, followEntity, unfollowEntity } from '../../services/crm';
 import { FieldRow, Panel } from './LeadPanelPrimitives';
 import StreamPanel from './StreamPanel';
@@ -72,14 +74,11 @@ export default function AccountDetail() {
 
   return (
     <Box>
-      <Breadcrumbs sx={{ mb: 0.5 }}>
-        <MuiLink component={RouterLink} to=".." underline="hover">Accounts</MuiLink>
-        <Typography color="text.primary">{row.name}</Typography>
-      </Breadcrumbs>
-      <Box sx={{ mb: 1.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>{row.name}</Typography>
-        {row.industry && <Typography variant="body2" color="text.secondary" noWrap>{row.industry}{row.type ? ` · ${row.type}` : ''}</Typography>}
-      </Box>
+      <EntityHeaderCard
+        icon={<AccountIcon />} entityLabel="Accounts" backTo=".."
+        title={row.name}
+        subtitle={row.industry ? `${row.industry}${row.type ? ` · ${row.type}` : ''}` : null}
+      />
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 2, px: 1.5, py: 1, bgcolor: 'background.default', borderRadius: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
