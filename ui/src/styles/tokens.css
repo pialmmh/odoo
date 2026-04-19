@@ -8,7 +8,7 @@
   --font-size-sm: 12px;
   --font-size-base: 13px;
   --font-size-md: 14px;
-  --font-size-sidebar-item: 12.5px;
+  --font-size-sidebar-item: 12.75px;
   --font-size-lg: 16px;
   --font-size-xl: 20px;
   --font-weight-regular: 400;
@@ -16,6 +16,8 @@
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
   --font-weight-extrabold: 800;
+  --font-weight-sidebar-item: 550;
+  --font-weight-sidebar-item-active: 650;
   --line-height-tight: 1.2;
   --line-height-normal: 1.5;
 

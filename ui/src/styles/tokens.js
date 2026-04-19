@@ -42,7 +42,7 @@ export const lightTokens = {
   colorSidebarBg: '#1e3a5f',
   colorSidebarText: '#94a3b8',
   colorSidebarTextHover: '#e2e8f0',
-  colorSidebarItemText: '#2a3441',
+  colorSidebarItemText: '#3a4656',
 
   colorSuccess: '#94bc66',
   colorSuccessBg: '#eef5e0',

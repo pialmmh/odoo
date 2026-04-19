@@ -231,7 +231,7 @@ export default function Sidebar() {
               </ListItemIcon>
               <ListItemText
                 primary={item.text}
-                primaryTypographyProps={{ fontSize: 'var(--font-size-sidebar-item)', fontWeight: isActive(item.path) ? 600 : 500, color: isActive(item.path) ? 'primary.main' : 'var(--color-sidebar-item-text)' }}
+                primaryTypographyProps={{ fontSize: 'var(--font-size-sidebar-item)', fontWeight: isActive(item.path) ? 'var(--font-weight-sidebar-item-active)' : 'var(--font-weight-sidebar-item)', color: isActive(item.path) ? 'primary.main' : 'var(--color-sidebar-item-text)' }}
               />
             </ListItemButton>
           );
