@@ -44,6 +44,14 @@ import ApiUsers      from './admin/users/ApiUsers';
 import OutboundEmails from './admin/messaging/OutboundEmails';
 import InboundEmails  from './admin/messaging/InboundEmails';
 import Sms            from './admin/messaging/Sms';
+import ChannelCredentials     from './admin/chat-settings/ChannelCredentials';
+import ChannelCredentialEdit  from './admin/chat-settings/ChannelCredentialEdit';
+import SmsSettings            from './admin/chat-settings/SmsSettings';
+import SmsSettingEdit         from './admin/chat-settings/SmsSettingEdit';
+import Conversations          from './admin/chat-settings/Conversations';
+import Customers              from './admin/chat-settings/Customers';
+import Handoffs               from './admin/chat-settings/Handoffs';
+import DeletionRequests       from './admin/chat-settings/DeletionRequests';
 
 export default function CrmIndex() {
   return (
@@ -113,6 +121,18 @@ export default function CrmIndex() {
       <Route path="admin/outboundEmails" element={<OutboundEmails />} />
       <Route path="admin/inboundEmails"  element={<InboundEmails />} />
       <Route path="admin/sms"            element={<Sms />} />
+
+      <Route path="admin/channelCredentials"          element={<ChannelCredentials />} />
+      <Route path="admin/channelCredentials/new"      element={<ChannelCredentialEdit />} />
+      <Route path="admin/channelCredentials/:id/edit" element={<ChannelCredentialEdit />} />
+      <Route path="admin/smsSettings"                 element={<SmsSettings />} />
+      <Route path="admin/smsSettings/new"             element={<SmsSettingEdit />} />
+      <Route path="admin/smsSettings/:id/edit"        element={<SmsSettingEdit />} />
+      <Route path="admin/imConversations"             element={<Conversations />} />
+      <Route path="admin/imCustomers"                 element={<Customers />} />
+      <Route path="admin/imHandoffs"                  element={<Handoffs />} />
+      <Route path="admin/imDeletionRequests"          element={<DeletionRequests />} />
+
       <Route path="admin/:key"           element={<AdminStub />} />
 
       <Route path="*" element={<Navigate to="leads" replace />} />

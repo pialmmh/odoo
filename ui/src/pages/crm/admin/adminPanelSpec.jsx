@@ -48,6 +48,12 @@ import {
   Timeline as TimelineIcon,
   Assignment as LogIcon,
   Code as CodeIcon,
+  Chat as ChatIcon,
+  Sms as SmsIcon,
+  Forum as ForumIcon,
+  Group as GroupIcon,
+  SwapHoriz as HandoffIcon,
+  DeleteForever as DeleteForeverIcon,
 } from '@mui/icons-material';
 
 export const ADMIN_SECTIONS = [
@@ -143,6 +149,18 @@ export const ADMIN_SECTIONS = [
       { key: 'oAuthProviders', label: 'OAuth Providers', espoUrl: '#Admin/oAuthProviders', desc: 'OAuth providers for integrations.',                            icon: <SignInIcon /> },
       { key: 'pipelines',      label: 'Pipelines',       espoUrl: '#Admin/pipelines',      desc: 'Configure multiple pipelines.',                                icon: <TimelineIcon /> },
       { key: 'appLog',         label: 'App Log',         espoUrl: '#Admin/appLog',         desc: 'Application log.',                                             icon: <LogIcon /> },
+    ],
+  },
+  {
+    key: 'chatIm',
+    label: 'Chat & IM',
+    items: [
+      { key: 'channelCredentials', label: 'Channel Credentials', desc: 'Per-channel credentials (Facebook, WhatsApp, SMS, Email) for the messaging bridge.', icon: <ChatIcon /> },
+      { key: 'smsSettings',        label: 'SMS Settings',        desc: 'Sender ID configuration for outbound SMS.',                                         icon: <SmsIcon /> },
+      { key: 'imConversations',    label: 'Conversations',       desc: 'Runtime conversation records written by the chat service.',                          icon: <ForumIcon /> },
+      { key: 'imCustomers',        label: 'IM Customers',        desc: 'Chat-ID to CRM entity mapping.',                                                     icon: <GroupIcon /> },
+      { key: 'imHandoffs',         label: 'Handoffs',            desc: 'Agent-to-agent conversation handoffs.',                                              icon: <HandoffIcon /> },
+      { key: 'imDeletionRequests', label: 'Deletion Requests',   desc: 'Customer data-deletion requests (GDPR).',                                            icon: <DeleteForeverIcon /> },
     ],
   },
   {

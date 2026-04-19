@@ -291,3 +291,38 @@ export const AUTH_METHODS = ['', 'ApiKey', 'Hmac'];
 export const ASSIGNMENT_PERMISSIONS = ['all', 'team', 'no'];
 export const SCOPE_LEVELS = ['all', 'team', 'own', 'no'];
 export const ACTION_LEVELS = ['yes', 'no'];
+
+// ── Chat / IM / SMS — custom entities (see espocrm/custom/Espo/Custom/Resources/metadata) ──
+export const CHAT_CHANNELS = ['facebook', 'whatsapp', 'sms', 'email'];
+export const CHAT_CHANNEL_COLORS = {
+  facebook: '#1877F2',
+  whatsapp: '#25D366',
+  sms:      '#FF9800',
+  email:    '#DC3545',
+};
+export const IM_CONVERSATION_STATUS = ['open', 'closed', 'archived'];
+export const IM_DELETION_STATUS     = ['pending', 'processed', 'rejected'];
+
+export const listChannelCredentials   = (params) => get('/ChannelCredential', params);
+export const getChannelCredential     = (id)     => get(`/ChannelCredential/${id}`);
+export const createChannelCredential  = (data)   => post('/ChannelCredential', data);
+export const updateChannelCredential  = (id, d)  => put(`/ChannelCredential/${id}`, d);
+export const deleteChannelCredential  = (id)     => del(`/ChannelCredential/${id}`);
+
+export const listSmsSettings   = (params) => get('/SmsSetting', params);
+export const getSmsSetting     = (id)     => get(`/SmsSetting/${id}`);
+export const createSmsSetting  = (data)   => post('/SmsSetting', data);
+export const updateSmsSetting  = (id, d)  => put(`/SmsSetting/${id}`, d);
+export const deleteSmsSetting  = (id)     => del(`/SmsSetting/${id}`);
+
+export const listImConversations  = (params) => get('/ImConversation', params);
+export const getImConversation    = (id)     => get(`/ImConversation/${id}`);
+
+export const listImCustomers  = (params) => get('/ImCustomer', params);
+export const getImCustomer    = (id)     => get(`/ImCustomer/${id}`);
+
+export const listImHandoffs  = (params) => get('/ImHandoff', params);
+export const getImHandoff    = (id)     => get(`/ImHandoff/${id}`);
+
+export const listImDeletionRequests  = (params) => get('/ImDeletionRequest', params);
+export const updateImDeletionRequest = (id, d)  => put(`/ImDeletionRequest/${id}`, d);
