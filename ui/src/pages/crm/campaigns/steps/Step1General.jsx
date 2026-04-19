@@ -39,9 +39,6 @@ export default function Step1General({ form, update }) {
 
   return (
     <Box>
-      <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-        Identity
-      </Typography>
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <TextField fullWidth size="small" required label="Campaign name"
@@ -53,17 +50,18 @@ export default function Step1General({ form, update }) {
             {TIMEZONES.map(tz => <MenuItem key={tz} value={tz}>{tz}</MenuItem>)}
           </TextField>
         </Grid>
-        <Grid item xs={12}>
-          <TextField
-            fullWidth size="small" multiline rows={2}
-            label="Description"
-            inputProps={{ maxLength: 200 }}
-            value={form.description}
-            onChange={e => update({ description: e.target.value })}
-            helperText={`${form.description.length}/200`}
-          />
-        </Grid>
       </Grid>
+
+      <Box sx={{ mt: 2 }}>
+        <TextField
+          fullWidth size="small" multiline rows={3}
+          label="Description"
+          inputProps={{ maxLength: 200 }}
+          value={form.description}
+          onChange={e => update({ description: e.target.value })}
+          helperText={`${form.description.length}/200`}
+        />
+      </Box>
 
       <Divider sx={{ my: 3 }} />
       <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>

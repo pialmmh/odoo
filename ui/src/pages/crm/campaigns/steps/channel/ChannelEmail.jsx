@@ -1,5 +1,5 @@
 import {
-  Box, Grid, TextField, Typography, Divider, Alert,
+  Box, Grid, TextField, Typography, Divider, Alert, MenuItem,
 } from '@mui/material';
 
 // Email channel — no backend support yet (SMSREST has no email sending code).
@@ -51,9 +51,8 @@ export default function ChannelEmail({ form, update }) {
           <TextField fullWidth size="small" select label="Template (optional)"
             value={form.emailTemplateId}
             onChange={e => update({ emailTemplateId: e.target.value })}
-            SelectProps={{ native: true }}
             helperText="Overrides body if picked">
-            <option value="">— use body below —</option>
+            <MenuItem value=""><em>— use body below —</em></MenuItem>
             {/* Templates endpoint pending — see gap tracker §17 */}
           </TextField>
         </Grid>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Box, Grid, TextField, Typography, FormControlLabel, Switch, Stack, Chip,
+  MenuItem,
 } from '@mui/material';
 
 // SMS channel config. Mirrors the SOFTSWITCH_DASHBOARD SMS form:
@@ -42,10 +43,11 @@ export default function ChannelSms({ form, update }) {
         <Grid item xs={12} md={4}>
           <TextField fullWidth size="small" select label="Forbidden-word group"
             value={form.forbiddenWordGroupId}
-            onChange={e => update({ forbiddenWordGroupId: e.target.value })}
-            SelectProps={{ native: true }}>
-            <option value="">— none —</option>
-            {forbidden.map(g => <option key={g.id} value={g.id}>{g.name || `#${g.id}`}</option>)}
+            onChange={e => update({ forbiddenWordGroupId: e.target.value })}>
+            <MenuItem value=""><em>— none —</em></MenuItem>
+            {forbidden.map(g => (
+              <MenuItem key={g.id} value={g.id}>{g.name || `#${g.id}`}</MenuItem>
+            ))}
           </TextField>
         </Grid>
       </Grid>
