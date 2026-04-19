@@ -8,7 +8,7 @@ import { ExpandMore as ExpandIcon } from '@mui/icons-material';
 import {
   listTimeBands, listRetryIntervals, listRetryCauseCodes,
   listThrottlingRules, listEnumSmsErrors,
-} from '../../../../../services/voiceCampaign';
+} from '../../../../services/campaign';
 
 // Preview of a Policy — shows its time bands, retry intervals, retry cause
 // codes, and throttling rules. Fetches all lists once and filters client-side

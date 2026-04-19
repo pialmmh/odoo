@@ -60,14 +60,14 @@ export default function Sidebar() {
   // Menu organized by category. `null` items are section headers.
   const menu = [
     // ── Overview ──
-    { text: 'Dashboard', icon: <DashboardIcon />, path: `${base}/` },
+    { text: 'Dashboard', icon: <DashboardIcon />, path: `${base}/`, iconColor: '#a4c2dc' },
 
     // ── Billing ──
     { section: 'Billing' },
-    { text: 'Customers', icon: <PeopleIcon />, path: `${base}/customers` },
+    { text: 'Customers', icon: <PeopleIcon />, path: `${base}/customers`, iconColor: '#f5b945' },
     { text: 'Subscriptions', icon: <SubIcon />, path: `${base}/subscriptions` },
-    { text: 'Invoices', icon: <InvoiceIcon />, path: `${base}/invoices` },
-    { text: 'Payments', icon: <PaymentsIcon />, path: `${base}/payments` },
+    { text: 'Invoices', icon: <InvoiceIcon />, path: `${base}/invoices`, iconColor: '#94bc66' },
+    { text: 'Payments', icon: <PaymentsIcon />, path: `${base}/payments`, iconColor: '#d4a5c9' },
     { text: 'Products', icon: <ProductsIcon />, path: `${base}/products` },
     { text: 'Pricing', icon: <PricingIcon />, path: `${base}/pricing` },
     { text: 'Rate History', icon: <HistoryIcon />, path: `${base}/rate-history` },
@@ -76,7 +76,7 @@ export default function Sidebar() {
 
     // ── Infrastructure ──
     { section: 'Infrastructure' },
-    { text: 'Infra', icon: <InfraIcon />, path: `${base}/infra` },
+    { text: 'Infra', icon: <InfraIcon />, path: `${base}/infra`, iconColor: '#a4c2dc' },
     { text: 'Device Catalog', icon: <CatalogDeviceIcon />, path: `${base}/infra/catalog` },
     { text: 'SSH', icon: <SSHIcon />, path: `${base}/infra/ssh` },
 
@@ -87,13 +87,13 @@ export default function Sidebar() {
     // ── CRM (feature-flagged) ──
     ...(FEATURES.crm ? [
       { section: 'CRM' },
-      { text: 'Leads',         icon: <LeadsIcon />,         path: `${base}/crm/leads` },
-      { text: 'Contacts',      icon: <ContactsIcon />,      path: `${base}/crm/contacts` },
-      { text: 'Accounts',      icon: <AccountsIcon />,      path: `${base}/crm/accounts` },
-      { text: 'Opportunities', icon: <OpportunitiesIcon />, path: `${base}/crm/opportunities` },
+      { text: 'Leads',         icon: <LeadsIcon />,         path: `${base}/crm/leads`,         iconColor: '#d4a5c9' },
+      { text: 'Contacts',      icon: <ContactsIcon />,      path: `${base}/crm/contacts`,      iconColor: '#a4c2dc' },
+      { text: 'Accounts',      icon: <AccountsIcon />,      path: `${base}/crm/accounts`,      iconColor: '#f5b945' },
+      { text: 'Opportunities', icon: <OpportunitiesIcon />, path: `${base}/crm/opportunities`, iconColor: '#94bc66' },
       { text: 'Cases',         icon: <CasesIcon />,         path: `${base}/crm/cases` },
       { text: 'Tasks',         icon: <TasksIcon />,         path: `${base}/crm/tasks` },
-      { text: 'Meetings',      icon: <MeetingsIcon />,      path: `${base}/crm/meetings` },
+      { text: 'Meetings',      icon: <MeetingsIcon />,      path: `${base}/crm/meetings`,      iconColor: '#a4c2dc' },
       { text: 'Meeting Dashboard', icon: <MeetingDashIcon />, path: `${base}/crm/meetings/dashboard` },
       { text: 'Rooms (Admin)', icon: <RoomsIcon />,         path: `${base}/crm/meetings/rooms` },
       { text: 'Demo Room',     icon: <MeetingsIcon />,      path: `${base}/crm/meetings/demo/room` },
@@ -102,8 +102,8 @@ export default function Sidebar() {
       { text: 'Administration', icon: <AdminToolsIcon />,    path: `${base}/crm/admin` },
 
       { section: 'Campaign' },
-      { text: 'Voice Campaigns', icon: <VoiceIcon />,    path: `${base}/crm/campaign/voice` },
-      { text: 'Voice Policies',  icon: <PolicyIcon />,   path: `${base}/crm/campaign/voice/policies` },
+      { text: 'Campaigns', icon: <CampaignIcon />, path: `${base}/crm/campaigns` },
+      { text: 'Policies',  icon: <PolicyIcon />,   path: `${base}/crm/campaigns/policies` },
     ] : []),
 
     // ── Admin ──
@@ -117,9 +117,9 @@ export default function Sidebar() {
     const loc = location.pathname;
     if (path === `${base}/`) return loc === `${base}/` || loc === `${base}`;
     if (path === `${base}/infra`) return loc === `${base}/infra`;
-    // Voice Campaigns parent vs Voice Policies sibling: don't highlight parent
+    // Campaigns parent vs Policies sibling: don't highlight parent
     // when on /policies child.
-    if (path === `${base}/crm/campaign/voice`)
+    if (path === `${base}/crm/campaigns`)
       return loc.startsWith(path) && !loc.startsWith(`${path}/policies`);
     return loc.startsWith(path);
   };
@@ -221,12 +221,17 @@ export default function Sidebar() {
                 '&:hover': { bgcolor: brand.sidebar.hoverBg },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 32, color: isActive(item.path) ? 'primary.main' : 'text.primary' }}>
+              <ListItemIcon sx={{
+                minWidth: 32,
+                color: isActive(item.path)
+                  ? 'primary.main'
+                  : (item.iconColor || 'var(--color-text-muted)'),
+              }}>
                 {item.icon}
               </ListItemIcon>
               <ListItemText
                 primary={item.text}
-                primaryTypographyProps={{ fontSize: 13, fontWeight: isActive(item.path) ? 600 : 500, color: 'text.primary' }}
+                primaryTypographyProps={{ fontSize: 'var(--font-size-base)', fontWeight: isActive(item.path) ? 600 : 500, color: isActive(item.path) ? 'primary.main' : 'text.secondary' }}
               />
             </ListItemButton>
           );

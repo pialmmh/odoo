@@ -12,7 +12,7 @@ import {
 } from '@mui/icons-material';
 import {
   listCampaignTasks, DISPOSITIONS, DISPOSITION_COLOR,
-} from '../../../../services/voiceCampaign';
+} from '../../../services/campaign';
 
 // Campaign detail + tasks table.
 // Top: summary stats card. Bottom: paginated task list with filters.
@@ -38,7 +38,7 @@ const stateChip = (s) => {
   return <Chip size="small" label={stateLabel(s)} sx={{ ...c, fontSize: 11, fontWeight: 500 }} />;
 };
 
-export default function VoiceCampaignDetail() {
+export default function CampaignDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 

@@ -4,83 +4,68 @@ import {
   Box, Typography, Card, Chip, CircularProgress, Alert, TextField,
   InputAdornment, Button, IconButton, Tooltip, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, TablePagination, Link as MuiLink,
-  Avatar, AvatarGroup, FormControlLabel, Switch, Stack,
+  MenuItem, Stack,
 } from '@mui/material';
 import {
   Search as SearchIcon, Add as AddIcon, Edit as EditIcon,
   Refresh as RefreshIcon, PlayArrow as PlayIcon, Pause as PauseIcon,
   Stop as StopIcon, Visibility as ViewIcon,
+  Sms as SmsIcon, Phone as VoiceIcon, Email as EmailIcon,
+  Hub as HybridIcon, SupportAgent as AgentIcon,
 } from '@mui/icons-material';
 import {
-  listCampaigns, enableCampaign, disableCampaign,
-} from '../../../../services/voiceCampaign';
+  listCampaigns, enableCampaign, disableCampaign, CAMPAIGN_TYPES,
+} from '../../../services/campaign';
 
-// Voice campaigns list. Columns modelled on the MightyCall dialer wiki:
-// Status · Name · Description · Agents · Records · Coverage · Actions.
-//
-// Backend doesn't carry most of these yet — values fall back to em-dash and
-// the gaps are tracked in campaign/ui-vs-api-todo.md.
+// Unified campaign list — any campaign type (SMS / Voice / Email / Hybrid)
+// appears here. Type column + type filter replace the old per-channel pages.
+
+const TYPE_META = {
+  SMS:             { label: 'SMS',            icon: <SmsIcon fontSize="small" />,    color: '#1e40af', bg: '#dbeafe' },
+  VOICE_AGENTLESS: { label: 'Voice · Auto',   icon: <VoiceIcon fontSize="small" />,  color: '#065f46', bg: '#dcfce7' },
+  VOICE_AGENT:     { label: 'Voice · Agent',  icon: <AgentIcon fontSize="small" />,  color: '#5b21b6', bg: '#ede9fe' },
+  EMAIL:           { label: 'Email',          icon: <EmailIcon fontSize="small" />,  color: '#9a3412', bg: '#ffedd5' },
+  HYBRID:          { label: 'Hybrid',         icon: <HybridIcon fontSize="small" />, color: '#831843', bg: '#fce7f3' },
+};
 
 const STATUS = {
-  Running:    { bg: '#dcfce7', color: '#15803d', dot: '#16a34a' },
-  Paused:     { bg: '#fef9c3', color: '#a16207', dot: '#ca8a04' },
-  Ready:      { bg: '#fef9c3', color: '#a16207', dot: '#ca8a04' },
+  Running:    { bg: '#eef5e0', color: '#6b8f4e', dot: '#94bc66' },
   Scheduled:  { bg: '#dbeafe', color: '#1d4ed8', dot: '#2563eb' },
-  Incomplete: { bg: '#fee2e2', color: '#b91c1c', dot: '#dc2626' },
+  Paused:     { bg: '#fef9c3', color: '#a16207', dot: '#ca8a04' },
+  Draft:      { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af' },
   Completed:  { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af' },
-  Preparing:  { bg: '#f3f4f6', color: '#9ca3af', dot: '#d1d5db' },
   Expired:    { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af' },
 };
 
+const deriveType = (c) => (c.campaignType || c.type || 'SMS').toUpperCase();
+
 const deriveStatus = (c) => {
+  if (c.status && typeof c.status === 'string') return c.status;
   if (c.expireAt && new Date(c.expireAt) < new Date()) return 'Expired';
-  if (c.status) return c.status;
+  if (c.scheduledAt && new Date(c.scheduledAt) > new Date()) return 'Scheduled';
   if (c.enabled) return 'Running';
-  return 'Paused';
+  if (c.id || c.campaignId) return 'Paused';
+  return 'Draft';
 };
 
-const isVoice = (c) =>
-  (c.campaignType || c.type || '').toUpperCase() === 'VOICE' || !!c.audioFilePath;
-
-const initials = (name) => (name || '?').split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
-
-const coveragePill = (cov) => {
-  if (!cov) return null;
-  const [done, total] = cov.split('/').map(Number);
-  const pct = total ? Math.round(100 * done / total) : 0;
-  const good = pct >= 80;
-  return (
-    <Chip
-      size="small"
-      label={`${cov} · ${pct}%`}
-      sx={{
-        fontSize: 11, fontWeight: 600,
-        bgcolor: good ? '#dcfce7' : '#fef9c3',
-        color:   good ? '#15803d' : '#a16207',
-      }}
-    />
-  );
-};
-
-export default function VoiceCampaigns() {
+export default function Campaigns() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-  const [dncScrubber, setDncScrubber] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
       const res = await listCampaigns(page, rowsPerPage);
       const list = res?.content || res?.list || res || [];
-      const count = res?.totalElements ?? res?.total ?? list.length;
-      setRows(list.filter(isVoice));
-      setTotal(count);
+      setRows(list);
+      setTotal(res?.totalElements ?? res?.total ?? list.length);
     } catch (e) {
       setError('Failed to load campaigns: ' + (e?.response?.data?.message || e.message));
     }
@@ -98,57 +83,55 @@ export default function VoiceCampaigns() {
     }
   };
 
-  const filtered = rows.filter(c =>
-    !search.trim() ||
-    (c.name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.description || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = rows.filter(c => {
+    if (typeFilter !== 'all' && deriveType(c) !== typeFilter) return false;
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (c.name || '').toLowerCase().includes(q) ||
+           (c.description || '').toLowerCase().includes(q);
+  });
 
   return (
     <Box sx={{ px: 4, py: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box>
-          <Typography variant="h6">Voice Campaigns</Typography>
+          <Typography variant="h6">Campaigns</Typography>
           <Typography variant="body2" color="text.secondary">
-            {filtered.length} of {total} campaigns
+            {filtered.length} of {total}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="contained" color="primary" size="small"
-            startIcon={<AddIcon />} onClick={() => navigate('new')}>
+        <Stack direction="row" spacing={1}>
+          <Button variant="contained" size="small" startIcon={<AddIcon />}
+            onClick={() => navigate('new')}>
             New Campaign
           </Button>
           <Tooltip title="Refresh">
             <IconButton onClick={load} size="small"><RefreshIcon /></IconButton>
           </Tooltip>
-        </Box>
+        </Stack>
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Card sx={{ px: 2, py: 1.5, mb: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-        <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase', color: 'text.secondary' }}>
-          DNC compliance
-        </Typography>
-        <FormControlLabel
-          control={<Switch size="small" checked={dncScrubber} onChange={e => setDncScrubber(e.target.checked)} />}
-          label={<Typography variant="body2">National DNC scrubber</Typography>}
-        />
-        <MuiLink component="button" variant="body2" onClick={() => alert('Local DNC list — not yet wired')}>
-          Local DNC list (0)
-        </MuiLink>
-      </Card>
-
-      <Box sx={{ mb: 2 }}>
+      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
         <TextField
-          size="small" placeholder="Search by name or description…"
+          size="small" placeholder="Search name or description…"
           value={search} onChange={e => setSearch(e.target.value)}
           sx={{ width: 320 }}
           InputProps={{
             startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
           }}
         />
-      </Box>
+        <TextField size="small" select label="Type"
+          value={typeFilter}
+          onChange={e => setTypeFilter(e.target.value)}
+          sx={{ minWidth: 180 }}>
+          <MenuItem value="all">All types</MenuItem>
+          {CAMPAIGN_TYPES.map(t => (
+            <MenuItem key={t} value={t}>{TYPE_META[t]?.label || t}</MenuItem>
+          ))}
+        </TextField>
+      </Stack>
 
       <Card>
         {loading ? (
@@ -159,38 +142,41 @@ export default function VoiceCampaigns() {
               <Table size="small">
                 <TableHead>
                   <TableRow>
+                    <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Agents</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Records</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Coverage</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }} align="right">Tasks</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }} align="right">Sent / Failed</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Scheduled</TableCell>
                     <TableCell align="center" sx={{ fontWeight: 600 }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filtered.map(c => {
                     const id = c.id || c.campaignId;
+                    const type = deriveType(c);
+                    const tm = TYPE_META[type] || TYPE_META.SMS;
                     const status = deriveStatus(c);
-                    const s = STATUS[status] || STATUS.Preparing;
-                    const agents = c.agents || [];
-                    const recordCount = c.totalTasks ?? c.taskCount ?? c.recordCount ?? '—';
-                    const recordList = c.recordListName || c.listName;
-                    const cov = c.coverageScore;
+                    const sm = STATUS[status] || STATUS.Draft;
                     const running = status === 'Running';
                     return (
-                      <TableRow key={id} hover>
+                      <TableRow key={id || Math.random()} hover>
                         <TableCell>
-                          <Chip
-                            size="small"
+                          <Chip size="small"
+                            icon={tm.icon}
+                            label={tm.label}
+                            sx={{ bgcolor: tm.bg, color: tm.color, fontSize: 11, fontWeight: 600 }} />
+                        </TableCell>
+                        <TableCell>
+                          <Chip size="small"
                             label={
                               <Stack direction="row" spacing={0.75} alignItems="center">
-                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: s.dot }} />
+                                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: sm.dot }} />
                                 <span>{status}</span>
                               </Stack>
                             }
-                            sx={{ bgcolor: s.bg, color: s.color, fontSize: 11, fontWeight: 600 }}
-                          />
+                            sx={{ bgcolor: sm.bg, color: sm.color, fontSize: 11, fontWeight: 600 }} />
                         </TableCell>
                         <TableCell>
                           <MuiLink component={RouterLink} to={`${id}`}
@@ -204,34 +190,25 @@ export default function VoiceCampaigns() {
                             {c.description || '—'}
                           </Typography>
                         </TableCell>
-                        <TableCell>
-                          {agents.length > 0 ? (
-                            <AvatarGroup max={4} sx={{ justifyContent: 'flex-start' }}>
-                              {agents.map((a, i) => (
-                                <Avatar key={i} sx={{ width: 26, height: 26, fontSize: 10 }}>
-                                  {initials(a.name || a)}
-                                </Avatar>
-                              ))}
-                            </AvatarGroup>
-                          ) : <Typography variant="caption" color="text.disabled">—</Typography>}
+                        <TableCell align="right">
+                          <Typography variant="caption">
+                            {c.totalTaskCount ?? c.totalTasks ?? '—'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="caption">
+                            <Box component="span" sx={{ color: 'success.main' }}>{c.sentTaskCount ?? 0}</Box>
+                            {' / '}
+                            <Box component="span" sx={{ color: 'error.main' }}>{c.failedTaskCount ?? 0}</Box>
+                          </Typography>
                         </TableCell>
                         <TableCell>
-                          {recordList ? (
-                            <Box>
-                              <Typography variant="caption" sx={{ display: 'block', fontWeight: 500 }}>
-                                {recordList}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {recordCount} records
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <Typography variant="caption">{recordCount}</Typography>
-                          )}
+                          <Typography variant="caption" color="text.secondary">
+                            {c.scheduledAt ? new Date(c.scheduledAt).toLocaleString() : '—'}
+                          </Typography>
                         </TableCell>
-                        <TableCell>{coveragePill(cov) || <Typography variant="caption" color="text.disabled">—</Typography>}</TableCell>
                         <TableCell align="center">
-                          <Tooltip title={running ? 'Pause' : 'Play'}>
+                          <Tooltip title={running ? 'Pause' : 'Start'}>
                             <IconButton size="small" onClick={() => toggle(c)}
                               sx={{ color: running ? 'warning.main' : 'success.main' }}>
                               {running ? <PauseIcon fontSize="small" /> : <PlayIcon fontSize="small" />}
@@ -258,8 +235,8 @@ export default function VoiceCampaigns() {
                   })}
                   {filtered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                        <Typography color="text.secondary">No voice campaigns found</Typography>
+                      <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                        <Typography color="text.secondary">No campaigns found</Typography>
                       </TableCell>
                     </TableRow>
                   )}

@@ -110,9 +110,31 @@ export const getPartnerConcurrentLimit = (partnerId) => fs.get('/api/broadcast/g
 export const listGateways   = () => fs.get('/api/v1/gateways').then(r => r.data);
 export const listRecordings = () => fs.get('/api/v1/recordings').then(r => r.data);
 
+// ── Launch actions ──
+// Schedule a campaign for a future start. Backend endpoint pending — today
+// `scheduledAt` is stored as part of save-campaign DTO. See gap tracker §16.
+export const scheduleCampaign = (id, scheduledAt) =>
+  sms.post('/campaign/schedule-campaign', { id, scheduledAt }).then(r => r.data);
+
 // ── Constants ──
 
-export const CAMPAIGN_TYPES = ['VOICE', 'SMS', 'EMAIL', 'IM'];
+export const CAMPAIGN_TYPES = [
+  'SMS',
+  'VOICE_AGENTLESS',
+  'VOICE_AGENT',
+  'EMAIL',
+  'HYBRID',
+];
+
+// Channels selectable as hybrid fallback steps.
+export const CHANNELS = ['SMS', 'VOICE_AGENTLESS', 'VOICE_AGENT', 'EMAIL'];
+
+// Triggers that advance to the next channel in a hybrid waterfall.
+export const HYBRID_FALLBACK_TRIGGERS = {
+  noRoute:     'No route available',
+  sendFailure: 'Send failure',
+  timeout:     'Delivery timeout',
+};
 
 // UI-level synthetic "campaign status" derived from enabled + expireAt.
 // Actual DB column is `enabled` boolean; no unified status column exists.

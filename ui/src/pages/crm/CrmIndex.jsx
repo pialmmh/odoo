@@ -26,10 +26,10 @@ import MeetingRoomsAdmin from './meetings/MeetingRoomsAdmin';
 import Calendar    from './Calendar';
 import Emails      from './emails/Emails';
 
-import VoiceCampaigns      from './campaign/voice/VoiceCampaigns';
-import VoiceCampaignEdit   from './campaign/voice/VoiceCampaignEdit';
-import VoiceCampaignDetail from './campaign/voice/VoiceCampaignDetail';
-import VoicePolicies       from './campaign/voice/VoicePolicies';
+import Campaigns       from './campaigns/Campaigns';
+import CampaignEdit    from './campaigns/CampaignEdit';
+import CampaignDetail  from './campaigns/CampaignDetail';
+import CampaignPolicies from './campaigns/Policies';
 
 import AdminIndex    from './admin/AdminIndex';
 import AdminStub     from './admin/AdminStub';
@@ -94,11 +94,11 @@ export default function CrmIndex() {
       <Route path="emails"         element={<Emails />} />
       <Route path="emails/:id"     element={<Emails />} />
 
-      <Route path="campaign/voice"             element={<VoiceCampaigns />} />
-      <Route path="campaign/voice/new"         element={<VoiceCampaignEdit />} />
-      <Route path="campaign/voice/:id"         element={<VoiceCampaignDetail />} />
-      <Route path="campaign/voice/:id/edit"    element={<VoiceCampaignEdit />} />
-      <Route path="campaign/voice/policies"    element={<VoicePolicies />} />
+      <Route path="campaigns"             element={<Campaigns />} />
+      <Route path="campaigns/new"         element={<CampaignEdit />} />
+      <Route path="campaigns/policies"    element={<CampaignPolicies />} />
+      <Route path="campaigns/:id"         element={<CampaignDetail />} />
+      <Route path="campaigns/:id/edit"    element={<CampaignEdit />} />
 
       <Route path="admin"                element={<AdminIndex />} />
       <Route path="admin/users"          element={<Users />} />

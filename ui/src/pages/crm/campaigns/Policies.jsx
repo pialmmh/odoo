@@ -6,7 +6,7 @@ import {
 import {
   listPolicies, listTimeBands, listRetryIntervals,
   listRetryCauseCodes, listSchedulePolicies,
-} from '../../../../services/voiceCampaign';
+} from '../../../services/campaign';
 
 // Read-only view of the four policy axes + schedule policies.
 // Full CRUD (create/edit dialogs) is pending — see ui-vs-api-todo.md.
@@ -19,7 +19,7 @@ const TABS = [
   { key: 'schedulePolicies', label: 'Schedules',      loader: listSchedulePolicies },
 ];
 
-export default function VoicePolicies() {
+export default function Policies() {
   const [tab, setTab] = useState(0);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);

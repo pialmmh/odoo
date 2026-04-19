@@ -5,7 +5,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableRow,
 } from '@mui/material';
 import { ExpandMore as ExpandIcon } from '@mui/icons-material';
-import { listSchedulePolicies } from '../../../../../services/voiceCampaign';
+import { listSchedulePolicies } from '../../../../services/campaign';
 
 // Preview of a SchedulePolicy — shows overall start/end window and the per-day
 // active hours (ActiveHours children). Schedule policies control WHEN a
