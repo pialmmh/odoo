@@ -18,7 +18,7 @@ const PaymentReceipt = forwardRef(function PaymentReceipt({ payment, invoice, ac
     <Box ref={ref} sx={{ p: 4, maxWidth: 600, mx: 'auto', fontFamily: 'Inter, sans-serif' }}>
       {/* Header */}
       <Box sx={{ textAlign: 'center', mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, color: '#00A651', mb: 0.5 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, color: '#94bc66', mb: 0.5 }}>
           Telcobright Billing
         </Typography>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>Payment Receipt</Typography>
@@ -134,7 +134,7 @@ const PaymentReceipt = forwardRef(function PaymentReceipt({ payment, invoice, ac
       {/* Amount */}
       <Box sx={{ bgcolor: '#f8faf8', borderRadius: 1, p: 2, textAlign: 'center' }}>
         <Typography variant="caption" color="text.secondary">Amount Paid</Typography>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#00A651' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: '#94bc66' }}>
           {currency} {amount.toLocaleString()}
         </Typography>
       </Box>

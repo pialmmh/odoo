@@ -113,7 +113,7 @@ export default function Dashboard() {
       <Grid container spacing={1.5} sx={{ mb: 1 }}>
         <Grid item xs={6} sm={4} md={2}><StatCard title="Regions" value={infra.regions} icon={<RegionIcon />} color="#6366f1" /></Grid>
         <Grid item xs={6} sm={4} md={2}><StatCard title="Datacenters" value={infra.dcs} icon={<DcIcon />} color="#0ea5e9" /></Grid>
-        <Grid item xs={6} sm={4} md={2}><StatCard title="Computes" value={infra.computes} icon={<ComputeIcon />} color="#10b981" /></Grid>
+        <Grid item xs={6} sm={4} md={2}><StatCard title="Computes" value={infra.computes} icon={<ComputeIcon />} color="#94bc66" /></Grid>
         <Grid item xs={6} sm={4} md={2}><StatCard title="Containers" value={infra.containers} icon={<ContainerIcon />} color="#8b5cf6" /></Grid>
         <Grid item xs={6} sm={4} md={2}><StatCard title="Net Devices" value={infra.devices} icon={<DeviceIcon />} color="#f59e0b" /></Grid>
         <Grid item xs={6} sm={4} md={2}><StatCard title="Networks" value={infra.networks} icon={<StorageIcon />} color="#64748b" /></Grid>

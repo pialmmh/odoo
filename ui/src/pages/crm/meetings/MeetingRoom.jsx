@@ -514,7 +514,7 @@ function PeoplePanel({ tiles }) {
           display: 'flex', alignItems: 'center', gap: 1, py: 0.75,
           borderBottom: '1px solid #222',
         }}>
-          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#22c55e' }} />
+          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#94bc66' }} />
           <Typography variant="body2" sx={{ flex: 1, color: '#ddd' }}>{t.name}</Typography>
           {t.isLocal && <Chip size="small" label="You" sx={{ height: 16, fontSize: 10, bgcolor: '#2a2a2a', color: '#ddd' }} />}
         </Box>

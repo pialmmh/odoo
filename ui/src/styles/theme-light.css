@@ -6,7 +6,7 @@ body.theme-light {
   --color-bg-subtle: #f9fafb;
   --color-bg-muted: #f3f4f6;
 
-  --color-text-primary: #111827;
+  --color-text-primary: #18202e;
   --color-text-secondary: #374151;
   --color-text-muted: #6b7280;
   --color-text-disabled: #9ca3af;
@@ -26,12 +26,13 @@ body.theme-light {
   --color-sidebar-text-hover: #e2e8f0;
   --color-sidebar-active-bg: var(--color-primary);
   --color-sidebar-active-text: #ffffff;
+  --color-sidebar-item-text: #2a3441;
 
-  --color-success: #16a34a;
-  --color-success-bg: #dcfce7;
-  --color-success-text: #15803d;
-  --color-success-border: #bbf7d0;
-  --color-success-surface: #f0fdf4;
+  --color-success: #94bc66;
+  --color-success-bg: #eef5e0;
+  --color-success-text: #6b8f4e;
+  --color-success-border: #cfe1ab;
+  --color-success-surface: #f7faed;
 
   --color-warning: #ca8a04;
   --color-warning-bg: #fef9c3;

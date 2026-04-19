@@ -24,7 +24,7 @@ export const lightTokens = {
   colorBgSubtle: '#f9fafb',
   colorBgMuted: '#f3f4f6',
 
-  colorTextPrimary: '#111827',
+  colorTextPrimary: '#18202e',
   colorTextSecondary: '#374151',
   colorTextMuted: '#6b7280',
   colorTextDisabled: '#9ca3af',
@@ -42,12 +42,13 @@ export const lightTokens = {
   colorSidebarBg: '#1e3a5f',
   colorSidebarText: '#94a3b8',
   colorSidebarTextHover: '#e2e8f0',
+  colorSidebarItemText: '#2a3441',
 
-  colorSuccess: '#16a34a',
-  colorSuccessBg: '#dcfce7',
-  colorSuccessText: '#15803d',
-  colorSuccessBorder: '#bbf7d0',
-  colorSuccessSurface: '#f0fdf4',
+  colorSuccess: '#94bc66',
+  colorSuccessBg: '#eef5e0',
+  colorSuccessText: '#6b8f4e',
+  colorSuccessBorder: '#cfe1ab',
+  colorSuccessSurface: '#f7faed',
 
   colorWarning: '#ca8a04',
   colorWarningBg: '#fef9c3',
@@ -99,8 +100,9 @@ export const darkTokens = {
   colorSidebarBg: '#020617',
   colorSidebarText: '#64748b',
   colorSidebarTextHover: '#cbd5e1',
+  colorSidebarItemText: '#cbd5e1',
 
-  colorSuccess: '#22c55e',
+  colorSuccess: '#a5c97e',
   colorSuccessBg: '#14532d',
   colorSuccessText: '#86efac',
   colorSuccessBorder: '#166534',
@@ -142,11 +144,11 @@ export const tokens = {
 export const tenantOverrides = {
   default: null,
   btcl: {
-    colorPrimary: '#00A651',
-    colorPrimaryHover: '#007a3b',
-    colorPrimaryBg: '#e8f7ee',
-    colorPrimaryText: '#007a3b',
-    colorSidebarBg: '#003d1a',
+    colorPrimary: '#6b8f4e',
+    colorPrimaryHover: '#567a3d',
+    colorPrimaryBg: '#e6efd6',
+    colorPrimaryText: '#4a6937',
+    colorSidebarBg: '#3d4a2a',
   },
   telcobright: {
     colorPrimary: '#1565C0',

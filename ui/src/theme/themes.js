@@ -71,10 +71,10 @@ function makeTheme({ label, primary, secondary, sidebar, infra, bg, text }) {
 const THEMES = {
   green: makeTheme({
     label: 'Green',
-    primary:   { main: '#00A651', light: '#4dc97a', dark: '#007a3b' },
+    primary:   { main: '#94bc66', light: '#cfe1ab', dark: '#6b8f4e' },
     secondary: { main: '#2B5A8A', light: '#5a8ab8', dark: '#1a3d5c' },
-    sidebar:   { activeBg: 'rgba(0,166,81,0.08)', hoverBg: 'rgba(0,166,81,0.04)' },
-    infra:     { region: '#1b7a3d', zone: '#2e7d50', dc: '#00875a' },
+    sidebar:   { activeBg: 'rgba(165,201,126,0.14)', hoverBg: 'rgba(165,201,126,0.07)' },
+    infra:     { region: '#6b8f4e', zone: '#8bb368', dc: '#94bc66' },
   }),
 
   blue: makeTheme({

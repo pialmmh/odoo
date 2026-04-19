@@ -26,8 +26,9 @@ body.theme-dark {
   --color-sidebar-text-hover: #cbd5e1;
   --color-sidebar-active-bg: var(--color-primary);
   --color-sidebar-active-text: #ffffff;
+  --color-sidebar-item-text: #cbd5e1;
 
-  --color-success: #22c55e;
+  --color-success: #a5c97e;
   --color-success-bg: #14532d;
   --color-success-text: #86efac;
   --color-success-border: #166534;

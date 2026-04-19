@@ -774,7 +774,7 @@ export default function CustomerDetail() {
                 const alreadySubscribed = allSubscriptions.some(s => s.planName === planName && (s.state === 'ACTIVE' || s.state === 'BLOCKED'));
                 return (
                   <Grid item xs={12} sm={6} md={4} key={planName}>
-                    <Card sx={{ height: '100%', cursor: alreadySubscribed ? 'default' : 'pointer', opacity: alreadySubscribed ? 0.5 : 1, border: selectedPlan === planName ? '2px solid #00A651' : '1px solid #e5e7eb', '&:hover': alreadySubscribed ? {} : { borderColor: '#00A651' }, transition: 'all 0.2s' }}
+                    <Card sx={{ height: '100%', cursor: alreadySubscribed ? 'default' : 'pointer', opacity: alreadySubscribed ? 0.5 : 1, border: selectedPlan === planName ? '2px solid #94bc66' : '1px solid #e5e7eb', '&:hover': alreadySubscribed ? {} : { borderColor: '#94bc66' }, transition: 'all 0.2s' }}
                       onClick={() => !alreadySubscribed && handleSelectPlan(planName)}>
                       <CardContent sx={{ p: 2 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
