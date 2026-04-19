@@ -22,8 +22,11 @@ import java.util.List;
 @Component
 @ConfigurationProperties(prefix = "orchestrix")
 public class TenantsBootstrap {
+    private String operator;
     private List<Entry> tenants = new ArrayList<>();
 
+    public String getOperator() { return operator; }
+    public void setOperator(String operator) { this.operator = operator; }
     public List<Entry> getTenants() { return tenants; }
     public void setTenants(List<Entry> tenants) { this.tenants = tenants; }
 

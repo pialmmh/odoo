@@ -36,12 +36,17 @@ public class TenantConfigRegistry {
 
     @PostConstruct
     void load() {
+        String operator = bootstrap.getOperator();
+        if (operator == null || operator.isBlank()) {
+            throw new IllegalStateException("orchestrix.operator must be set in application.yml");
+        }
         for (TenantsBootstrap.Entry e : bootstrap.getTenants()) {
             if (!e.isEnabled()) {
                 log.info("Tenant '{}' disabled — skipping", e.getName());
                 continue;
             }
-            String path = "config/tenants/" + e.getName() + "/" + e.getProfile()
+            String path = "config/operators/" + operator
+                        + "/tenants/" + e.getName() + "/" + e.getProfile()
                         + "/profile-" + e.getProfile() + ".yml";
             try (InputStream in = new ClassPathResource(path).getInputStream()) {
                 Map<String, Object> raw = new Yaml().load(in);
@@ -62,6 +67,8 @@ public class TenantConfigRegistry {
     public TenantConfig get(String slug) { return byslug.get(slug); }
 
     public Map<String, TenantConfig> all() { return Collections.unmodifiableMap(byslug); }
+
+    public boolean isEnabled(String slug) { return slug != null && byslug.containsKey(slug); }
 
     // ── parsing ──────────────────────────────────────────────────────────
 

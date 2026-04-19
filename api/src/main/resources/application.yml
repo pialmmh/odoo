@@ -19,6 +19,9 @@ killbill:
 # Enable tenants and select which profile to load for each.
 # Profile files live at: config/tenants/{name}/{profile}/profile-{profile}.yml
 orchestrix:
+  # Operator owning this deployment. One deployment = one operator.
+  # Tenants listed below are clients of this operator.
+  operator: telcobright
   tenants:
     - name: telcobright
       enabled: true
@@ -33,7 +36,7 @@ spring:
   profiles:
     # Hardcoded here to avoid env-var surprises. To change env, edit this line
     # (or create application-<profile>.yml).
-    active: mustafa
+    active: dev
   security:
     oauth2:
       resourceserver:

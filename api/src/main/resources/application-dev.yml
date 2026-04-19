@@ -7,13 +7,12 @@ integrations:
   crm:
     enabled: true
 
-    # Use 'localhost' (not 127.0.0.1) — our multi-tenant bootstrap.php in
-    # espocrm resolves tenant from the HTTP Host header. A Host of
-    # "127.0.0.1:7080" would match '127' as the tenant slug (regex
-    # ^([a-z0-9_-]+)\.) and 404. 'localhost:7080' has no dotted prefix →
-    # slug=master → the control DB. For a specific tenant, use
-    # e.g. http://btcl.localhost:7080.
-    base-url: http://localhost:7080
+    # Multi-tenant bootstrap.php in espocrm resolves tenant from the HTTP
+    # Host header. A Host of "127.0.0.1:7082" would match '127' as the
+    # tenant slug (regex ^([a-z0-9_-]+)\.) and 404. Plain 'localhost' →
+    # slug=master → the control DB (has no user/entity data). To hit a
+    # real tenant, put the slug in the hostname:
+    base-url: http://btcl.localhost:7080
 
     # Admin Basic auth — the working path for User/Role/Team/Settings and
     # other admin-scope endpoints. EspoCRM's X-Api-Key only accepts
@@ -25,3 +24,13 @@ integrations:
 
     # X-Api-Key fallback — only used when admin-user is blank.
     api-key: ''
+
+# LiveKit — meeting JWT minting + (later) recording control.
+# Shared deployment: btcl SFU, fronted by nginx on sbc1.
+# Keys from: routesphere/webrtc/docs/livekit-installation-info.md §2
+livekit:
+  enabled: true
+  ws-url: wss://hcc.btcliptelephony.gov.bd/btcl/livekit
+  api-key: APIbtclpilot
+  api-secret: 21055e3cc56bad066ee3afb7d1db89e957c753b9b89d3d29e1025581525401ca
+  token-ttl-seconds: 7200
