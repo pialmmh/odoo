@@ -79,6 +79,11 @@ export function buildTheme(mode = 'light', tenantSlug = null) {
           paper: { backgroundColor: t.colorBgSurface, borderRight: `1px solid ${t.colorBorder}` },
         },
       },
+      MuiLink: {
+        styleOverrides: {
+          root: { color: t.colorPrimaryText },
+        },
+      },
     },
   });
 }
