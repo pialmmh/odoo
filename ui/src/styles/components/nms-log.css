@@ -1,0 +1,26 @@
+/* Dark terminal-style panel for live log streams in the NMS UI.
+ * Intentionally dark in both light and dark themes — it's a terminal,
+ * not a surface. Tokens are scoped to .nms-log so nothing leaks. */
+
+.nms-log {
+  --nms-log-bg: #0f1a14;
+  --nms-log-fg: #d6e0d8;
+  --nms-log-time: #7f9186;
+  --nms-log-node: #9bbfa2;
+
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--font-size-sm);
+  background-color: var(--nms-log-bg);
+  color: var(--nms-log-fg);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  overflow-y: auto;
+}
+
+.nms-log__row       { white-space: pre; display: flex; gap: var(--space-2); }
+.nms-log__time      { color: var(--nms-log-time); }
+.nms-log__node      { color: var(--nms-log-node); min-width: 120px; }
+.nms-log__lvl       { font-weight: var(--font-weight-bold); min-width: 50px; }
+.nms-log__lvl-INFO  { color: var(--color-success); }
+.nms-log__lvl-WARN  { color: var(--color-warning); }
+.nms-log__lvl-ERROR { color: var(--color-danger); }

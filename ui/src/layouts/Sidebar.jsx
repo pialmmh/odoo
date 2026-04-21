@@ -39,6 +39,7 @@ import {
   Tune as AdminToolsIcon,
   MonitorHeart as NmsIcon,
   Hub as ClusterIcon,
+  Schedule as TemporalIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -84,8 +85,9 @@ export default function Sidebar() {
 
     // ── NMS ──
     { section: 'NMS' },
-    { text: 'NMS Overview', icon: <NmsIcon />, path: `${base}/nms`, iconColor: '#94bc66' },
-    { text: 'Galera Cluster', icon: <ClusterIcon />, path: `${base}/nms/galera`, iconColor: '#a4c2dc' },
+    { text: 'NMS Overview', icon: <NmsIcon />, path: `${base}/nms`, iconColor: 'var(--color-success)' },
+    { text: 'Galera Cluster', icon: <ClusterIcon />, path: `${base}/nms/galera`, iconColor: 'var(--color-primary)' },
+    { text: 'Temporal Clusters', icon: <TemporalIcon />, path: `${base}/nms/temporal`, iconColor: 'var(--color-warning)' },
 
     // ── Artifacts ──
     { section: 'Artifacts' },

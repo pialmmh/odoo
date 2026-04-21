@@ -25,6 +25,8 @@ import InfraSSH from './pages/infra/InfraSSH';
 import ArtifactsMain from './pages/artifacts/ArtifactsMain';
 import NmsOverview from './pages/nms/NmsOverview';
 import NmsGalera from './pages/nms/NmsGalera';
+import NmsTemporalClusters from './pages/nms/NmsTemporalClusters';
+import NmsTemporalClusterEdit from './pages/nms/NmsTemporalClusterEdit';
 import RBACManagement from './pages/RBACManagement';
 import Purchase from './pages/Purchase';
 import CrmIndex from './pages/crm/CrmIndex';
@@ -68,6 +70,9 @@ function TenantRoutes() {
       <Route path="artifacts" element={<ArtifactsMain />} />
       <Route path="nms" element={<NmsOverview />} />
       <Route path="nms/galera" element={<NmsGalera />} />
+      <Route path="nms/temporal" element={<NmsTemporalClusters />} />
+      <Route path="nms/temporal/new" element={<NmsTemporalClusterEdit />} />
+      <Route path="nms/temporal/:id/edit" element={<NmsTemporalClusterEdit />} />
       <Route path="purchase" element={<Purchase />} />
       <Route path="rbac" element={<RBACManagement />} />
       {FEATURES.crm && <Route path="crm/*" element={<CrmIndex />} />}
