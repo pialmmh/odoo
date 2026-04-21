@@ -23,6 +23,8 @@ import InfraMain from './pages/infra/InfraMain';
 import InfraDeviceCatalog from './pages/infra/InfraDeviceCatalog';
 import InfraSSH from './pages/infra/InfraSSH';
 import ArtifactsMain from './pages/artifacts/ArtifactsMain';
+import NmsOverview from './pages/nms/NmsOverview';
+import NmsGalera from './pages/nms/NmsGalera';
 import RBACManagement from './pages/RBACManagement';
 import Purchase from './pages/Purchase';
 import CrmIndex from './pages/crm/CrmIndex';
@@ -64,6 +66,8 @@ function TenantRoutes() {
       <Route path="infra/catalog" element={<InfraDeviceCatalog />} />
       <Route path="infra/ssh" element={<InfraSSH />} />
       <Route path="artifacts" element={<ArtifactsMain />} />
+      <Route path="nms" element={<NmsOverview />} />
+      <Route path="nms/galera" element={<NmsGalera />} />
       <Route path="purchase" element={<Purchase />} />
       <Route path="rbac" element={<RBACManagement />} />
       {FEATURES.crm && <Route path="crm/*" element={<CrmIndex />} />}

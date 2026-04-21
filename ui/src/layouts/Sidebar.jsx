@@ -37,6 +37,8 @@ import {
   Phone as VoiceIcon,
   Policy as PolicyIcon,
   Tune as AdminToolsIcon,
+  MonitorHeart as NmsIcon,
+  Hub as ClusterIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -80,6 +82,11 @@ export default function Sidebar() {
     { text: 'Device Catalog', icon: <CatalogDeviceIcon />, path: `${base}/infra/catalog` },
     { text: 'SSH', icon: <SSHIcon />, path: `${base}/infra/ssh` },
 
+    // ── NMS ──
+    { section: 'NMS' },
+    { text: 'NMS Overview', icon: <NmsIcon />, path: `${base}/nms`, iconColor: '#94bc66' },
+    { text: 'Galera Cluster', icon: <ClusterIcon />, path: `${base}/nms/galera`, iconColor: '#a4c2dc' },
+
     // ── Artifacts ──
     { section: 'Artifacts' },
     { text: 'Artifacts', icon: <ArtifactIcon />, path: `${base}/artifacts` },
@@ -117,6 +124,7 @@ export default function Sidebar() {
     const loc = location.pathname;
     if (path === `${base}/`) return loc === `${base}/` || loc === `${base}`;
     if (path === `${base}/infra`) return loc === `${base}/infra`;
+    if (path === `${base}/nms`) return loc === `${base}/nms`;
     // Campaigns parent vs Policies sibling: don't highlight parent
     // when on /policies child.
     if (path === `${base}/crm/campaigns`)

@@ -34,3 +34,32 @@ livekit:
   api-key: APIbtclpilot
   api-secret: 21055e3cc56bad066ee3afb7d1db89e957c753b9b89d3d29e1025581525401ca
   token-ttl-seconds: 7200
+
+# NMS — Galera cluster monitoring targets.
+# Each node is polled via JDBC: `SHOW GLOBAL STATUS LIKE 'wsrep_%'`.
+# Use a dedicated read-only user (e.g. GRANT PROCESS,REPLICATION CLIENT on *.* to 'monitor'@'%').
+# `errorLogPath` is optional — when set and readable by this process, the /logs endpoint
+# tails it (WSREP/warning/error lines only). Leave blank to disable.
+nms:
+  galera:
+    clusters:
+      - name: db-prod
+        nodes:
+          - name: galera-node-1
+            host: 127.0.0.1
+            port: 3306
+            user: monitor
+            password: change-me
+            errorLogPath: ''
+          - name: galera-node-2
+            host: 127.0.0.1
+            port: 3307
+            user: monitor
+            password: change-me
+            errorLogPath: ''
+          - name: galera-node-3
+            host: 127.0.0.1
+            port: 3308
+            user: monitor
+            password: change-me
+            errorLogPath: ''
