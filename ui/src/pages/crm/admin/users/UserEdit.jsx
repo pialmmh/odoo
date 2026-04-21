@@ -29,6 +29,27 @@ const WIDE_MENU = {
   PaperProps: { sx: { minWidth: 280 } },
 };
 
+// Bangladesh mobile phone normalizer.
+// Accepts anything the user types ("+880 1711 123456", "01711-123456",
+// "8801711123456", "1711123456", etc.) and returns the canonical E.164 form
+// +8801XXXXXXXXX. Returns null if the field is empty after stripping or the
+// digits don't look like a BD mobile.
+function normalizeBdPhone(raw) {
+  if (!raw) return null;
+  const digits = String(raw).replace(/\D/g, '');
+  if (!digits) return null;
+  let local;
+  if (digits.startsWith('880')) local = digits.slice(3);
+  else if (digits.startsWith('0')) local = digits.slice(1);
+  else local = digits;
+  // BD mobile: 10 digits starting with 1 (e.g. 1711123456).
+  if (!/^1\d{9}$/.test(local)) {
+    // Not a BD mobile — pass the user's input through so EspoCRM validates it.
+    return String(raw).trim() || null;
+  }
+  return '+880' + local;
+}
+
 const TYPE_COLOR = {
   admin: 'error', 'super-admin': 'error',
   regular: 'primary', portal: 'info', api: 'warning', system: 'default',
@@ -215,7 +236,7 @@ export default function UserEdit() {
         lastName:       form.lastName || null,
         title:          form.title || null,
         emailAddress:   form.emailAddress || null,
-        phoneNumber:    form.phoneNumber || null,
+        phoneNumber:    normalizeBdPhone(form.phoneNumber),
         gender:         form.gender || null,
         avatarColor:    form.avatarColor || null,
         type:           form.type,
@@ -359,9 +380,13 @@ export default function UserEdit() {
                       ))}
                     </Select>
                   </FormControl>
-                  <TextField fullWidth size="small" placeholder="+1 000-000-0000"
+                  <TextField fullWidth size="small" placeholder="+8801XXXXXXXXX"
                     value={form.phoneNumber}
-                    onChange={(e) => set({ phoneNumber: e.target.value })} />
+                    onChange={(e) => set({ phoneNumber: e.target.value })}
+                    onBlur={() => {
+                      const n = normalizeBdPhone(form.phoneNumber);
+                      if (n && n !== form.phoneNumber) set({ phoneNumber: n });
+                    }} />
                 </Box>
               </Grid>
 

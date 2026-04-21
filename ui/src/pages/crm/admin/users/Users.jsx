@@ -48,9 +48,9 @@ export default function Users() {
         i++;
       }
       if (activeFilter !== 'all') {
-        params[`where[${i}][type]`] = 'equals';
+        // EspoCRM's `equals` doesn't coerce "true"/"false" to 0/1; use boolean-aware filter types.
+        params[`where[${i}][type]`] = activeFilter === 'active' ? 'isTrue' : 'isFalse';
         params[`where[${i}][attribute]`] = 'isActive';
-        params[`where[${i}][value]`] = activeFilter === 'active';
         i++;
       }
       if (search.trim()) {
