@@ -1,0 +1,100 @@
+{
+    "fields": {
+        "name": {
+            "type": "varchar",
+            "maxLength": 100,
+            "required": true
+        },
+        "egressId": {
+            "type": "varchar",
+            "maxLength": 64,
+            "unique": true,
+            "readOnly": true,
+            "tooltip": "LiveKit egress job ID"
+        },
+        "status": {
+            "type": "enum",
+            "options": ["STARTING", "ACTIVE", "ENDING", "COMPLETED", "FAILED", "ABORTED"],
+            "default": "STARTING",
+            "readOnly": true
+        },
+        "filePath": {
+            "type": "varchar",
+            "maxLength": 500,
+            "readOnly": true
+        },
+        "fileSizeBytes": {
+            "type": "int",
+            "readOnly": true
+        },
+        "durationMs": {
+            "type": "int",
+            "readOnly": true
+        },
+        "errorText": {
+            "type": "text",
+            "readOnly": true
+        },
+        "startedAt": {
+            "type": "datetime"
+        },
+        "endedAt": {
+            "type": "datetime"
+        },
+        "parentMeeting": {
+            "type": "link",
+            "required": true
+        },
+        "startedBy": {
+            "type": "link"
+        },
+        "createdAt": {
+            "type": "datetime",
+            "readOnly": true
+        },
+        "modifiedAt": {
+            "type": "datetime",
+            "readOnly": true
+        },
+        "createdBy": {
+            "type": "link",
+            "readOnly": true
+        },
+        "modifiedBy": {
+            "type": "link",
+            "readOnly": true
+        }
+    },
+    "links": {
+        "parentMeeting": {
+            "type": "belongsTo",
+            "entity": "Meeting",
+            "foreign": "recordings"
+        },
+        "startedBy": {
+            "type": "belongsTo",
+            "entity": "User"
+        },
+        "createdBy": {
+            "type": "belongsTo",
+            "entity": "User"
+        },
+        "modifiedBy": {
+            "type": "belongsTo",
+            "entity": "User"
+        }
+    },
+    "collection": {
+        "orderBy": "startedAt",
+        "order": "desc",
+        "textFilterFields": ["name", "egressId"]
+    },
+    "indexes": {
+        "parentMeeting": {
+            "columns": ["parentMeetingId"]
+        },
+        "status": {
+            "columns": ["status"]
+        }
+    }
+}

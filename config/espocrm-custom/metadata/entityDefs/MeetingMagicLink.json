@@ -1,0 +1,75 @@
+{
+    "fields": {
+        "name": {
+            "type": "varchar",
+            "maxLength": 100,
+            "required": true
+        },
+        "token": {
+            "type": "varchar",
+            "maxLength": 64,
+            "unique": true,
+            "required": true,
+            "readOnly": true
+        },
+        "invitedEmail": {
+            "type": "varchar",
+            "maxLength": 200
+        },
+        "invitedName": {
+            "type": "varchar",
+            "maxLength": 200
+        },
+        "expiresAt": {
+            "type": "datetime",
+            "required": true
+        },
+        "usedAt": {
+            "type": "datetime",
+            "readOnly": true
+        },
+        "linkType": {
+            "type": "enum",
+            "options": ["PERSONAL", "SHARE"],
+            "default": "PERSONAL",
+            "tooltip": "PERSONAL: bound to an email. SHARE: reusable share link."
+        },
+        "parentMeeting": {
+            "type": "link",
+            "required": true
+        },
+        "createdAt": {
+            "type": "datetime",
+            "readOnly": true
+        },
+        "createdBy": {
+            "type": "link",
+            "readOnly": true
+        }
+    },
+    "links": {
+        "parentMeeting": {
+            "type": "belongsTo",
+            "entity": "Meeting",
+            "foreign": "magicLinks"
+        },
+        "createdBy": {
+            "type": "belongsTo",
+            "entity": "User"
+        }
+    },
+    "collection": {
+        "orderBy": "createdAt",
+        "order": "desc",
+        "textFilterFields": ["invitedEmail", "invitedName", "token"]
+    },
+    "indexes": {
+        "token": {
+            "columns": ["token"],
+            "unique": true
+        },
+        "parentMeeting": {
+            "columns": ["parentMeetingId"]
+        }
+    }
+}

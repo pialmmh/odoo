@@ -47,3 +47,33 @@ intent, files touched, how to verify, how to revert.*
   - `CHANGES-meeting-integration.md` (this file, new)
 - **Verify**: `git log --oneline main..feature/meeting-integration` shows the commits.
 - **Revert**: `git switch main && git branch -D feature/meeting-integration` drops everything.
+
+### 2. EspoCRM custom metadata (meeting extensions + new entities)
+
+- **Intent**: Define schema for recording + magic-link persistence, extend
+  `Meeting` with LK-specific fields, all drop-in deployable under
+  EspoCRM's standard `Custom/Resources/metadata/` layout.
+- **Files** (all under `config/espocrm-custom/`, new):
+  - `README.md` — deploy instructions + revert
+  - `metadata/entityDefs/Meeting.json` — adds fields: `roomName` (readonly
+    varchar), `recordingEnabled` (bool), `allowSelfRegister` (bool); adds
+    `recordings` and `magicLinks` hasMany links
+  - `metadata/entityDefs/MeetingRecording.json` — new entity with
+    egressId / status / filePath / fileSizeBytes / durationMs /
+    errorText / startedAt / endedAt / parentMeeting link / startedBy
+    link + audit fields
+  - `metadata/entityDefs/MeetingMagicLink.json` — new entity with token /
+    invitedEmail / invitedName / expiresAt / usedAt / linkType (PERSONAL|
+    SHARE) / parentMeeting link
+  - `metadata/scopes/MeetingRecording.json` — entity scope config
+  - `metadata/scopes/MeetingMagicLink.json` — entity scope config
+  - `i18n/en_US/Global.json` — human labels
+- **Apply** (manual, per tenant's EspoCRM install): see
+  `config/espocrm-custom/README.md`. Copy files into the Espo install's
+  `custom/Espo/Custom/Resources/{metadata,i18n}`, run `clear_cache.php`
+  + `rebuild.php`.
+- **Verify**: after rebuild, `GET /api/v1/Meeting` returns new fields in
+  the response schema; `GET /api/v1/MeetingRecording` returns 200 (empty
+  list); the two entities appear in Admin → Entity Manager.
+- **Revert**: remove the copied files, rerun `rebuild.php`. Files in this
+  repo can be reverted per git.

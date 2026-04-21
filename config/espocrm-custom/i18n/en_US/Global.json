@@ -1,0 +1,10 @@
+{
+    "scopeNames": {
+        "MeetingRecording": "Meeting Recording",
+        "MeetingMagicLink": "Meeting Invite Link"
+    },
+    "scopeNamesPlural": {
+        "MeetingRecording": "Meeting Recordings",
+        "MeetingMagicLink": "Meeting Invite Links"
+    }
+}

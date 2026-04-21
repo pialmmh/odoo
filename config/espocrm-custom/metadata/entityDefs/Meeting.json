@@ -1,0 +1,37 @@
+{
+    "fields": {
+        "roomName": {
+            "type": "varchar",
+            "maxLength": 100,
+            "readOnly": true,
+            "isCustom": true,
+            "tooltip": "LiveKit room identifier (assigned on creation)"
+        },
+        "recordingEnabled": {
+            "type": "bool",
+            "default": false,
+            "isCustom": true,
+            "tooltip": "Allow recordings to be started in this meeting"
+        },
+        "allowSelfRegister": {
+            "type": "bool",
+            "default": false,
+            "isCustom": true,
+            "tooltip": "Guests joining via share/magic link may register themselves without prior invitation"
+        }
+    },
+    "links": {
+        "recordings": {
+            "type": "hasMany",
+            "entity": "MeetingRecording",
+            "foreign": "parentMeeting",
+            "isCustom": true
+        },
+        "magicLinks": {
+            "type": "hasMany",
+            "entity": "MeetingMagicLink",
+            "foreign": "parentMeeting",
+            "isCustom": true
+        }
+    }
+}
