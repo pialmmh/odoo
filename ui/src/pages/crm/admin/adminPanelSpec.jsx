@@ -54,6 +54,9 @@ import {
   Group as GroupIcon,
   SwapHoriz as HandoffIcon,
   DeleteForever as DeleteForeverIcon,
+  Videocam as VideocamIcon,
+  FiberManualRecord as RecIcon,
+  MeetingRoom as MeetingRoomIcon,
 } from '@mui/icons-material';
 
 export const ADMIN_SECTIONS = [
@@ -161,6 +164,15 @@ export const ADMIN_SECTIONS = [
       { key: 'imCustomers',        label: 'IM Customers',        desc: 'Chat-ID to CRM entity mapping.',                                                     icon: <GroupIcon /> },
       { key: 'imHandoffs',         label: 'Handoffs',            desc: 'Agent-to-agent conversation handoffs.',                                              icon: <HandoffIcon /> },
       { key: 'imDeletionRequests', label: 'Deletion Requests',   desc: 'Customer data-deletion requests (GDPR).',                                            icon: <DeleteForeverIcon /> },
+    ],
+  },
+  {
+    key: 'meetings',
+    label: 'Meetings',
+    items: [
+      { key: 'meetingSettings',   label: 'Meeting Settings',  desc: 'Defaults for recording, guest self-register, share-link TTL, and intercept modes.', icon: <VideocamIcon /> },
+      { key: 'meetingRoomsAdmin', label: 'Rooms (Admin)',     desc: 'Live rooms policy admin (lock / mute-on-entry / waiting room).',                   icon: <MeetingRoomIcon /> },
+      { key: 'recordingsPolicy',  label: 'Recordings Policy', desc: 'Retention + storage defaults for meeting recordings.',                              icon: <RecIcon /> },
     ],
   },
   {

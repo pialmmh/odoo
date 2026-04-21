@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box, Typography, Button, IconButton, CircularProgress, Alert,
   Breadcrumbs, Link as MuiLink, Grid, FormControl, Select, MenuItem,
-  TextField, Avatar,
+  TextField, Avatar, FormControlLabel, Switch,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import {
@@ -63,6 +63,9 @@ function buildInitial() {
     parent: null,                              // { type, id, name }
     users: [], contacts: [], leads: [],         // [{id, name}]
     assignedUserId: '', assignedUserName: '',
+    // LiveKit-specific meeting options (custom fields on Meeting).
+    recordingEnabled: false,
+    allowSelfRegister: false,
   };
 }
 
@@ -92,6 +95,8 @@ export default function MeetingEdit() {
           endDate: ed,   endTime: et,
           duration: dur,
           description: d.description || '',
+          recordingEnabled: !!d.recordingEnabled,
+          allowSelfRegister: !!d.allowSelfRegister,
           parent: d.parentId ? { type: d.parentType, id: d.parentId, name: d.parentName } : null,
           users:    objIdsToList(d.usersIds,    d.usersNames),
           contacts: objIdsToList(d.contactsIds, d.contactsNames),
@@ -157,6 +162,8 @@ export default function MeetingEdit() {
         dateStart: toEspoDT(form.startDate, form.startTime),
         dateEnd:   toEspoDT(form.endDate,   form.endTime),
         description: form.description || '',
+        recordingEnabled: !!form.recordingEnabled,
+        allowSelfRegister: !!form.allowSelfRegister,
         parentType: form.parent?.type || null,
         parentId:   form.parent?.id   || null,
         parentName: form.parent?.name || null,
@@ -261,6 +268,30 @@ export default function MeetingEdit() {
                 <Lbl>Description</Lbl>
                 <TextField fullWidth size="small" multiline minRows={4} maxRows={15}
                   value={form.description} onChange={e => set({ description: e.target.value })} />
+              </Grid>
+
+              {/* LiveKit-specific options — persisted as custom fields on Meeting */}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={!!form.recordingEnabled}
+                      onChange={e => set({ recordingEnabled: e.target.checked })}
+                    />
+                  }
+                  label="Allow recording in this meeting"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={!!form.allowSelfRegister}
+                      onChange={e => set({ allowSelfRegister: e.target.checked })}
+                    />
+                  }
+                  label="Guests may self-register via share link"
+                />
               </Grid>
             </Grid>
           </Panel>

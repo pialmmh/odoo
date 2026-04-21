@@ -96,13 +96,45 @@ export const ACTIONS = {
   P_WAITING:      'participantToWaiting',
 };
 
-// Central dispatcher. Today: logs + resolves. Tomorrow: POST /api/crm/meetings/{id}/control.
+// ─────────────────────────────────────────────────────────────────────────
+// Central dispatcher. Routes UI-facing ACTIONS enum to:
+//   - POST /meetings/:id/recording/{start,stop}   (recording actions)
+//   - POST /meetings/:id/control                  (everything else)
+//
+// The backend's /control endpoint understands a small, stable set:
+// MUTE / UNMUTE / REMOVE / KICK / BLOCK / LIST_PARTICIPANTS / END.
+// We map the richer UI enum down to that; unmapped actions are passed
+// through verbatim and will surface a 400 until implemented server-side.
+// ─────────────────────────────────────────────────────────────────────────
+import { post, controlMeeting, startRecording, stopRecording } from '../../../services/crm';
+
+const BACKEND_ACTION = {
+  participantMute:   'MUTE',
+  participantUnmute: 'UNMUTE',
+  participantKick:   'KICK',
+  participantBan:    'BLOCK',
+  end:               'END',
+  // LOCK / UNLOCK / MUTE_ALL / WAITING / MUTE_ON_ENTRY / TRANSCRIBE and
+  // friends don't have direct backend equivalents yet — left to fall
+  // through and get a 400 (explicit) rather than silently ignored.
+};
+
 export async function dispatchAction(meetingId, action, payload = {}) {
-  // eslint-disable-next-line no-console
-  console.log('[meeting-lifecycle] dispatch', { meetingId, action, payload });
-  // TODO: return post(`/meetings/${meetingId}/control`, { action, ...payload });
-  await new Promise(r => setTimeout(r, 250));
-  return { ok: true, action, meetingId };
+  // Recording actions have their own endpoints, not /control.
+  if (action === 'recordStart') return startRecording(meetingId);
+  if (action === 'recordStop')  return stopRecording(meetingId);
+
+  const backendAction = BACKEND_ACTION[action] || action;
+  const body = { action: backendAction };
+  // Map UI payload field names → backend shape.
+  if (payload.participantId) body.targetIdentity = payload.participantId;
+  if (payload.targetIdentity) body.targetIdentity = payload.targetIdentity;
+  if (payload.trackSid) body.trackSid = payload.trackSid;
+  // Keep everything else on `payload` so future fields round-trip.
+  const { participantId, targetIdentity, trackSid, ...rest } = payload;
+  if (Object.keys(rest).length) body.payload = rest;
+
+  return controlMeeting(meetingId, body);
 }
 
 export function fmtDT(s) {

@@ -17,7 +17,7 @@ import {
   CallSplit as BreakoutIcon, ContentCopy as CopyIcon,
   ArrowDropDown as CaretIcon, Close as CloseIcon,
 } from '@mui/icons-material';
-import { getMeeting } from '../../../services/crm';
+import { getMeeting, startRecording, stopRecording } from '../../../services/crm';
 import {
   requestToken, joinSession, enableLocalMedia,
   attachLocalCamera, setMic, setCam, setScreenShare,
@@ -373,7 +373,20 @@ export default function MeetingRoom() {
         <PillBtn label={recording ? 'Stop rec' : 'Record'} active={!recording}
           danger={recording}
           icon={recording ? <RecStopIcon /> : <RecIcon />}
-          onClick={() => { setRecording(!recording); setSnack(recording ? 'Recording stopped' : 'Recording started'); }} />
+          onClick={async () => {
+            // Real server call — egress starts/stops via platform-api.
+            // Optimistic flip of local state; revert on error.
+            const prev = recording;
+            setRecording(!prev);
+            try {
+              if (prev) await stopRecording(id);
+              else      await startRecording(id);
+              setSnack(prev ? 'Recording stopped' : 'Recording started');
+            } catch (e) {
+              setRecording(prev);
+              setSnack('Recording error: ' + (e?.response?.data?.error || e.message));
+            }
+          }} />
         <PillBtn label="React" icon={<ReactIcon />} onClick={() => setSnack('Reactions — TBD')} />
         <PillBtn label={handRaised ? 'Lower' : 'Raise hand'} active={!handRaised}
           icon={<HandIcon />} onClick={() => { setHandRaised(!handRaised); setSnack(handRaised ? 'Hand lowered' : 'Hand raised'); }} />

@@ -9,12 +9,29 @@ const keycloak = new Keycloak({
 
 let _initialized = false;
 
+// Paths that render as guests — do NOT force Keycloak login on these.
+// Pattern: /:tenant/join/:token (used by the public magic-link flow).
+const PUBLIC_ROUTE_PATTERNS = [
+  /^\/[^/]+\/join\/[^/]+\/?$/,
+];
+
+export function isPublicRoute(pathname = window.location.pathname) {
+  return PUBLIC_ROUTE_PATTERNS.some((re) => re.test(pathname));
+}
+
 /**
  * Initialize Keycloak. login-required mode redirects to KC if not authenticated.
  * Must only be called once (StrictMode removed to ensure this).
+ *
+ * For public routes (magic-link guest join), we skip Keycloak entirely so
+ * unauthenticated visitors don't get redirected away.
  */
 export async function initKeycloak() {
   if (_initialized) return keycloak.authenticated;
+  if (isPublicRoute()) {
+    _initialized = true;
+    return false; // render as guest; no KC session
+  }
 
   try {
     const authenticated = await keycloak.init({

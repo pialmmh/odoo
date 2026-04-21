@@ -52,6 +52,7 @@ import Conversations          from './admin/chat-settings/Conversations';
 import Customers              from './admin/chat-settings/Customers';
 import Handoffs               from './admin/chat-settings/Handoffs';
 import DeletionRequests       from './admin/chat-settings/DeletionRequests';
+import MeetingSettings        from './admin/meetings/MeetingSettings';
 
 export default function CrmIndex() {
   return (
@@ -132,6 +133,8 @@ export default function CrmIndex() {
       <Route path="admin/imCustomers"                 element={<Customers />} />
       <Route path="admin/imHandoffs"                  element={<Handoffs />} />
       <Route path="admin/imDeletionRequests"          element={<DeletionRequests />} />
+
+      <Route path="admin/meetingSettings"             element={<MeetingSettings />} />
 
       <Route path="admin/:key"           element={<AdminStub />} />
 

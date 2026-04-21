@@ -80,6 +80,38 @@ export const updateMeeting  = (id, d)  => put(`/Meeting/${id}`, d);
 export const deleteMeeting  = (id)     => del(`/Meeting/${id}`);
 export const listCalls      = (params) => get('/Call', params);
 
+// ── LiveKit meeting extensions (platform-api endpoints) ──
+// These sit at the same /api/crm prefix but aren't Espo passthroughs —
+// they're our own controllers that talk to LiveKit's Egress / RoomService
+// and persist via the MeetingRecording / MeetingMagicLink custom entities.
+export const meetingToken       = (meetingId, body = {}) =>
+  post(`/meetings/${meetingId}/token`, body);
+export const controlMeeting     = (meetingId, body)      =>
+  post(`/meetings/${meetingId}/control`, body);
+export const listRecordings     = (meetingId)            =>
+  get(`/meetings/${meetingId}/recordings`);
+export const startRecording     = (meetingId)            =>
+  post(`/meetings/${meetingId}/recording/start`);
+export const stopRecording      = (meetingId)            =>
+  post(`/meetings/${meetingId}/recording/stop`);
+export const recordingFileUrl   = (recordingId)          =>
+  `/api/crm/recordings/${recordingId}/file`;
+export const listInvites        = (meetingId)            =>
+  get(`/meetings/${meetingId}/invites`);
+export const createInvite       = (meetingId, data)      =>
+  post(`/meetings/${meetingId}/invites`, data);
+export const revokeInvite       = (meetingId, token)     =>
+  del(`/meetings/${meetingId}/invites/${token}`);
+export const createShareLink    = (meetingId)            =>
+  post(`/meetings/${meetingId}/invites/share`);
+
+// ── Public meeting join (no auth — different URL prefix) ──
+// Uses raw axios so the Keycloak bearer interceptor doesn't attach.
+export const resolveMagicLink = (tenant, token) =>
+  axios.get(`/api/public/meeting/${tenant}/magic/${token}`).then(r => r.data);
+export const joinByMagicLink = (tenant, token, displayName) =>
+  axios.post(`/api/public/meeting/${tenant}/join/${token}`, { displayName }).then(r => r.data);
+
 // ── Email ──
 export const listEmails    = (params) => get('/Email', params);
 export const getEmail      = (id)     => get(`/Email/${id}`);

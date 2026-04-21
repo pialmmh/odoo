@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { ThemeRegistryProvider, useAppTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -26,6 +26,7 @@ import ArtifactsMain from './pages/artifacts/ArtifactsMain';
 import RBACManagement from './pages/RBACManagement';
 import Purchase from './pages/Purchase';
 import CrmIndex from './pages/crm/CrmIndex';
+import JoinByLink from './pages/crm/meetings/JoinByLink';
 import { FEATURES } from './config/platform';
 
 /** Block access to tenant URLs the user is not authorized for */
@@ -75,6 +76,18 @@ function TenantRoutes() {
 
 function AppRoutes() {
   const { isLoggedIn } = useAuth();
+  const location = useLocation();
+
+  // Public magic-link guest page — rendered outside the Keycloak gate.
+  // Pattern matches /:tenant/join/:token (matches keycloak.js isPublicRoute).
+  const isPublicJoin = /^\/[^/]+\/join\/[^/]+\/?$/.test(location.pathname);
+  if (isPublicJoin) {
+    return (
+      <Routes>
+        <Route path="/:tenant/join/:token" element={<JoinByLink />} />
+      </Routes>
+    );
+  }
 
   // Keycloak is configured with login-required, so if we reach here
   // unauthenticated something went wrong — render nothing rather than loop.

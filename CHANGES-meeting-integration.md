@@ -162,3 +162,96 @@ intent, files touched, how to verify, how to revert.*
   deferred (needs a future `BlockedUser` custom entity + token-mint
   check). Response includes a `note` explaining this.
 - **Revert**: `git revert` this commit.
+
+### 7. Frontend — service wiring (api.js + lifecycle.dispatchAction)
+
+- **Intent**: Expose the new backend endpoints as service functions, and
+  convert the previously-stubbed `dispatchAction` to actually POST
+  `/meetings/:id/control`.
+- **Files**:
+  - `ui/src/services/crm.js` (modified) — new exports:
+    `meetingToken`, `controlMeeting`, `listRecordings`, `startRecording`,
+    `stopRecording`, `recordingFileUrl`, `listInvites`, `createInvite`,
+    `revokeInvite`, `createShareLink`, and public `resolveMagicLink` /
+    `joinByMagicLink` (raw axios, no bearer).
+  - `ui/src/pages/crm/meetings/lifecycle.js` (modified) — `dispatchAction`
+    now routes recording actions to `/recording/{start,stop}` and all
+    other actions to `/control` with UI action names mapped to the
+    backend's canonical enum (MUTE / UNMUTE / KICK / BLOCK / END).
+    `participantId` is mapped to `targetIdentity`.
+- **Verify**: existing `MeetingControl.jsx` which calls `dispatchAction(...)`
+  now round-trips to the live endpoint.
+- **Revert**: `git revert` this commit.
+
+### 8. Frontend — Recording / Share / Invite components + MeetingEdit + MeetingRoom wiring
+
+- **Intent**: Ship the reusable UI pieces so existing pages can surface
+  recording status, share links, and invite management, and so the REC
+  button in MeetingRoom hits real endpoints.
+- **Files** (new, under `ui/src/pages/crm/meetings/`):
+  - `RecordingsList.jsx` — table of recordings (status / duration / size
+    / play / download).
+  - `ShareButton.jsx` — "Share meeting" button/icon; copies share URL.
+  - `RecordingControl.jsx` — in-call REC chip + host-only start/stop
+    button; polls status every 5s; transition toasts for all participants.
+  - `InviteManager.jsx` — list / create / revoke invites dialog.
+- **Modified**:
+  - `MeetingRoom.jsx` — the existing REC pill's fake handler now calls
+    `startRecording(id)` / `stopRecording(id)`. Optimistic state with
+    snackbar error on failure. No deeper refactor.
+  - `MeetingEdit.jsx` — form adds `recordingEnabled` and
+    `allowSelfRegister` switches; loads from Espo Meeting row; included
+    in create/update payload.
+- **Why not replace `MeetingRoom.jsx`'s REC pill with `RecordingControl`
+  wholesale**: the CRM's in-call UI has a distinct pill-button design
+  system (`PillBtn`) and layout. Keeping the diff minimal lets the
+  existing UX survive while the functionality lights up. We can use
+  `RecordingControl` on newer surfaces (e.g. the forthcoming
+  MeetingDashboard row actions).
+- **Revert**: `git revert` this commit.
+
+### 9. Frontend — public /join/:token guest page + Keycloak bypass
+
+- **Intent**: Receivers of share/magic links are guests (no Keycloak).
+  Bypass login-required for the specific route pattern and render a
+  minimal in-call UI with livekit-client.
+- **Files**:
+  - `ui/src/services/keycloak.js` (modified) — `isPublicRoute` helper +
+    early-return in `initKeycloak`: when the URL matches
+    `/:tenant/join/:token`, Keycloak init is skipped, `authenticated`
+    stays false.
+  - `ui/src/App.jsx` (modified) — route `GET /:tenant/join/:token` is
+    rendered outside the `isLoggedIn` gate (detected via `useLocation`
+    + regex, same pattern as `isPublicRoute`).
+  - `ui/src/pages/crm/meetings/JoinByLink.jsx` (new) — pre-join page
+    (resolve magic link → display-name entry) + a minimal `GuestRoom`
+    sub-component using `livekit-client` directly (local preview,
+    remote tiles, mic/cam/leave). Intentionally simpler than
+    `MeetingRoom.jsx` — no chat/screen-share/recording/moderation for
+    guests in this pass.
+- **Security note**: the `/api/public/meeting/**` endpoints on the
+  backend (see entry #5) are the only things reachable without Keycloak;
+  all privileged operations still require a bearer token.
+- **Revert**: `git revert` this commit. Keycloak's `login-required`
+  mode is fully restored on revert.
+
+### 10. Frontend — Admin dashboard: Meeting Settings entry
+
+- **Intent**: Surface a tenant-level meeting configuration page in
+  `/crm/admin`, matching the data-driven admin-panel pattern.
+- **Files**:
+  - `ui/src/pages/crm/admin/adminPanelSpec.jsx` (modified) — added new
+    `meetings` section with three items (`meetingSettings`,
+    `meetingRoomsAdmin`, `recordingsPolicy`). `recordingsPolicy` falls
+    through to `AdminStub` for now.
+  - `ui/src/pages/crm/admin/meetings/MeetingSettings.jsx` (new) —
+    form for default recording / self-register, retention / TTL /
+    max-duration knobs, and per-tenant enable flags for the four
+    admin intercept modes (silent/coach/barge/takeover).
+  - `ui/src/pages/crm/CrmIndex.jsx` (modified) — registered route
+    `admin/meetingSettings` → `MeetingSettings`, ordered before the
+    catch-all `admin/:key` that routes to `AdminStub`.
+- **Caveat**: form state lives in React only for now; persistence
+  (EspoCRM Settings entity or a MeetingSetting custom entity) lands in
+  a follow-up.
+- **Revert**: `git revert` this commit.
