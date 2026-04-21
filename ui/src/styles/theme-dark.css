@@ -58,4 +58,19 @@ body.theme-dark {
   --color-accent-pink: #f472b6;
   --color-accent-amber: #fbbf24;
   --color-accent-emerald: #34d399;
+
+  --color-chart-series-1: #86efac;
+  --color-chart-series-2: #93c5fd;
+  --color-chart-series-3: #f87171;
+  --color-chart-series-4: #f9a8d4;
+  --color-chart-series-5: #fcd34d;
+
+  --color-log-bg: #0a140f;
+  --color-log-text: #c8d2cb;
+  --color-log-dim: #6a7c72;
+  --color-log-accent: #87a88e;
+  --color-log-level-info: #86efac;
+  --color-log-level-warn: #fde68a;
+  --color-log-level-error: #fca5a5;
+  --color-log-level-debug: #94a3b8;
 }

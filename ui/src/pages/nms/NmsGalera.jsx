@@ -3,6 +3,7 @@ import {
   Box, Grid, Card, CardContent, Typography, Chip, Table, TableHead, TableBody, TableRow, TableCell,
   LinearProgress, Tabs, Tab, Paper, IconButton, Tooltip as MuiTooltip, Divider,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
   Storage as DbIcon,
   CheckCircle as OkIcon,
@@ -13,7 +14,8 @@ import {
 } from '@mui/icons-material';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 
-// ─── Mock data ──────────────────────────────────────────────────────────────
+const tick = { fontSize: 'var(--font-size-xs)' };
+
 const CLUSTER = {
   name: 'db-prod (galera-1)',
   size: 3,
@@ -62,7 +64,6 @@ const INITIAL_LOG = [
   { t: '14:24:21', node: 'galera-node-1', lvl: 'INFO',  msg: 'WSREP: Recv queue empty, applier caught up (seqno 948721)' },
 ];
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
 function wsrepChip(wsrep) {
   const map = {
     'Synced': { color: 'success', icon: <OkIcon /> },
@@ -77,33 +78,36 @@ function wsrepChip(wsrep) {
 
 function sevChip(sev) {
   const map = { critical: 'error', warning: 'warning', info: 'info' };
-  return <Chip size="small" label={sev.toUpperCase()} color={map[sev] || 'default'} sx={{ fontWeight: 700, minWidth: 72 }} />;
+  return <Chip size="small" label={sev.toUpperCase()} color={map[sev] || 'default'} sx={{ fontWeight: 'var(--font-weight-bold)', minWidth: 72 }} />;
 }
 
-function lvlColor(lvl) {
-  if (lvl === 'ERROR') return '#c0392b';
-  if (lvl === 'WARN') return '#b7950b';
-  if (lvl === 'INFO') return '#6a8a5a';
-  return '#777';
+function lvlCssVar(lvl) {
+  if (lvl === 'ERROR') return 'var(--color-log-level-error)';
+  if (lvl === 'WARN') return 'var(--color-log-level-warn)';
+  if (lvl === 'INFO') return 'var(--color-log-level-info)';
+  return 'var(--color-log-level-debug)';
 }
 
 function Meter({ value }) {
   const clr = value >= 85 ? 'error' : value >= 70 ? 'warning' : 'primary';
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <LinearProgress variant="determinate" value={value} color={clr} sx={{ flex: 1, height: 6, borderRadius: 3 }} />
-      <Typography fontSize={11} fontWeight={600} sx={{ minWidth: 34, textAlign: 'right' }}>{value}%</Typography>
+      <LinearProgress variant="determinate" value={value} color={clr} sx={{ flex: 1, height: 6, borderRadius: 'var(--radius-sm)' }} />
+      <Typography sx={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', minWidth: 34, textAlign: 'right' }}>{value}%</Typography>
     </Box>
   );
 }
 
-// ─── Page ───────────────────────────────────────────────────────────────────
 export default function NmsGalera() {
+  const theme = useTheme();
   const [tab, setTab] = useState(0);
   const [logs, setLogs] = useState(INITIAL_LOG);
   const logBoxRef = useRef(null);
 
-  // Simulate live log streaming
+  const series1 = theme.palette.success.main;
+  const series2 = theme.palette.info.main;
+  const series3 = theme.palette.error.main;
+
   useEffect(() => {
     const id = setInterval(() => {
       const nodes = NODES.map(n => n.name);
@@ -139,12 +143,11 @@ export default function NmsGalera() {
 
   return (
     <Box sx={{ px: 2, py: 1.5 }}>
-      {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
         <DbIcon sx={{ color: 'primary.main' }} />
         <Typography variant="h5" fontWeight={700}>Galera Cluster</Typography>
         <Chip size="small" label={CLUSTER.name} />
-        <Chip size="small" label="PRIMARY" color="success" sx={{ fontWeight: 700 }} />
+        <Chip size="small" label="PRIMARY" color="success" sx={{ fontWeight: 'var(--font-weight-bold)' }} />
         <Box sx={{ flex: 1 }} />
         <MuiTooltip title="Refresh (mock)"><IconButton size="small"><RefreshIcon fontSize="small" /></IconButton></MuiTooltip>
       </Box>
@@ -152,76 +155,73 @@ export default function NmsGalera() {
         Multi-master synchronous replication cluster. Live WSREP state, replication queues, flow control, logs and alerts.
       </Typography>
 
-      {/* Top summary cards */}
       <Grid container spacing={1.5} sx={{ mb: 2 }}>
         <Grid item xs={6} md={3}>
           <Card><CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-            <Typography fontSize={11} color="text.secondary">Cluster Size</Typography>
-            <Typography fontSize={22} fontWeight={700}>{CLUSTER.size} / 3</Typography>
-            <Typography fontSize={11} color="success.main">Quorum healthy</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">Cluster Size</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)' }}>{CLUSTER.size} / 3</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="success.main">Quorum healthy</Typography>
           </CardContent></Card>
         </Grid>
         <Grid item xs={6} md={3}>
           <Card><CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-            <Typography fontSize={11} color="text.secondary">Cluster State</Typography>
-            <Typography fontSize={22} fontWeight={700}>{CLUSTER.state}</Typography>
-            <Typography fontSize={11} color="text.secondary">Segment {CLUSTER.segment}</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">Cluster State</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)' }}>{CLUSTER.state}</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">Segment {CLUSTER.segment}</Typography>
           </CardContent></Card>
         </Grid>
         <Grid item xs={6} md={3}>
           <Card><CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-            <Typography fontSize={11} color="text.secondary">Last Committed Seqno</Typography>
-            <Typography fontSize={22} fontWeight={700}>{CLUSTER.seqno.toLocaleString()}</Typography>
-            <Typography fontSize={11} color="text.secondary">Trailing node: −6</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">Last Committed Seqno</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)' }}>{CLUSTER.seqno.toLocaleString()}</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">Trailing node: −6</Typography>
           </CardContent></Card>
         </Grid>
         <Grid item xs={6} md={3}>
           <Card><CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-            <Typography fontSize={11} color="text.secondary">Synced Nodes</Typography>
-            <Typography fontSize={22} fontWeight={700}>2 / 3</Typography>
-            <Typography fontSize={11} color="warning.main">1 donor/desynced</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">Synced Nodes</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)' }}>2 / 3</Typography>
+            <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="warning.main">1 donor/desynced</Typography>
           </CardContent></Card>
         </Grid>
       </Grid>
 
-      {/* Tabs */}
-      <Paper variant="outlined" sx={{ borderRadius: 2 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: '1px solid #eee', px: 1 }}>
+      <Paper variant="outlined" sx={{ borderRadius: 'var(--radius-2xl)' }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: '1px solid var(--color-border-subtle)', px: 1 }}>
           <Tab label="Nodes" />
           <Tab label="Replication" />
           <Tab label="Live Logs" />
           <Tab label="Alerts" />
         </Tabs>
 
-        {/* Nodes */}
         {tab === 0 && (
           <Box sx={{ p: 2 }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontSize: 11 }}>Node</TableCell>
-                  <TableCell sx={{ fontSize: 11 }}>Host</TableCell>
-                  <TableCell sx={{ fontSize: 11 }}>WSREP State</TableCell>
-                  <TableCell sx={{ fontSize: 11 }}>Send Q</TableCell>
-                  <TableCell sx={{ fontSize: 11 }}>Recv Q</TableCell>
-                  <TableCell sx={{ fontSize: 11 }}>Flow Ctrl Paused</TableCell>
-                  <TableCell sx={{ fontSize: 11 }}>Seqno</TableCell>
-                  <TableCell sx={{ fontSize: 11, width: 140 }}>CPU</TableCell>
-                  <TableCell sx={{ fontSize: 11, width: 140 }}>Memory</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Node</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Host</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>WSREP State</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Send Q</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Recv Q</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Flow Ctrl Paused</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Seqno</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)', width: 140 }}>CPU</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)', width: 140 }}>Memory</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {NODES.map(n => (
                   <TableRow key={n.name} hover>
-                    <TableCell sx={{ fontSize: 12, fontWeight: 600 }}>{n.name}</TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>{n.host}</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}>{n.name}</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-sm)' }}>{n.host}</TableCell>
                     <TableCell>{wsrepChip(n.wsrep)}</TableCell>
-                    <TableCell sx={{ fontSize: 12, color: n.queueSend > 10 ? 'warning.main' : 'inherit', fontWeight: n.queueSend > 10 ? 700 : 400 }}>{n.queueSend}</TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>{n.queueRecv}</TableCell>
-                    <TableCell sx={{ fontSize: 12, color: n.flowCtrlPaused > 0.05 ? 'warning.main' : 'inherit', fontWeight: n.flowCtrlPaused > 0.05 ? 700 : 400 }}>
+                    <TableCell sx={{ fontSize: 'var(--font-size-sm)', color: n.queueSend > 10 ? 'warning.main' : 'inherit', fontWeight: n.queueSend > 10 ? 'var(--font-weight-bold)' : 'var(--font-weight-regular)' }}>{n.queueSend}</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-sm)' }}>{n.queueRecv}</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-sm)', color: n.flowCtrlPaused > 0.05 ? 'warning.main' : 'inherit', fontWeight: n.flowCtrlPaused > 0.05 ? 'var(--font-weight-bold)' : 'var(--font-weight-regular)' }}>
                       {(n.flowCtrlPaused * 100).toFixed(1)}%
                     </TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>{n.committed.toLocaleString()}</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-sm)' }}>{n.committed.toLocaleString()}</TableCell>
                     <TableCell><Meter value={n.cpu} /></TableCell>
                     <TableCell><Meter value={n.mem} /></TableCell>
                   </TableRow>
@@ -231,39 +231,38 @@ export default function NmsGalera() {
           </Box>
         )}
 
-        {/* Replication charts */}
         {tab === 1 && (
           <Box sx={{ p: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <Typography fontSize={13} fontWeight={700} sx={{ mb: 1 }}>Send Queue Depth (per node)</Typography>
+                <Typography sx={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-bold)', mb: 1 }}>Send Queue Depth (per node)</Typography>
                 <Box sx={{ width: '100%', height: 240 }}>
                   <ResponsiveContainer>
                     <LineChart data={REPL_TREND} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="t" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 10 }} />
+                      <XAxis dataKey="t" tick={tick} />
+                      <YAxis tick={tick} />
                       <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Line type="monotone" dataKey="n1" name="node-1" stroke="#6a8a5a" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="n2" name="node-2" stroke="#a4c2dc" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="n3" name="node-3" stroke="#c0392b" strokeWidth={2} dot={false} />
+                      <Legend wrapperStyle={{ fontSize: 'var(--font-size-xs)' }} />
+                      <Line type="monotone" dataKey="n1" name="node-1" stroke={series1} strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="n2" name="node-2" stroke={series2} strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="n3" name="node-3" stroke={series3} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography fontSize={13} fontWeight={700} sx={{ mb: 1 }}>Commits / Cert Conflicts per sec</Typography>
+                <Typography sx={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-bold)', mb: 1 }}>Commits / Cert Conflicts per sec</Typography>
                 <Box sx={{ width: '100%', height: 240 }}>
                   <ResponsiveContainer>
                     <LineChart data={COMMIT_TREND} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="t" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 10 }} />
+                      <XAxis dataKey="t" tick={tick} />
+                      <YAxis tick={tick} />
                       <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Line type="monotone" dataKey="commits" name="commits/s" stroke="#6a8a5a" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="conflicts" name="cert conflicts/s" stroke="#c0392b" strokeWidth={2} dot={false} />
+                      <Legend wrapperStyle={{ fontSize: 'var(--font-size-xs)' }} />
+                      <Line type="monotone" dataKey="commits" name="commits/s" stroke={series1} strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="conflicts" name="cert conflicts/s" stroke={series3} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -271,37 +270,40 @@ export default function NmsGalera() {
             </Grid>
             <Divider sx={{ my: 2 }} />
             <Grid container spacing={2}>
-              <Grid item xs={6} md={3}><Typography fontSize={11} color="text.secondary">Cluster UUID</Typography><Typography fontSize={12} fontWeight={600}>{CLUSTER.uuid}</Typography></Grid>
-              <Grid item xs={6} md={3}><Typography fontSize={11} color="text.secondary">Weighted Quorum</Typography><Typography fontSize={12} fontWeight={600}>{CLUSTER.weightedQuorum}</Typography></Grid>
-              <Grid item xs={6} md={3}><Typography fontSize={11} color="text.secondary">Primary Component</Typography><Typography fontSize={12} fontWeight={600}>Yes</Typography></Grid>
-              <Grid item xs={6} md={3}><Typography fontSize={11} color="text.secondary">GCache Size</Typography><Typography fontSize={12} fontWeight={600}>512 MB</Typography></Grid>
+              <Grid item xs={6} md={3}><Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">Cluster UUID</Typography><Typography sx={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}>{CLUSTER.uuid}</Typography></Grid>
+              <Grid item xs={6} md={3}><Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">Weighted Quorum</Typography><Typography sx={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}>{CLUSTER.weightedQuorum}</Typography></Grid>
+              <Grid item xs={6} md={3}><Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">Primary Component</Typography><Typography sx={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}>Yes</Typography></Grid>
+              <Grid item xs={6} md={3}><Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">GCache Size</Typography><Typography sx={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}>512 MB</Typography></Grid>
             </Grid>
           </Box>
         )}
 
-        {/* Live Logs */}
         {tab === 2 && (
           <Box sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <DotIcon sx={{ fontSize: 10, color: 'success.main' }} />
-              <Typography fontSize={12} color="text.secondary">Live — streaming WSREP log from all nodes</Typography>
+              <DotIcon sx={{ fontSize: 'var(--font-size-xs)', color: 'success.main' }} />
+              <Typography sx={{ fontSize: 'var(--font-size-sm)' }} color="text.secondary">Live — streaming WSREP log from all nodes</Typography>
               <Box sx={{ flex: 1 }} />
-              <Typography fontSize={11} color="text.secondary">{logs.length} lines</Typography>
+              <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">{logs.length} lines</Typography>
             </Box>
             <Box
               ref={logBoxRef}
               sx={{
-                fontFamily: 'monospace', fontSize: 12,
-                bgcolor: '#0f1a14', color: '#d6e0d8',
-                borderRadius: 1, p: 1.5, height: 420,
+                fontFamily: 'monospace',
+                fontSize: 'var(--font-size-sm)',
+                bgcolor: 'var(--color-log-bg)',
+                color: 'var(--color-log-text)',
+                borderRadius: 'var(--radius-sm)',
+                p: 1.5,
+                height: 420,
                 overflowY: 'auto',
               }}
             >
               {logs.map((l, i) => (
                 <Box key={i} sx={{ whiteSpace: 'pre', display: 'flex', gap: 1 }}>
-                  <span style={{ color: '#7f9186' }}>{l.t}</span>
-                  <span style={{ color: '#9bbfa2', minWidth: 120 }}>{l.node}</span>
-                  <span style={{ color: lvlColor(l.lvl), fontWeight: 700, minWidth: 50 }}>{l.lvl}</span>
+                  <span style={{ color: 'var(--color-log-dim)' }}>{l.t}</span>
+                  <span style={{ color: 'var(--color-log-accent)', minWidth: 120 }}>{l.node}</span>
+                  <span style={{ color: lvlCssVar(l.lvl), fontWeight: 'var(--font-weight-bold)', minWidth: 50 }}>{l.lvl}</span>
                   <span>{l.msg}</span>
                 </Box>
               ))}
@@ -309,25 +311,24 @@ export default function NmsGalera() {
           </Box>
         )}
 
-        {/* Alerts */}
         {tab === 3 && (
           <Box sx={{ p: 2 }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontSize: 11, width: 100 }}>Severity</TableCell>
-                  <TableCell sx={{ fontSize: 11 }}>Source</TableCell>
-                  <TableCell sx={{ fontSize: 11 }}>Message</TableCell>
-                  <TableCell sx={{ fontSize: 11, width: 100 }}>When</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)', width: 100 }}>Severity</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Source</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Message</TableCell>
+                  <TableCell sx={{ fontSize: 'var(--font-size-xs)', width: 100 }}>When</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {ALERTS.map((a, i) => (
                   <TableRow key={i} hover>
                     <TableCell>{sevChip(a.severity)}</TableCell>
-                    <TableCell sx={{ fontSize: 12, fontWeight: 600 }}>{a.node}</TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>{a.msg}</TableCell>
-                    <TableCell sx={{ fontSize: 12, color: 'text.secondary' }}>{a.when}</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}>{a.node}</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-sm)' }}>{a.msg}</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-sm)', color: 'text.secondary' }}>{a.when}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
