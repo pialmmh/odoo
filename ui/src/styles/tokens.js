@@ -4,12 +4,13 @@
 
 export const baseTokens = {
   fontSans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
-  fontSizeXs: 11,
-  fontSizeSm: 12,
-  fontSizeBase: 13,
-  fontSizeMd: 14,
+  fontSizeXs: 12,
+  fontSizeSm: 13,
+  fontSizeBase: 14,
+  fontSizeMd: 15,
   fontSizeLg: 16,
   fontSizeXl: 20,
+  fontSize2xl: 22,
   radiusSm: 4,
   radiusMd: 6,
   radiusLg: 8,
@@ -74,6 +75,21 @@ export const lightTokens = {
   colorAccentPink: '#db2777',
   colorAccentAmber: '#d97706',
   colorAccentEmerald: '#065f46',
+
+  colorChartSeries1: '#6b8f4e',
+  colorChartSeries2: '#a4c2dc',
+  colorChartSeries3: '#c0392b',
+  colorChartSeries4: '#d4a5c9',
+  colorChartSeries5: '#f5b945',
+
+  colorLogBg: '#0f1a14',
+  colorLogText: '#d6e0d8',
+  colorLogDim: '#7f9186',
+  colorLogAccent: '#9bbfa2',
+  colorLogLevelInfo: '#6b8f4e',
+  colorLogLevelWarn: '#b7950b',
+  colorLogLevelError: '#c0392b',
+  colorLogLevelDebug: '#6b7280',
 };
 
 export const darkTokens = {
@@ -132,6 +148,21 @@ export const darkTokens = {
   colorAccentPink: '#f472b6',
   colorAccentAmber: '#fbbf24',
   colorAccentEmerald: '#34d399',
+
+  colorChartSeries1: '#86efac',
+  colorChartSeries2: '#93c5fd',
+  colorChartSeries3: '#f87171',
+  colorChartSeries4: '#f9a8d4',
+  colorChartSeries5: '#fcd34d',
+
+  colorLogBg: '#0a140f',
+  colorLogText: '#c8d2cb',
+  colorLogDim: '#6a7c72',
+  colorLogAccent: '#87a88e',
+  colorLogLevelInfo: '#86efac',
+  colorLogLevelWarn: '#fde68a',
+  colorLogLevelError: '#fca5a5',
+  colorLogLevelDebug: '#94a3b8',
 };
 
 export const tokens = {

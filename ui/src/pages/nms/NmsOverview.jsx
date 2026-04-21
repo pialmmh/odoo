@@ -1,5 +1,5 @@
 import { Box, Grid, Card, CardContent, Typography, LinearProgress, Chip, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
-import { useTheme, alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import {
   Dns as ServerIcon,
   ViewInAr as ContainerIcon,
@@ -12,34 +12,35 @@ import {
 } from '@mui/icons-material';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 
-// ─── Mock data ──────────────────────────────────────────────────────────────
-// Palette keys (not hex) — resolved via MUI theme at render time so the UI
-// tracks the tenant/mode palette.
-const FLEET = [
-  { label: 'Servers',          value: 12,  icon: <ServerIcon />,    palette: 'primary' },
-  { label: 'Virtual Machines', value: 34,  icon: <VmIcon />,        palette: 'success' },
-  { label: 'Containers',       value: 118, icon: <ContainerIcon />, palette: 'warning' },
-  { label: 'Databases',        value: 9,   icon: <DbIcon />,        palette: 'info' },
-];
+const tick = { fontSize: 'var(--font-size-xs)' };
+
+function buildFleet(theme) {
+  return [
+    { label: 'Servers', value: 12, icon: <ServerIcon />, color: theme.palette.info.main },
+    { label: 'Virtual Machines', value: 34, icon: <VmIcon />, color: theme.palette.success.main },
+    { label: 'Containers', value: 118, icon: <ContainerIcon />, color: theme.palette.warning.main },
+    { label: 'Databases', value: 9, icon: <DbIcon />, color: theme.palette.primary.main },
+  ];
+}
 
 const HEALTH = [
   { label: 'Healthy', value: 156, color: 'success' },
-  { label: 'Warning', value: 11,  color: 'warning' },
-  { label: 'Critical', value: 3,  color: 'error' },
+  { label: 'Warning', value: 11, color: 'warning' },
+  { label: 'Critical', value: 3, color: 'error' },
 ];
 
 const SERVICES = [
-  { name: 'Galera Cluster (db-prod)',    kind: 'Galera', nodes: '3/3 synced',                                 status: 'healthy' },
-  { name: 'MySQL Primary (db-analytics)', kind: 'MySQL',  nodes: '1/1 up',                                     status: 'healthy' },
-  { name: 'Kafka Cluster (events)',       kind: 'Kafka',  nodes: '3/3 brokers',                                status: 'warning' },
-  { name: 'Redis Sentinel (cache)',       kind: 'Redis',  nodes: '1 master, 2 replicas, 3 sentinels',          status: 'healthy' },
-  { name: 'Redis Sentinel (session)',     kind: 'Redis',  nodes: 'failover in progress',                       status: 'critical' },
+  { name: 'Galera Cluster (db-prod)', kind: 'Galera', nodes: '3/3 synced', status: 'healthy' },
+  { name: 'MySQL Primary (db-analytics)', kind: 'MySQL', nodes: '1/1 up', status: 'healthy' },
+  { name: 'Kafka Cluster (events)', kind: 'Kafka', nodes: '3/3 brokers', status: 'warning' },
+  { name: 'Redis Sentinel (cache)', kind: 'Redis', nodes: '1 master, 2 replicas, 3 sentinels', status: 'healthy' },
+  { name: 'Redis Sentinel (session)', kind: 'Redis', nodes: 'failover in progress', status: 'critical' },
 ];
 
 const HOSTS = [
-  { host: 'host-01.dc1', cpu: 42, mem: 68, disk: 55, netIn: 180, netOut: 96  },
+  { host: 'host-01.dc1', cpu: 42, mem: 68, disk: 55, netIn: 180, netOut: 96 },
   { host: 'host-02.dc1', cpu: 81, mem: 74, disk: 42, netIn: 310, netOut: 220 },
-  { host: 'host-03.dc1', cpu: 23, mem: 45, disk: 62, netIn: 78,  netOut: 55  },
+  { host: 'host-03.dc1', cpu: 23, mem: 45, disk: 62, netIn: 78, netOut: 55 },
   { host: 'host-04.dc2', cpu: 95, mem: 88, disk: 71, netIn: 420, netOut: 385 },
   { host: 'host-05.dc2', cpu: 51, mem: 60, disk: 49, netIn: 140, netOut: 120 },
 ];
@@ -51,17 +52,16 @@ const CPU_TREND = Array.from({ length: 30 }, (_, i) => ({
 }));
 
 const ALERTS = [
-  { severity: 'critical', source: 'host-04.dc2',    msg: 'CPU > 90% sustained for 5m',              when: '2m ago'  },
-  { severity: 'critical', source: 'redis-session',  msg: 'Sentinel failover triggered',             when: '4m ago'  },
-  { severity: 'warning',  source: 'kafka-broker-2', msg: 'Under-replicated partitions: 7',          when: '11m ago' },
-  { severity: 'warning',  source: 'host-02.dc1',    msg: 'Memory > 70%',                            when: '22m ago' },
+  { severity: 'critical', source: 'host-04.dc2', msg: 'CPU > 90% sustained for 5m', when: '2m ago' },
+  { severity: 'critical', source: 'redis-session', msg: 'Sentinel failover triggered', when: '4m ago' },
+  { severity: 'warning', source: 'kafka-broker-2', msg: 'Under-replicated partitions: 7', when: '11m ago' },
+  { severity: 'warning', source: 'host-02.dc1', msg: 'Memory > 70%', when: '22m ago' },
 ];
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
 function statusChip(status) {
-  if (status === 'healthy') return <Chip size="small" icon={<OkIcon />}   label="Healthy"  color="success" variant="outlined" />;
-  if (status === 'warning') return <Chip size="small" icon={<WarnIcon />} label="Warning"  color="warning" variant="outlined" />;
-  return                           <Chip size="small" icon={<ErrIcon />}  label="Critical" color="error"   variant="outlined" />;
+  if (status === 'healthy') return <Chip size="small" icon={<OkIcon />} label="Healthy" color="success" variant="outlined" />;
+  if (status === 'warning') return <Chip size="small" icon={<WarnIcon />} label="Warning" color="warning" variant="outlined" />;
+  return <Chip size="small" icon={<ErrIcon />} label="Critical" color="error" variant="outlined" />;
 }
 
 function severityChip(sev) {
@@ -69,22 +69,21 @@ function severityChip(sev) {
   return <Chip size="small" label={sev.toUpperCase()} color={c} sx={{ fontWeight: 'var(--font-weight-bold)', minWidth: 72 }} />;
 }
 
-function Meter({ value }) {
-  const clr = value >= 85 ? 'error' : value >= 70 ? 'warning' : 'primary';
+function Meter({ value, color }) {
+  const clr = value >= 85 ? 'error' : value >= 70 ? 'warning' : color || 'primary';
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <LinearProgress variant="determinate" value={value} color={clr} sx={{ flex: 1, height: 6, borderRadius: 3 }} />
-      <Typography variant="caption" fontWeight={600} sx={{ minWidth: 34, textAlign: 'right' }}>{value}%</Typography>
+      <LinearProgress variant="determinate" value={value} color={clr} sx={{ flex: 1, height: 6, borderRadius: 'var(--radius-sm)' }} />
+      <Typography sx={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', minWidth: 34, textAlign: 'right' }}>{value}%</Typography>
     </Box>
   );
 }
 
-// ─── Page ───────────────────────────────────────────────────────────────────
 export default function NmsOverview() {
   const theme = useTheme();
-  const chartCpu = theme.palette.success.main;
-  const chartMem = theme.palette.primary.main;
-  const tickSize = Number(getComputedStyle(document.documentElement).getPropertyValue('--font-size-xs')) || 11;
+  const FLEET = buildFleet(theme);
+  const cpuColor = theme.palette.success.main;
+  const memColor = theme.palette.info.main;
 
   return (
     <Box sx={{ px: 2, py: 1.5 }}>
@@ -93,69 +92,59 @@ export default function NmsOverview() {
         Fleet-wide health across servers, virtual machines, containers, and platform services.
       </Typography>
 
-      {/* Fleet summary */}
       <Grid container spacing={1.5} sx={{ mb: 2 }}>
-        {FLEET.map(f => {
-          const main = theme.palette[f.palette].main;
-          return (
-            <Grid item xs={6} md={3} key={f.label}>
-              <Card>
-                <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Box sx={{
-                    width: 40, height: 40, borderRadius: 1.5,
-                    bgcolor: alpha(main, 0.15), color: main,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>{f.icon}</Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">{f.label}</Typography>
-                    <Typography variant="h6" fontWeight={700}>{f.value}</Typography>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          );
-        })}
+        {FLEET.map(f => (
+          <Grid item xs={6} md={3} key={f.label}>
+            <Card>
+              <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', bgcolor: alpha(f.color, 0.15), color: f.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{f.icon}</Box>
+                <Box>
+                  <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">{f.label}</Typography>
+                  <Typography sx={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)' }}>{f.value}</Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
 
       <Grid container spacing={1.5}>
-        {/* Health breakdown */}
         <Grid item xs={12} md={4}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Health Breakdown</Typography>
+              <Typography sx={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-bold)', mb: 1.5 }}>Health Breakdown</Typography>
               {HEALTH.map(h => (
                 <Box key={h.label} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                   <Chip size="small" label={h.label} color={h.color} variant="outlined" />
-                  <Typography variant="h6" fontWeight={700}>{h.value}</Typography>
+                  <Typography sx={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)' }}>{h.value}</Typography>
                 </Box>
               ))}
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Trend chart */}
         <Grid item xs={12} md={8}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>Fleet CPU / Memory — last 30 min</Typography>
+              <Typography sx={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-bold)', mb: 1 }}>Fleet CPU / Memory — last 30 min</Typography>
               <Box sx={{ width: '100%', height: 180 }}>
                 <ResponsiveContainer>
                   <AreaChart data={CPU_TREND} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="gCpu" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%"   stopColor={chartCpu} stopOpacity={0.4} />
-                        <stop offset="100%" stopColor={chartCpu} stopOpacity={0} />
+                        <stop offset="0%" stopColor={cpuColor} stopOpacity={0.4} />
+                        <stop offset="100%" stopColor={cpuColor} stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="gMem" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%"   stopColor={chartMem} stopOpacity={0.4} />
-                        <stop offset="100%" stopColor={chartMem} stopOpacity={0} />
+                        <stop offset="0%" stopColor={memColor} stopOpacity={0.4} />
+                        <stop offset="100%" stopColor={memColor} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="t" tick={{ fontSize: tickSize }} />
-                    <YAxis tick={{ fontSize: tickSize }} domain={[0, 100]} />
+                    <XAxis dataKey="t" tick={tick} />
+                    <YAxis tick={tick} domain={[0, 100]} />
                     <Tooltip />
-                    <Area type="monotone" dataKey="cpu" stroke={chartCpu} fill="url(#gCpu)" strokeWidth={2} />
-                    <Area type="monotone" dataKey="mem" stroke={chartMem} fill="url(#gMem)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="cpu" stroke={cpuColor} fill="url(#gCpu)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="mem" stroke={memColor} fill="url(#gMem)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </Box>
@@ -163,32 +152,31 @@ export default function NmsOverview() {
           </Card>
         </Grid>
 
-        {/* Hosts table */}
         <Grid item xs={12} md={8}>
           <Card>
             <CardContent sx={{ p: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>Hosts</Typography>
+              <Typography sx={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-bold)', mb: 1 }}>Hosts</Typography>
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Host</TableCell>
-                    <TableCell sx={{ width: 160 }}>CPU</TableCell>
-                    <TableCell sx={{ width: 160 }}>Memory</TableCell>
-                    <TableCell sx={{ width: 160 }}>Disk</TableCell>
-                    <TableCell>Net In / Out (Mbps)</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Host</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-xs)', width: 160 }}>CPU</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-xs)', width: 160 }}>Memory</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-xs)', width: 160 }}>Disk</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Net In / Out (Mbps)</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {HOSTS.map(h => (
                     <TableRow key={h.host} hover>
-                      <TableCell><Typography variant="body2" fontWeight={600}>{h.host}</Typography></TableCell>
-                      <TableCell><Meter value={h.cpu}  /></TableCell>
-                      <TableCell><Meter value={h.mem}  /></TableCell>
+                      <TableCell sx={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}>{h.host}</TableCell>
+                      <TableCell><Meter value={h.cpu} /></TableCell>
+                      <TableCell><Meter value={h.mem} /></TableCell>
                       <TableCell><Meter value={h.disk} /></TableCell>
-                      <TableCell>
+                      <TableCell sx={{ fontSize: 'var(--font-size-sm)' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                           <NetIcon sx={{ fontSize: 'var(--font-size-md)', color: 'text.secondary' }} />
-                          <Typography variant="body2">{h.netIn} / {h.netOut}</Typography>
+                          {h.netIn} / {h.netOut}
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -199,49 +187,43 @@ export default function NmsOverview() {
           </Card>
         </Grid>
 
-        {/* Alerts */}
         <Grid item xs={12} md={4}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>Active Alerts</Typography>
+              <Typography sx={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-bold)', mb: 1 }}>Active Alerts</Typography>
               {ALERTS.map((a, i) => (
-                <Box key={i} sx={{
-                  display: 'flex', alignItems: 'flex-start', gap: 1, py: 0.75,
-                  borderBottom: i === ALERTS.length - 1 ? 'none' : '1px solid',
-                  borderColor: 'divider',
-                }}>
+                <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, py: 0.75, borderBottom: i === ALERTS.length - 1 ? 'none' : '1px solid var(--color-border-subtle)' }}>
                   {severityChip(a.severity)}
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="body2" fontWeight={600} noWrap>{a.source}</Typography>
-                    <Typography variant="caption" color="text.secondary">{a.msg}</Typography>
+                    <Typography sx={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }} noWrap>{a.source}</Typography>
+                    <Typography sx={{ fontSize: 'var(--font-size-xs)' }} color="text.secondary">{a.msg}</Typography>
                   </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>{a.when}</Typography>
+                  <Typography sx={{ fontSize: 'var(--font-size-xs)', whiteSpace: 'nowrap' }} color="text.secondary">{a.when}</Typography>
                 </Box>
               ))}
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Services */}
         <Grid item xs={12}>
           <Card>
             <CardContent sx={{ p: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>Platform Services</Typography>
+              <Typography sx={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-bold)', mb: 1 }}>Platform Services</Typography>
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Service</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Topology</TableCell>
-                    <TableCell>Status</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Service</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Type</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Topology</TableCell>
+                    <TableCell sx={{ fontSize: 'var(--font-size-xs)' }}>Status</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {SERVICES.map(s => (
                     <TableRow key={s.name} hover>
-                      <TableCell><Typography variant="body2" fontWeight={600}>{s.name}</Typography></TableCell>
-                      <TableCell><Typography variant="body2">{s.kind}</Typography></TableCell>
-                      <TableCell><Typography variant="body2">{s.nodes}</Typography></TableCell>
+                      <TableCell sx={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}>{s.name}</TableCell>
+                      <TableCell sx={{ fontSize: 'var(--font-size-sm)' }}>{s.kind}</TableCell>
+                      <TableCell sx={{ fontSize: 'var(--font-size-sm)' }}>{s.nodes}</TableCell>
                       <TableCell>{statusChip(s.status)}</TableCell>
                     </TableRow>
                   ))}
