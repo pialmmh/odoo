@@ -22,6 +22,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/odoo/health").permitAll()
                 .requestMatchers("/api/odoo/res.partner/**").permitAll()
                 .requestMatchers("/api/odoo/platform.tenant.config/**").permitAll()
+                // Public meeting join — magic-link lookup + guest token mint
+                .requestMatchers("/api/public/meeting/**").permitAll()
                 // EspoCRM proxy — JWT required
                 .requestMatchers("/api/crm/**").authenticated()
                 // All other API calls require a valid JWT
