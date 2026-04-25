@@ -18,3 +18,28 @@ export async function getTabRows(windowId, tabIndex, params = {}) {
   const resp = await api.get(`/window/${windowId}/tab/${tabIndex}/rows`, { params });
   return resp.data;
 }
+
+/**
+ * Update a single-PK row. `changes` keys are AD column names ("Name",
+ * "IsActive", "M_Product_Category_ID"). Bundle re-reads the row and returns it.
+ */
+export async function saveRow(windowId, tabIndex, recordId, changes) {
+  const resp = await api.put(
+    `/window/${windowId}/tab/${tabIndex}/row/${recordId}`,
+    { changes }
+  );
+  return resp.data;
+}
+
+/**
+ * Update a composite-key row. `keys` is an object whose keys are AD column
+ * names of the row's primary key (multiple for tables like M_ProductPrice,
+ * M_Product_Acct, etc.) and whose values identify the row.
+ */
+export async function saveRowByKeys(windowId, tabIndex, keys, changes) {
+  const resp = await api.put(
+    `/window/${windowId}/tab/${tabIndex}/row`,
+    { keys, changes }
+  );
+  return resp.data;
+}

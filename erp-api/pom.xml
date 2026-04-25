@@ -33,6 +33,14 @@
             <version>2.15.4</version>
             <scope>provided</scope>
         </dependency>
+        <!-- iDempiere base — gives us PO, MTable, Env, MProduct, etc. for the
+             write path. Resolved at runtime by OSGi via Require-Bundle. -->
+        <dependency>
+            <groupId>idempiere</groupId>
+            <artifactId>org.adempiere.base</artifactId>
+            <version>12.0.0</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -56,6 +64,10 @@
                         <Bundle-RequiredExecutionEnvironment>JavaSE-17</Bundle-RequiredExecutionEnvironment>
                         <Web-ContextPath>/erp-api</Web-ContextPath>
                         <Jetty-Environment>ee8</Jetty-Environment>
+                        <!-- Require-Bundle: brings iDempiere's PO/MTable/Env into our
+                             bundle classpath, including non-exported packages like
+                             org.compiere.util. -->
+                        <Require-Bundle>org.adempiere.base</Require-Bundle>
                         <_wab>src/main/webapp</_wab>
                         <Import-Package>
                             javax.servlet;version="[3.1,5)",

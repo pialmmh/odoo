@@ -1,8 +1,15 @@
 package com.telcobright.erp.api;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.compiere.model.MTable;
+import org.compiere.model.PO;
+import org.compiere.model.POInfo;
+import org.compiere.util.Env;
+import org.adempiere.util.ServerContext;
+import org.compiere.util.Trx;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -18,6 +25,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,6 +51,10 @@ public class ApiServlet extends HttpServlet {
             Pattern.compile("^/window/(\\d+)/spec$");
     private static final Pattern P_ROWS =
             Pattern.compile("^/window/(\\d+)/tab/(\\d+)/rows$");
+    private static final Pattern P_ROW =
+            Pattern.compile("^/window/(\\d+)/tab/(\\d+)/row/(\\d+)$");
+    private static final Pattern P_ROW_BY_KEYS =
+            Pattern.compile("^/window/(\\d+)/tab/(\\d+)/row$");
 
     private static final String JDBC_URL =
             "jdbc:postgresql://127.0.0.1:5433/idempiere";
@@ -88,6 +102,46 @@ public class ApiServlet extends HttpServlet {
             error(resp, 404, "not_found", "Unknown path: " + path);
         } catch (Exception e) {
             log("erp-api: " + path + " failed", e);
+            error(resp, 500, "internal_error", e.getMessage());
+        }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String path = req.getPathInfo();
+        if (path == null) path = "";
+        try {
+            JsonNode body = mapper.readTree(req.getReader());
+            JsonNode changes = body.path("changes");
+            if (!changes.isObject()) { error(resp, 400, "bad_request", "Body must be {\"changes\":{...}}"); return; }
+            Map<String, Object> changeMap = new LinkedHashMap<>();
+            changes.fields().forEachRemaining(e -> changeMap.put(e.getKey(), jsonToJava(e.getValue())));
+
+            Matcher m;
+            if ((m = P_ROW.matcher(path)).matches()) {
+                int windowId = Integer.parseInt(m.group(1));
+                int tabIndex = Integer.parseInt(m.group(2));
+                long recordId = Long.parseLong(m.group(3));
+                writeJson(resp, savePo(windowId, tabIndex, recordId, null, changeMap));
+                return;
+            }
+            if ((m = P_ROW_BY_KEYS.matcher(path)).matches()) {
+                int windowId = Integer.parseInt(m.group(1));
+                int tabIndex = Integer.parseInt(m.group(2));
+                JsonNode keys = body.path("keys");
+                if (!keys.isObject() || keys.isEmpty()) {
+                    error(resp, 400, "bad_request", "Body must include a non-empty \"keys\" object for composite rows"); return;
+                }
+                Map<String, Object> keyMap = new LinkedHashMap<>();
+                keys.fields().forEachRemaining(e -> keyMap.put(e.getKey(), jsonToJava(e.getValue())));
+                writeJson(resp, savePo(windowId, tabIndex, 0L, keyMap, changeMap));
+                return;
+            }
+            error(resp, 404, "not_found", "Unknown path: " + path);
+        } catch (PoSaveException e) {
+            error(resp, 422, "save_failed", e.getMessage());
+        } catch (Exception e) {
+            log("erp-api PUT: " + path + " failed", e);
             error(resp, 500, "internal_error", e.getMessage());
         }
     }
@@ -304,6 +358,235 @@ public class ApiServlet extends HttpServlet {
     private static Long parseLong(String s) {
         if (s == null || s.isBlank()) return null;
         try { return Long.parseLong(s.trim()); } catch (NumberFormatException e) { return null; }
+    }
+
+    // ─── Write path ─────────────────────────────────────────────────────────
+
+    /**
+     * Updates a single row via {@code PO.saveEx()}. Goes through the model
+     * layer so ModelValidators, sequences, and change-log fire — without
+     * the full GridTab UI machinery (which is overkill for an HTTP request).
+     * Callouts are NOT fired (those are GridTab-specific); we'll add a
+     * separate /callout endpoint when needed.
+     */
+    private ObjectNode savePo(int windowId, int tabIndex, long recordId,
+                              Map<String, Object> keys, Map<String, Object> changes) throws Exception {
+        String tableName;
+        int adTableId;
+        try (Connection c = openConn();
+             PreparedStatement st = c.prepareStatement(
+                     "SELECT t.ad_table_id, tbl.tablename FROM adempiere.ad_tab t " +
+                     "JOIN adempiere.ad_table tbl ON tbl.ad_table_id = t.ad_table_id " +
+                     "WHERE t.ad_window_id = ? AND t.isactive = 'Y' " +
+                     "ORDER BY t.seqno OFFSET ? FETCH FIRST 1 ROWS ONLY")) {
+            st.setInt(1, windowId);
+            st.setInt(2, tabIndex);
+            try (ResultSet rs = st.executeQuery()) {
+                if (!rs.next()) throw new IllegalArgumentException("Tab " + tabIndex + " not found in window " + windowId);
+                adTableId = rs.getInt("ad_table_id");
+                tableName = rs.getString("tablename");
+            }
+        }
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        String trxName = Trx.createTrxName("erp-api-save");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            MTable mt = MTable.get(ctx, adTableId);
+            if (mt == null) throw new IllegalStateException("MTable not found for id " + adTableId);
+            PO po;
+            if (keys != null && !keys.isEmpty()) {
+                po = loadPoByKeys(mt, tableName, keys, trxName);
+            } else {
+                po = mt.getPO((int) recordId, trxName);
+            }
+            if (po == null || po.get_ID() < 0) {
+                throw new PoSaveException("Row not found: " + tableName + (keys != null ? " keys=" + keys : "[" + recordId + "]"));
+            }
+            POInfo pi = POInfo.getPOInfo(ctx, adTableId);
+            for (Map.Entry<String, Object> e : changes.entrySet()) {
+                int idx = po.get_ColumnIndex(e.getKey());
+                if (idx < 0) {
+                    throw new PoSaveException("Unknown column on " + tableName + ": " + e.getKey());
+                }
+                Class<?> cls = pi != null ? pi.getColumnClass(idx) : Object.class;
+                Object coerced = coerceTo(cls, e.getValue());
+                // set_ValueNoCheck bypasses some "system" guards; set_ValueOfColumn
+                // is the gentler public path. Use the latter; PO's beforeSave still
+                // catches type problems.
+                if (!po.set_ValueNoCheck(e.getKey(), coerced)) {
+                    throw new PoSaveException("set_Value rejected " + e.getKey()
+                            + " (column read-only or value invalid?)");
+                }
+            }
+            boolean ok = po.save();
+            if (!ok) {
+                org.compiere.util.ValueNamePair last = org.compiere.util.CLogger.retrieveError();
+                String msg = last != null ? last.getName() : "PO.save() returned false";
+                throw new PoSaveException(msg);
+            }
+            trx.commit(true);
+            // Re-read the row from the DB so the UI sees any model-side
+            // coercion / sequence allocation. For composite keys, identify
+            // by the same keys map.
+            int singleId = po.get_ID();
+            if (singleId > 0) return readSingleRow(adTableId, tableName, singleId);
+            return readRowByKeys(tableName, keys);
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            if (prevCtx != null) ServerContext.setCurrentInstance(prevCtx);
+            else ServerContext.dispose();
+        }
+    }
+
+    private PO loadPoByKeys(MTable mt, String tableName, Map<String, Object> keys, String trxName) {
+        StringBuilder where = new StringBuilder();
+        java.util.List<Object> params = new java.util.ArrayList<>();
+        for (Map.Entry<String, Object> e : keys.entrySet()) {
+            String safeCol = e.getKey().replaceAll("[^A-Za-z0-9_]", "");
+            if (where.length() > 0) where.append(" AND ");
+            where.append(safeCol).append(" = ?");
+            params.add(e.getValue());
+        }
+        java.util.List<PO> hits = new org.compiere.model.Query(
+                ServerContext.getCurrentInstance(), tableName, where.toString(), trxName)
+                .setParameters(params.toArray())
+                .list();
+        if (hits.isEmpty()) return null;
+        return hits.get(0);
+    }
+
+    private ObjectNode readRowByKeys(String tableName, Map<String, Object> keys) throws SQLException {
+        String safeTable = tableName.replaceAll("[^A-Za-z0-9_]", "");
+        StringBuilder where = new StringBuilder();
+        for (String k : keys.keySet()) {
+            String safeCol = k.replaceAll("[^A-Za-z0-9_]", "");
+            if (where.length() > 0) where.append(" AND ");
+            where.append(safeCol).append(" = ?");
+        }
+        try (Connection c = openConn();
+             PreparedStatement st = c.prepareStatement(
+                     "SELECT * FROM adempiere." + safeTable + " WHERE " + where)) {
+            int i = 1;
+            for (Object v : keys.values()) {
+                if (v instanceof Number n) st.setLong(i++, n.longValue());
+                else st.setString(i++, String.valueOf(v));
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (!rs.next()) return null;
+                ObjectNode row = mapper.createObjectNode();
+                ResultSetMetaData md = rs.getMetaData();
+                for (int j = 1; j <= md.getColumnCount(); j++) {
+                    putColumn(row, md.getColumnLabel(j), rs.getObject(j));
+                }
+                return row;
+            }
+        }
+    }
+
+    /**
+     * Coerce a JSON-decoded value (Boolean / Long / Double / String) to the
+     * exact type PO expects for a column. iDempiere's PO compares old vs new
+     * values using Object.equals; if the types differ, the column never gets
+     * marked dirty and save() silently no-ops.
+     */
+    private Object coerceTo(Class<?> cls, Object v) {
+        if (v == null) return null;
+        if (cls == java.math.BigDecimal.class) {
+            if (v instanceof java.math.BigDecimal bd) return bd;
+            if (v instanceof Number n) return java.math.BigDecimal.valueOf(n.doubleValue());
+            if (v instanceof String s && !s.isBlank()) return new java.math.BigDecimal(s.trim());
+            return null;
+        }
+        if (cls == Integer.class) {
+            if (v instanceof Integer i) return i;
+            if (v instanceof Number n) return n.intValue();
+            if (v instanceof String s && !s.isBlank()) return Integer.parseInt(s.trim());
+            return null;
+        }
+        if (cls == Long.class) {
+            if (v instanceof Long l) return l;
+            if (v instanceof Number n) return n.longValue();
+            if (v instanceof String s && !s.isBlank()) return Long.parseLong(s.trim());
+            return null;
+        }
+        if (cls == Boolean.class) {
+            if (v instanceof Boolean b) return b;
+            if (v instanceof String s) return "Y".equalsIgnoreCase(s) || "true".equalsIgnoreCase(s);
+            return Boolean.FALSE;
+        }
+        if (cls == String.class) {
+            if (v instanceof String s) return s.isEmpty() ? null : s;
+            return v.toString();
+        }
+        if (cls == java.sql.Timestamp.class) {
+            if (v instanceof java.sql.Timestamp ts) return ts;
+            if (v instanceof String s && !s.isBlank()) {
+                // Accept "2026-04-25" or full ISO.
+                String t = s.length() == 10 ? s + " 00:00:00" : s.replace('T', ' ').replace("Z", "");
+                return java.sql.Timestamp.valueOf(t);
+            }
+            return null;
+        }
+        return v;
+    }
+
+    private ObjectNode readSingleRow(int adTableId, String tableName, int recordId) throws SQLException {
+        String safeTable = tableName.replaceAll("[^A-Za-z0-9_]", "");
+        // Use the AD's IsKey columns to identify the row.
+        try (Connection c = openConn()) {
+            String pkCol;
+            try (PreparedStatement st = c.prepareStatement(
+                    "SELECT columnname FROM adempiere.ad_column WHERE ad_table_id = ? AND iskey = 'Y' ORDER BY ad_column_id LIMIT 1")) {
+                st.setInt(1, adTableId);
+                try (ResultSet rs = st.executeQuery()) {
+                    pkCol = rs.next() ? rs.getString("columnname").replaceAll("[^A-Za-z0-9_]", "") : safeTable + "_ID";
+                }
+            }
+            try (PreparedStatement st = c.prepareStatement(
+                    "SELECT * FROM adempiere." + safeTable + " WHERE " + pkCol + " = ?")) {
+                st.setInt(1, recordId);
+                try (ResultSet rs = st.executeQuery()) {
+                    if (!rs.next()) return null;
+                    ObjectNode row = mapper.createObjectNode();
+                    ResultSetMetaData md = rs.getMetaData();
+                    for (int i = 1; i <= md.getColumnCount(); i++) {
+                        putColumn(row, md.getColumnLabel(i), rs.getObject(i));
+                    }
+                    return row;
+                }
+            }
+        }
+    }
+
+    /**
+     * Build the iDempiere context for a request. For now: hard-coded GardenWorld
+     * super-admin context (client 11, org *, user 100, role 102). When we wire
+     * Keycloak JWT, this is where we resolve the current user's iDempiere role.
+     */
+    private Properties newRequestContext() {
+        Properties ctx = new Properties();
+        Env.setContext(ctx, "#AD_Client_ID", 11);
+        Env.setContext(ctx, "#AD_Org_ID", 0);
+        Env.setContext(ctx, "#AD_User_ID", 100);
+        Env.setContext(ctx, "#AD_Role_ID", 102);
+        Env.setContext(ctx, "#Date", new Timestamp(System.currentTimeMillis()));
+        Env.setContext(ctx, "#AD_Language", "en_US");
+        return ctx;
+    }
+
+    private static Object jsonToJava(JsonNode n) {
+        if (n == null || n.isNull()) return null;
+        if (n.isBoolean()) return n.booleanValue();
+        if (n.isIntegralNumber()) return n.longValue();
+        if (n.isFloatingPointNumber()) return n.doubleValue();
+        if (n.isTextual()) return n.textValue();
+        return n.toString();
+    }
+
+    private static class PoSaveException extends RuntimeException {
+        PoSaveException(String m) { super(m); }
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
