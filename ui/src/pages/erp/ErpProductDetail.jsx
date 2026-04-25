@@ -204,6 +204,11 @@ export default function ErpProductDetail() {
           <Paper variant="outlined" sx={{
             borderRadius: 1.5, overflow: 'hidden',
             position: { md: 'sticky' }, top: { md: 'var(--space-4)' },
+            // Cap height so the tab strip stays inside the viewport when there
+            // are many tabs; the inner <Tabs scrollable> shows arrow buttons.
+            maxHeight: { md: '80vh' },
+            display: 'flex', flexDirection: 'column',
+            bgcolor: 'background.default',
           }}>
             <Tabs
               value={activeTab}
@@ -211,16 +216,38 @@ export default function ErpProductDetail() {
               orientation="vertical"
               variant="scrollable"
               sx={{
-                borderRight: 1, borderColor: 'divider',
-                bgcolor: 'background.default',
+                flex: 1, minHeight: 0,
+                // Right-edge MUI indicator is redundant — we use a left
+                // accent stripe on the selected tab instead.
+                '& .MuiTabs-indicator': { display: 'none' },
                 '& .MuiTab-root': {
                   textTransform: 'none',
-                  fontWeight: 'var(--font-weight-semibold)',
                   fontSize: 'var(--font-size-sm)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  color: 'var(--color-text-secondary)',
                   alignItems: 'flex-start',
+                  justifyContent: 'flex-start',
                   textAlign: 'left',
                   minHeight: 'var(--space-8)',
-                  py: 1, px: 2,
+                  py: 1,
+                  pl: 'var(--space-3)',
+                  pr: 'var(--space-2)',
+                  borderLeft: '3px solid transparent',
+                  transition:
+                    'background-color var(--transition-fast), color var(--transition-fast)',
+                  '&:hover': {
+                    backgroundColor: 'var(--color-bg-muted)',
+                    color: 'var(--color-text-primary)',
+                  },
+                  '&.Mui-selected': {
+                    color: 'var(--color-primary)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    backgroundColor: 'var(--color-primary-bg)',
+                    borderLeftColor: 'var(--color-primary)',
+                  },
+                  '&.Mui-focusVisible': {
+                    backgroundColor: 'var(--color-bg-muted)',
+                  },
                 },
               }}
             >
