@@ -154,7 +154,17 @@ export default function ErpProductDetail() {
             scrollButtons="auto"
             sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.default' }}
           >
-            {TAB_ORDER.map((name) => <Tab key={name} label={name} sx={{ textTransform: 'none', fontWeight: 600, fontSize: 13 }} />)}
+            {TAB_ORDER.map((name) => (
+              <Tab
+                key={name}
+                label={name}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  fontSize: 'var(--font-size-sm)',
+                }}
+              />
+            ))}
           </Tabs>
         )}
         <Box sx={{ p: 2 }}>
@@ -352,7 +362,7 @@ function FieldRenderer({ field, value, lookup, onChange }) {
         value={display}
         fullWidth size="small" variant="outlined"
         InputProps={{ readOnly: true, endAdornment: editable
-            ? <Tooltip title="Picker coming soon"><EditIcon sx={{ fontSize: 14, color: 'action.disabled' }} /></Tooltip>
+            ? <Tooltip title="Picker coming soon"><EditIcon sx={{ fontSize: 'var(--font-size-base)', color: 'action.disabled' }} /></Tooltip>
             : null }}
         helperText={editable ? null : 'Read-only'}
       />
@@ -416,13 +426,12 @@ function SaveBar({ isNew, dirtyCount, saving, onSave, onDiscard }) {
     <Box sx={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
       zIndex: 10, p: 1.5,
-      background: 'linear-gradient(0deg, rgba(0,0,0,0.04), transparent)',
       display: 'flex', justifyContent: 'flex-end',
     }}>
       <Paper variant="outlined" sx={{
         display: 'flex', alignItems: 'center', px: 2, py: 1, gap: 2,
         borderRadius: 1.5, bgcolor: 'background.paper',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        boxShadow: 'var(--shadow-dropdown)',
       }}>
         <Typography variant="body2">
           {isNew
