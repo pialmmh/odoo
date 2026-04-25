@@ -4,14 +4,18 @@ import {
   Box, Card, CardContent, Typography, Tabs, Tab, Chip,
   CircularProgress, Alert, Grid, TextField, IconButton, Tooltip, Divider,
   FormControlLabel, Checkbox,
+  Table, TableHead, TableBody, TableRow, TableCell, TableContainer, TablePagination,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon, Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { getProduct } from '../../services/erpProducts';
+import { getTabRows } from '../../services/erpBundle';
 import { useNotification } from '../../components/ErrorNotification';
 import { evaluateDisplayLogic } from '../../lib/displayLogic';
 import productWindow from './m_product_window.json';
+
+const PRODUCT_WINDOW_ID = 140;
 
 // Tab definitions match the AD window order. Header tab ('Product') is wired
 // to a generated form below; child tabs are placeholders until writes/expand
@@ -113,7 +117,12 @@ export default function ErpProductDetail() {
           ) : activeTab === 0 ? (
             <HeaderTab spec={headerTabSpec} data={data} />
           ) : (
-            <ChildTabPlaceholder name={TAB_ORDER[activeTab]} />
+            <ChildTab
+              key={activeTab}
+              tabIndex={activeTab}
+              tabSpec={productWindow.tabs[activeTab]}
+              parentId={data?.id ?? Number(id)}
+            />
           )}
         </Box>
       </Card>
@@ -226,15 +235,92 @@ function camelizeLookup(col) {
   }
 }
 
-function ChildTabPlaceholder({ name }) {
+// ── Child tab — fetches parent-filtered rows from /erp-api ──────────────────
+function ChildTab({ tabIndex, tabSpec, parentId }) {
+  const [rows, setRows] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(25);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const cols = useMemo(() => {
+    if (!tabSpec) return [];
+    return tabSpec.fields
+      .filter((f) => f.isDisplayedGrid === 'Y')
+      .sort((a, b) => (a.seqNoGrid || 0) - (b.seqNoGrid || 0))
+      .slice(0, 10);
+  }, [tabSpec]);
+
+  useEffect(() => {
+    if (!parentId) return;
+    setLoading(true);
+    setError(null);
+    getTabRows(PRODUCT_WINDOW_ID, tabIndex, { parentId, page, size })
+      .then((d) => { setRows(d.items || []); setTotal(d.total || 0); })
+      .catch((e) => setError(e?.response?.data?.message || e.message))
+      .finally(() => setLoading(false));
+  }, [tabIndex, parentId, page, size]);
+
+  if (loading && rows.length === 0) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>;
+  }
+  if (error) {
+    return <Alert severity="error">{error}</Alert>;
+  }
+  if (rows.length === 0) {
+    return (
+      <Box sx={{ py: 4, textAlign: 'center', color: 'text.secondary' }}>
+        <Typography variant="body2">No rows for this tab.</Typography>
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ py: 6, textAlign: 'center', color: 'text.secondary' }}>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-        {name}
-      </Typography>
-      <Typography variant="body2">
-        This tab will be wired once writes are enabled (engine API plugin pending).
-      </Typography>
+    <Box>
+      <TableContainer>
+        <Table size="small" stickyHeader>
+          <TableHead>
+            <TableRow>
+              {cols.map((col) => (
+                <TableCell key={col.columnName} sx={{ fontWeight: 700 }}>
+                  {col.label}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((r, i) => (
+              <TableRow key={i} hover>
+                {cols.map((col) => (
+                  <TableCell key={col.columnName}>
+                    {formatCell(r[col.columnName.toLowerCase()])}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        component="div"
+        count={total}
+        page={page}
+        onPageChange={(_, p) => setPage(p)}
+        rowsPerPage={size}
+        onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
+        rowsPerPageOptions={[25, 50, 100]}
+      />
     </Box>
   );
+}
+
+function formatCell(v) {
+  if (v === null || v === undefined) return '—';
+  if (typeof v === 'boolean') return v ? '✓' : '';
+  if (typeof v === 'number') {
+    return Number.isInteger(v) ? String(v) : v.toFixed(2);
+  }
+  if (typeof v === 'string' && v.length > 40) return v.slice(0, 40) + '…';
+  return String(v);
 }
