@@ -63,6 +63,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- ERP (iDempiere) read-only Postgres access -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- LiveKit: mint access tokens for meeting participants. -->
         <!-- Using jjwt + protocol POJO since io.livekit:livekit-server has patchy availability on Maven Central. -->
         <dependency>

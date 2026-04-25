@@ -44,6 +44,11 @@ curl -s -X PUT "$ADMIN/routes/4" -H "X-API-KEY: $KEY" -H "Content-Type: applicat
   -d "{\"name\":\"api-kb\",\"uri\":\"/api/kb/*\",\"methods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\",\"OPTIONS\"],\"upstream_id\":\"1\",\"plugins\":{\"cors\":$CORS,\"openid-connect\":$OIDC}}" > /dev/null
 echo "  ✓ Route: /api/kb/* (Keycloak JWT)"
 
+# Protected: ERP (experimental — iDempiere read-only)
+curl -s -X PUT "$ADMIN/routes/9" -H "X-API-KEY: $KEY" -H "Content-Type: application/json" \
+  -d "{\"name\":\"api-erp\",\"uri\":\"/api/erp/*\",\"methods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\",\"OPTIONS\"],\"upstream_id\":\"1\",\"priority\":0,\"plugins\":{\"cors\":$CORS,\"openid-connect\":$OIDC}}" > /dev/null
+echo "  ✓ Route: /api/erp/* (Keycloak JWT)"
+
 # Public: CRM health
 curl -s -X PUT "$ADMIN/routes/6" -H "X-API-KEY: $KEY" -H "Content-Type: application/json" \
   -d "{\"name\":\"api-crm-health\",\"uri\":\"/api/crm/health\",\"methods\":[\"GET\"],\"upstream_id\":\"1\",\"priority\":10,\"plugins\":{\"cors\":$CORS}}" > /dev/null

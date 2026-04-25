@@ -35,11 +35,19 @@ import {
   Email as EmailsIcon,
   Campaign as CampaignIcon,
   Phone as VoiceIcon,
+  DialerSip as ExtensionIcon,
   Policy as PolicyIcon,
   Tune as AdminToolsIcon,
   MonitorHeart as NmsIcon,
   Hub as ClusterIcon,
   Schedule as TemporalIcon,
+  Handshake as PartnerIcon,
+  ManageAccounts as PartyUserIcon,
+  AssignmentInd as RoleIcon,
+  Key as PermissionIcon,
+  Sync as SyncIcon,
+  CorporateFare as OperatorIcon,
+  Inventory as ErpProductIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -93,6 +101,10 @@ export default function Sidebar() {
     { section: 'Artifacts' },
     { text: 'Artifacts', icon: <ArtifactIcon />, path: `${base}/artifacts` },
 
+    // ── ERP (Experimental) ──
+    { section: 'ERP (Experimental)' },
+    { text: 'Product', icon: <ErpProductIcon />, path: `${base}/erp/product`, iconColor: '#94bc66' },
+
     // ── CRM (feature-flagged) ──
     ...(FEATURES.crm ? [
       { section: 'CRM' },
@@ -108,6 +120,7 @@ export default function Sidebar() {
       { text: 'Demo Room',     icon: <MeetingsIcon />,      path: `${base}/crm/meetings/demo/room` },
       { text: 'Calendar',      icon: <CalendarIcon />,      path: `${base}/crm/calendar` },
       { text: 'Emails',        icon: <EmailsIcon />,        path: `${base}/crm/emails` },
+      { text: 'Extension Management', icon: <ExtensionIcon />, path: `${base}/crm/admin/pbxExtensions` },
       { text: 'Administration', icon: <AdminToolsIcon />,    path: `${base}/crm/admin` },
 
       { section: 'Campaign' },
@@ -115,11 +128,28 @@ export default function Sidebar() {
       { text: 'Policies',  icon: <PolicyIcon />,   path: `${base}/crm/campaigns/policies` },
     ] : []),
 
+    // ── Party (tenant-scoped) ──
+    { section: 'Party' },
+    { text: 'Partners',    icon: <PartnerIcon />,    path: `${base}/party/partners`,    iconColor: '#f5b945' },
+    { text: 'Party Users', icon: <PartyUserIcon />,  path: `${base}/party/users`,       iconColor: '#a4c2dc' },
+    { text: 'Roles',       icon: <RoleIcon />,       path: `${base}/party/roles`,       iconColor: '#94bc66' },
+    { text: 'Permissions', icon: <PermissionIcon />, path: `${base}/party/permissions` },
+    { text: 'Sync Jobs',   icon: <SyncIcon />,       path: `${base}/party/sync-jobs`,   iconColor: 'var(--color-warning)' },
+
     // ── Admin ──
     { section: 'Admin' },
     { text: 'RBAC', icon: <RBACIcon />, path: `${base}/rbac` },
     { text: 'Tenants', icon: <TenantIcon />, path: `${base}/tenants` },
+    ...(isSuper ? [
+      { text: 'Operators',      icon: <OperatorIcon />,  path: `${base}/party/admin/operators` },
+      { text: 'Party Tenants',  icon: <TenantIcon />,    path: `${base}/party/admin/tenants` },
+      { text: 'Operator Users', icon: <PartyUserIcon />, path: `${base}/party/admin/operator-users` },
+    ] : []),
     { text: 'Settings', icon: <SettingsIcon />, path: `${base}/settings` },
+
+    // ── Experimental (spike/scratch surfaces, not production) ──
+    { section: 'Experimental' },
+    { text: 'LiveKit Call (exp)', icon: <VoiceIcon />, path: `${base}/experiments/livekit-call`, iconColor: 'var(--color-warning)' },
   ];
 
   const isActive = (path) => {
@@ -131,6 +161,11 @@ export default function Sidebar() {
     // when on /policies child.
     if (path === `${base}/crm/campaigns`)
       return loc.startsWith(path) && !loc.startsWith(`${path}/policies`);
+    // Administration parent vs sibling admin items that have their own
+    // sidebar entry (PBX Extensions, etc.) — don't highlight Administration
+    // when on one of those.
+    if (path === `${base}/crm/admin`)
+      return loc.startsWith(path) && !loc.startsWith(`${path}/pbxExtensions`);
     return loc.startsWith(path);
   };
 
