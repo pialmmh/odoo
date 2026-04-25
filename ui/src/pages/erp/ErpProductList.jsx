@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Box, Card, CardContent, Typography, TextField, InputAdornment,
+  Box, Paper, Typography, TextField, InputAdornment,
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
-  TablePagination, CircularProgress, Chip, Alert, IconButton, Tooltip,
+  TablePagination, CircularProgress, Chip, Alert, IconButton, Tooltip, Button,
 } from '@mui/material';
 import {
-  Search as SearchIcon, Refresh as RefreshIcon,
+  Search as SearchIcon, Refresh as RefreshIcon, Add as AddIcon,
 } from '@mui/icons-material';
 import { listProducts } from '../../services/erpProducts';
 import { useNotification } from '../../components/ErrorNotification';
@@ -58,38 +58,46 @@ export default function ErpProductList() {
   }, [pendingSearch, search]);
 
   return (
-    <Box sx={{ px: 1 }}>
+    <Box>
+      {/* Page header — matches CRM list pages: title + count subtitle, primary action + refresh on the right. */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>Products</Typography>
-          <Typography variant="caption" color="text.secondary">
-            Experimental — read-only view of the ERP catalog
+          <Typography variant="h6">Products</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {total} {total === 1 ? 'product' : 'products'} total
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <TextField
-            size="small"
-            placeholder="Search by key, name, or SKU"
-            value={pendingSearch}
-            onChange={(e) => setPendingSearch(e.target.value)}
-            InputProps={{
-              startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
-            }}
-            sx={{ width: 320 }}
-          />
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained" color="primary" size="small"
+            startIcon={<AddIcon />}
+            onClick={() => navigate(`/${tenant}/erp/product/new`)}
+            sx={{ fontWeight: 600 }}
+          >
+            New Product
+          </Button>
           <Tooltip title="Refresh">
-            <IconButton size="small" onClick={load}><RefreshIcon /></IconButton>
+            <IconButton onClick={load} size="small"><RefreshIcon /></IconButton>
           </Tooltip>
         </Box>
       </Box>
 
-      <Alert severity="info" sx={{ mb: 2 }}>
-        This page is experimental. Writes (create / edit / delete) and child tabs (Price, Purchasing,
-        Accounting, BOM, etc.) will be wired once the underlying engine's API plugin is installed.
-      </Alert>
+      {/* Search bar in its own row, like CRM list pages. */}
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          size="small"
+          placeholder="Search by key, name, or SKU"
+          value={pendingSearch}
+          onChange={(e) => setPendingSearch(e.target.value)}
+          InputProps={{
+            startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
+          }}
+          sx={{ width: 320 }}
+        />
+      </Box>
 
-      <Card>
-        <CardContent sx={{ p: 0 }}>
+      <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+        <Box sx={{ p: 0 }}>
           {loading && items.length === 0 ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
               <CircularProgress size={28} />
@@ -157,8 +165,8 @@ export default function ErpProductList() {
             onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
             rowsPerPageOptions={[25, 50, 100, 200]}
           />
-        </CardContent>
-      </Card>
+        </Box>
+      </Paper>
     </Box>
   );
 }

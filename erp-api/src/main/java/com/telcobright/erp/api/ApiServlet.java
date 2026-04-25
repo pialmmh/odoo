@@ -55,6 +55,8 @@ public class ApiServlet extends HttpServlet {
             Pattern.compile("^/window/(\\d+)/tab/(\\d+)/row/(\\d+)$");
     private static final Pattern P_ROW_BY_KEYS =
             Pattern.compile("^/window/(\\d+)/tab/(\\d+)/row$");
+    private static final Pattern P_NEW_ROW =
+            Pattern.compile("^/window/(\\d+)/tab/(\\d+)/row$");
 
     private static final String JDBC_URL =
             "jdbc:postgresql://127.0.0.1:5433/idempiere";
@@ -102,6 +104,32 @@ public class ApiServlet extends HttpServlet {
             error(resp, 404, "not_found", "Unknown path: " + path);
         } catch (Exception e) {
             log("erp-api: " + path + " failed", e);
+            error(resp, 500, "internal_error", e.getMessage());
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String path = req.getPathInfo();
+        if (path == null) path = "";
+        try {
+            Matcher m = P_NEW_ROW.matcher(path);
+            if (!m.matches()) { error(resp, 404, "not_found", "Unknown path: " + path); return; }
+            int windowId = Integer.parseInt(m.group(1));
+            int tabIndex = Integer.parseInt(m.group(2));
+            JsonNode body = mapper.readTree(req.getReader());
+            JsonNode changes = body.path("changes");
+            if (!changes.isObject()) {
+                error(resp, 400, "bad_request", "Body must be {\"changes\":{...}}"); return;
+            }
+            Map<String, Object> changeMap = new LinkedHashMap<>();
+            changes.fields().forEachRemaining(e -> changeMap.put(e.getKey(), jsonToJava(e.getValue())));
+            resp.setStatus(HttpServletResponse.SC_CREATED);
+            writeJson(resp, createPo(windowId, tabIndex, changeMap));
+        } catch (PoSaveException e) {
+            error(resp, 422, "save_failed", e.getMessage());
+        } catch (Exception e) {
+            log("erp-api POST: " + path + " failed", e);
             error(resp, 500, "internal_error", e.getMessage());
         }
     }
@@ -432,6 +460,69 @@ public class ApiServlet extends HttpServlet {
             // by the same keys map.
             int singleId = po.get_ID();
             if (singleId > 0) return readSingleRow(adTableId, tableName, singleId);
+            return readRowByKeys(tableName, keys);
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            if (prevCtx != null) ServerContext.setCurrentInstance(prevCtx);
+            else ServerContext.dispose();
+        }
+    }
+
+    /**
+     * Insert a new row via {@code PO.save()} on a fresh PO. Same model-layer
+     * guarantees as the update path: ModelValidators, sequence allocation
+     * for {@code Value} / {@code DocumentNo}, change-log writes.
+     */
+    private ObjectNode createPo(int windowId, int tabIndex, Map<String, Object> changes) throws Exception {
+        String tableName;
+        int adTableId;
+        try (Connection c = openConn();
+             PreparedStatement st = c.prepareStatement(
+                     "SELECT t.ad_table_id, tbl.tablename FROM adempiere.ad_tab t " +
+                     "JOIN adempiere.ad_table tbl ON tbl.ad_table_id = t.ad_table_id " +
+                     "WHERE t.ad_window_id = ? AND t.isactive = 'Y' " +
+                     "ORDER BY t.seqno OFFSET ? FETCH FIRST 1 ROWS ONLY")) {
+            st.setInt(1, windowId);
+            st.setInt(2, tabIndex);
+            try (ResultSet rs = st.executeQuery()) {
+                if (!rs.next()) throw new IllegalArgumentException("Tab " + tabIndex + " not found in window " + windowId);
+                adTableId = rs.getInt("ad_table_id");
+                tableName = rs.getString("tablename");
+            }
+        }
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        String trxName = Trx.createTrxName("erp-api-create");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            MTable mt = MTable.get(ctx, adTableId);
+            if (mt == null) throw new IllegalStateException("MTable not found for id " + adTableId);
+            PO po = mt.getPO(0, trxName);   // 0 → new instance
+            if (po == null) throw new PoSaveException("Could not instantiate PO for " + tableName);
+            POInfo pi = POInfo.getPOInfo(ctx, adTableId);
+            for (Map.Entry<String, Object> e : changes.entrySet()) {
+                int idx = po.get_ColumnIndex(e.getKey());
+                if (idx < 0) throw new PoSaveException("Unknown column on " + tableName + ": " + e.getKey());
+                Class<?> cls = pi != null ? pi.getColumnClass(idx) : Object.class;
+                Object coerced = coerceTo(cls, e.getValue());
+                if (!po.set_ValueNoCheck(e.getKey(), coerced)) {
+                    throw new PoSaveException("set_Value rejected " + e.getKey() + " on new row");
+                }
+            }
+            boolean ok = po.save();
+            if (!ok) {
+                org.compiere.util.ValueNamePair last = org.compiere.util.CLogger.retrieveError();
+                throw new PoSaveException(last != null ? last.getName() : "PO.save() returned false");
+            }
+            trx.commit(true);
+            int newId = po.get_ID();
+            if (newId > 0) return readSingleRow(adTableId, tableName, newId);
+            // Composite-key row: re-read by the keys we just set.
+            Map<String, Object> keys = new LinkedHashMap<>();
+            for (String col : changes.keySet()) {
+                if (col.endsWith("_ID")) keys.put(col, changes.get(col));
+            }
             return readRowByKeys(tableName, keys);
         } finally {
             try { trx.close(); } catch (Exception ignore) { }

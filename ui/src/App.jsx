@@ -91,6 +91,7 @@ function TenantRoutes() {
       <Route path="nms/temporal/:id/edit" element={<NmsTemporalClusterEdit />} />
       <Route path="purchase" element={<Purchase />} />
       <Route path="erp/product" element={<ErpProductList />} />
+      <Route path="erp/product/new" element={<ErpProductDetail />} />
       <Route path="erp/product/:id" element={<ErpProductDetail />} />
       <Route path="rbac" element={<RBACManagement />} />
       {FEATURES.crm && <Route path="crm/*" element={<CrmIndex />} />}

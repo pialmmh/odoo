@@ -43,3 +43,15 @@ export async function saveRowByKeys(windowId, tabIndex, keys, changes) {
   );
   return resp.data;
 }
+
+/**
+ * Create a new row. Goes through PO.save() so sequences, validators, and
+ * change-log all fire. Returns the new row including the assigned ID.
+ */
+export async function createRow(windowId, tabIndex, changes) {
+  const resp = await api.post(
+    `/window/${windowId}/tab/${tabIndex}/row`,
+    { changes }
+  );
+  return resp.data;
+}

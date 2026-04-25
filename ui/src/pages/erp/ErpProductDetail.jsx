@@ -1,22 +1,23 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
-  Box, Card, CardContent, Typography, Tabs, Tab, Chip,
+  Box, Paper, Typography, Tabs, Tab, Chip,
   CircularProgress, Grid, TextField, IconButton, Tooltip,
   FormControlLabel, Checkbox,
   Table, TableHead, TableBody, TableRow, TableCell, TableContainer, TablePagination,
-  Drawer, Button, Breadcrumbs, Link, Stack, Snackbar, Alert,
+  Drawer, Button, Stack, Alert,
 } from '@mui/material';
 import {
-  ArrowBack as BackIcon, Refresh as RefreshIcon,
+  Refresh as RefreshIcon,
   Save as SaveIcon, Close as CloseIcon, Edit as EditIcon,
   ChevronLeft as PrevIcon, ChevronRight as NextIcon,
-  Home as HomeIcon, NavigateNext as ChevronIcon,
+  Inventory as ProductIcon,
 } from '@mui/icons-material';
 import { getProduct } from '../../services/erpProducts';
-import { getTabRows, saveRow, saveRowByKeys } from '../../services/erpBundle';
+import { getTabRows, saveRow, saveRowByKeys, createRow } from '../../services/erpBundle';
 import { useNotification } from '../../components/ErrorNotification';
 import { evaluateDisplayLogic } from '../../lib/displayLogic';
+import EntityHeaderCard from '../crm/EntityHeaderCard';
 import productWindow from './m_product_window.json';
 
 const PRODUCT_WINDOW_ID = 140;
@@ -37,16 +38,50 @@ const COMPOSITE_KEYS = {
   'M_Storage':        ['M_Locator_ID', 'M_Product_ID', 'M_AttributeSetInstance_ID'],
 };
 
+// Defaults applied to a new Product before the user touches anything.
+// Matches iDempiere's AD-defaults for required fields on M_Product so
+// PO.save can succeed without the user filling every checkbox.
+const NEW_PRODUCT_DEFAULTS = {
+  IsActive: true,
+  IsSummary: false,
+  IsStocked: true,
+  IsSold: true,
+  IsPurchased: true,
+  IsBOM: false,
+  IsManufactured: false,
+  IsPhantom: false,
+  IsKanban: false,
+  IsDropShip: false,
+  IsOwnBox: false,
+  IsAutoProduce: false,
+  IsBOMPriceOverride: false,
+  IsInvoicePrintDetails: false,
+  IsPickListPrintDetails: false,
+  IsExcludeAutoDelivery: false,
+  IsWebStoreFeatured: false,
+  IsSelfService: false,
+  IsVerified: false,
+  ProductType: 'I',
+  M_AttributeSetInstance_ID: 0,
+  LowLevel: 0,
+  // C_UOM_ID, C_TaxCategory_ID, M_Product_Category_ID, Value, Name —
+  // user must fill these. We don't preselect to avoid silently shipping
+  // wrong data.
+};
+
 export default function ErpProductDetail() {
   const { tenant, id } = useParams();
   const navigate = useNavigate();
   const { error: notifyError, success: notifySuccess } = useNotification();
 
+  const isNew = id === 'new' || id == null;
+
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isNew);
   const [activeTab, setActiveTab] = useState(0);
 
   const reload = useCallback(() => {
+    if (isNew) return;
     let alive = true;
     setLoading(true);
     getProduct(id)
@@ -54,7 +89,7 @@ export default function ErpProductDetail() {
       .catch((e) => notifyError('Failed to load product', e?.response?.data?.message || e.message))
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [id, notifyError]);
+  }, [id, isNew, notifyError]);
 
   useEffect(() => reload(), [reload]);
 
@@ -63,91 +98,79 @@ export default function ErpProductDetail() {
     []
   );
 
-  return (
-    <Box sx={{ px: 1, pb: 8 /* room for sticky save bar */ }}>
-      {/* ── Breadcrumb ───────────────────────────────────────────── */}
-      <Breadcrumbs
-        separator={<ChevronIcon fontSize="small" />}
-        sx={{ px: 1, py: 0.5, fontSize: 13 }}
-      >
-        <Link
-          component={RouterLink}
-          to={`/${tenant}/`}
-          underline="hover"
-          color="inherit"
-          sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-        >
-          <HomeIcon sx={{ fontSize: 14 }} /> Home
-        </Link>
-        <Link component={RouterLink} to={`/${tenant}/erp/product`} underline="hover" color="inherit">
-          ERP
-        </Link>
-        <Link component={RouterLink} to={`/${tenant}/erp/product`} underline="hover" color="inherit">
-          Products
-        </Link>
-        <Typography color="text.primary" sx={{ fontSize: 13 }}>
-          {data?.name || `#${id}`}
-        </Typography>
-      </Breadcrumbs>
+  // Action slot (right side of EntityHeaderCard) — Prev/Next/Refresh on
+  // existing records, hidden in create mode.
+  const headerActions = !isNew && (
+    <Stack direction="row" spacing={0.5}>
+      <PrevNextNav id={id} tenant={tenant} />
+      <Tooltip title="Refresh">
+        <IconButton size="small" onClick={reload}><RefreshIcon /></IconButton>
+      </Tooltip>
+    </Stack>
+  );
 
-      {/* ── Sticky identity header ───────────────────────────────── */}
-      <Card sx={{ mb: 2, position: 'sticky', top: 0, zIndex: 5 }}>
-        <CardContent sx={{ py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Tooltip title="Back to list">
-            <IconButton size="small" onClick={() => navigate(`/${tenant}/erp/product`)}>
-              <BackIcon />
-            </IconButton>
-          </Tooltip>
-          <PrevNextNav id={id} tenant={tenant} />
-          <Box sx={{ flex: 1 }}>
-            {loading ? (
-              <Typography variant="body2" color="text.secondary">Loading…</Typography>
-            ) : !data ? (
-              <Typography variant="body2" color="text.secondary">Not found</Typography>
-            ) : (
-              <>
-                <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                  {data.name}{' '}
-                  <Typography component="span" variant="caption" color="text.secondary">
-                    ({data.value})
-                  </Typography>
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 0.75, mt: 0.5, flexWrap: 'wrap' }}>
-                  {data.isActive    ? <Chip label="Active"    size="small" color="success" variant="outlined" />
-                                    : <Chip label="Inactive"  size="small" variant="outlined" />}
-                  {data.isSummary   && <Chip label="Summary"   size="small" variant="outlined" />}
-                  {data.isStocked   && <Chip label="Stocked"   size="small" variant="outlined" />}
-                  {data.isSold      && <Chip label="Sold"      size="small" variant="outlined" />}
-                  {data.isPurchased && <Chip label="Purchased" size="small" variant="outlined" />}
-                  {data.isBOM       && <Chip label="BOM"       size="small" variant="outlined" />}
-                  <Chip
-                    label={`${data.productTypeLabel || data.productType || '—'} · ${data.uomName || '—'} · ${data.productCategoryName || '—'}`}
-                    size="small"
-                    sx={{ ml: 1 }}
-                  />
-                </Box>
-              </>
-            )}
-          </Box>
-          <Tooltip title="Refresh">
-            <IconButton size="small" onClick={reload}><RefreshIcon /></IconButton>
-          </Tooltip>
-        </CardContent>
-      </Card>
+  const subtitle = isNew
+    ? 'Fill in the required fields and click Create.'
+    : data
+      ? `${data.value} · ${data.productTypeLabel || data.productType || '—'} · ${data.uomName || '—'} · ${data.productCategoryName || '—'}`
+      : null;
+
+  return (
+    <Box sx={{ pb: 8 /* room for sticky save bar */ }}>
+      {/* ── Header — CRM EntityHeaderCard pattern ─────────────────── */}
+      <EntityHeaderCard
+        icon={<ProductIcon />}
+        entityLabel="Products"
+        backTo={`/${tenant}/erp/product`}
+        title={isNew ? 'New Product' : (loading ? 'Loading…' : (data?.name || `#${id}`))}
+        subtitle={subtitle}
+        actions={headerActions}
+      />
+
+      {/* Status chip strip — sits in CRM "action bar" style row below the header. */}
+      {!isNew && data && (
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap',
+          mb: 1.5, px: 1.5, py: 1,
+          bgcolor: 'background.default', borderRadius: 1,
+        }}>
+          {data.isActive    ? <Chip label="Active"    size="small" color="success" variant="outlined" />
+                            : <Chip label="Inactive"  size="small" variant="outlined" />}
+          {data.isSummary   && <Chip label="Summary"   size="small" variant="outlined" />}
+          {data.isStocked   && <Chip label="Stocked"   size="small" variant="outlined" />}
+          {data.isSold      && <Chip label="Sold"      size="small" variant="outlined" />}
+          {data.isPurchased && <Chip label="Purchased" size="small" variant="outlined" />}
+          {data.isBOM       && <Chip label="BOM"       size="small" variant="outlined" />}
+        </Box>
+      )}
 
       {/* ── Tabs ─────────────────────────────────────────────────── */}
-      <Card sx={{ mb: 2 }}>
-        <Tabs
-          value={activeTab}
-          onChange={(_, v) => setActiveTab(v)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
-        >
-          {TAB_ORDER.map((name) => <Tab key={name} label={name} />)}
-        </Tabs>
+      <Paper variant="outlined" sx={{ mb: 2, borderRadius: 1.5, overflow: 'hidden' }}>
+        {!isNew && (
+          <Tabs
+            value={activeTab}
+            onChange={(_, v) => setActiveTab(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.default' }}
+          >
+            {TAB_ORDER.map((name) => <Tab key={name} label={name} sx={{ textTransform: 'none', fontWeight: 600, fontSize: 13 }} />)}
+          </Tabs>
+        )}
         <Box sx={{ p: 2 }}>
-          {loading ? (
+          {isNew ? (
+            <HeaderTab
+              spec={headerTabSpec}
+              data={null}
+              isNew
+              defaults={NEW_PRODUCT_DEFAULTS}
+              onCreated={(created) => {
+                notifySuccess('Product created');
+                navigate(`/${tenant}/erp/product/${created.m_product_id}`);
+              }}
+              onError={(msg) => notifyError('Create failed', msg)}
+            />
+          ) : loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
               <CircularProgress size={28} />
             </Box>
@@ -173,7 +196,7 @@ export default function ErpProductDetail() {
             />
           )}
         </Box>
-      </Card>
+      </Paper>
     </Box>
   );
 }
@@ -200,18 +223,23 @@ function PrevNextNav({ id, tenant }) {
 }
 
 // ── Header tab — editable form bound to the AD spec ─────────────────────────
-function HeaderTab({ spec, data, recordId, onSaved, onError }) {
+function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, onError }) {
   // Original snapshot used to compute the dirty diff.
+  // For new records: defaults are the "original"; everything beyond defaults is dirty.
   const original = useMemo(() => {
+    if (isNew) {
+      const o = {};
+      for (const f of spec.fields) o[f.columnName] = (defaults && defaults[f.columnName]) ?? null;
+      return o;
+    }
     const o = {};
     for (const f of spec.fields) o[f.columnName] = readField(data, f);
     return o;
-  }, [data, spec]);
+  }, [data, spec, isNew, defaults]);
 
   const [form, setForm] = useState(original);
   const [saving, setSaving] = useState(false);
 
-  // Reset form when product reloads.
   useEffect(() => { setForm(original); }, [original]);
 
   const dirty = useMemo(() => {
@@ -230,11 +258,23 @@ function HeaderTab({ spec, data, recordId, onSaved, onError }) {
 
   const onChange = (col, v) => setForm((s) => ({ ...s, [col]: v }));
   const onDiscard = () => setForm(original);
+
   const onSave = async () => {
     setSaving(true);
     try {
-      const updated = await saveRow(PRODUCT_WINDOW_ID, HEADER_TAB_INDEX, recordId, dirty);
-      onSaved?.(updated);
+      if (isNew) {
+        // Send defaults + user-edits (everything we have) so PO sees mandatory flags.
+        const payload = { ...form };
+        // Strip null/undefined to keep the payload clean.
+        for (const k of Object.keys(payload)) {
+          if (payload[k] === null || payload[k] === undefined) delete payload[k];
+        }
+        const created = await createRow(PRODUCT_WINDOW_ID, HEADER_TAB_INDEX, payload);
+        onCreated?.(created);
+      } else {
+        const updated = await saveRow(PRODUCT_WINDOW_ID, HEADER_TAB_INDEX, recordId, dirty);
+        onSaved?.(updated);
+      }
     } catch (e) {
       onError?.(e?.response?.data?.message || e.message);
     } finally {
@@ -242,7 +282,7 @@ function HeaderTab({ spec, data, recordId, onSaved, onError }) {
     }
   };
 
-  if (!data) return null;
+  if (!isNew && !data) return null;
 
   return (
     <>
@@ -257,7 +297,7 @@ function HeaderTab({ spec, data, recordId, onSaved, onError }) {
               <FieldRenderer
                 field={f}
                 value={form[f.columnName]}
-                lookup={readLookup(data, f.columnName)}
+                lookup={isNew ? null : readLookup(data, f.columnName)}
                 onChange={(v) => onChange(f.columnName, v)}
               />
             </Grid>
@@ -265,9 +305,10 @@ function HeaderTab({ spec, data, recordId, onSaved, onError }) {
         })}
       </Grid>
 
-      {/* Sticky Save / Discard bar — slides in only when dirty. */}
-      {isDirty && (
+      {/* Sticky Save / Discard bar — always present in new mode. */}
+      {(isDirty || isNew) && (
         <SaveBar
+          isNew={isNew}
           dirtyCount={Object.keys(dirty).length}
           saving={saving}
           onSave={onSave}
@@ -370,7 +411,7 @@ function FieldRenderer({ field, value, lookup, onChange }) {
 }
 
 // ── Sticky save / discard bar ───────────────────────────────────────────────
-function SaveBar({ dirtyCount, saving, onSave, onDiscard }) {
+function SaveBar({ isNew, dirtyCount, saving, onSave, onDiscard }) {
   return (
     <Box sx={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
@@ -378,20 +419,27 @@ function SaveBar({ dirtyCount, saving, onSave, onDiscard }) {
       background: 'linear-gradient(0deg, rgba(0,0,0,0.04), transparent)',
       display: 'flex', justifyContent: 'flex-end',
     }}>
-      <Card sx={{ display: 'flex', alignItems: 'center', px: 2, py: 1, gap: 2 }}>
+      <Paper variant="outlined" sx={{
+        display: 'flex', alignItems: 'center', px: 2, py: 1, gap: 2,
+        borderRadius: 1.5, bgcolor: 'background.paper',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      }}>
         <Typography variant="body2">
-          {dirtyCount} unsaved change{dirtyCount === 1 ? '' : 's'}
+          {isNew
+            ? 'New product (unsaved)'
+            : `${dirtyCount} unsaved change${dirtyCount === 1 ? '' : 's'}`}
         </Typography>
         <Stack direction="row" spacing={1}>
-          <Button onClick={onDiscard} disabled={saving} startIcon={<CloseIcon />} size="small">
-            Discard
+          <Button onClick={onDiscard} disabled={saving || isNew}
+                  startIcon={<CloseIcon />} size="small">
+            {isNew ? 'Reset' : 'Discard'}
           </Button>
           <Button onClick={onSave} disabled={saving} variant="contained" size="small"
                   startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <SaveIcon />}>
-            Save
+            {isNew ? 'Create' : 'Save'}
           </Button>
         </Stack>
-      </Card>
+      </Paper>
     </Box>
   );
 }
