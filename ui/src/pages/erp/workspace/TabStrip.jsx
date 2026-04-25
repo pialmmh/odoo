@@ -102,19 +102,25 @@ export default function TabStrip({ onActivate, onClose }) {
                 flex: 1,
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}
-              title={tab.title}
+              title={tab.dirty ? `${tab.title} — unsaved changes` : tab.title}
             >
+              {tab.dirty && (
+                <Box component="span" sx={{ color: 'var(--color-warning, var(--color-primary))', mr: 0.5 }}>
+                  *
+                </Box>
+              )}
               {tab.title}
             </Box>
             {!tab.pinned && (
-              <Tooltip title="Close" disableInteractive>
+              <Tooltip title={tab.dirty ? 'Close (unsaved changes)' : 'Close'} disableInteractive>
                 <IconButton
                   className="tab-close"
                   size="small"
                   onClick={(e) => { e.stopPropagation(); onClose?.(tab.key); }}
                   sx={{
                     p: '2px',
-                    opacity: isActive ? 0.7 : 0,
+                    // Dirty tabs always show the close button so the * isn't hidden behind hover.
+                    opacity: tab.dirty ? 1 : (isActive ? 0.7 : 0),
                     '&:hover': { opacity: 1, bgcolor: 'var(--color-bg-subtle)' },
                   }}
                 >

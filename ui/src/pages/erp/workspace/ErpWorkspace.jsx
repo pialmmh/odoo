@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Box, Divider } from '@mui/material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { WorkspaceProvider, useWorkspace } from './workspaceStore';
+import { WorkspaceProvider, useWorkspace, ActiveTabProvider } from './workspaceStore';
 import { TabContent, WINDOWS } from './WindowRegistry';
 import AppSearch from './AppSearch';
 import TabStrip from './TabStrip';
@@ -45,6 +45,10 @@ function WorkspaceShell() {
     }
     if (rest === 'product') {
       openTab({ kind: 'product-list', key: 'product-list', title: 'Products', params: {} });
+      return;
+    }
+    if (rest === 'product/new') {
+      openTab({ kind: 'product-new', key: 'product-new', title: 'New Product', params: {} });
       return;
     }
     const m = rest.match(/^product\/([^/]+)$/);
@@ -134,7 +138,9 @@ function WorkspaceShell() {
               key={tab.key}
               sx={{ display: tab.key === activeKey ? 'block' : 'none' }}
             >
-              <TabContent tab={tab} />
+              <ActiveTabProvider tab={tab}>
+                <TabContent tab={tab} />
+              </ActiveTabProvider>
             </Box>
           ))
         )}

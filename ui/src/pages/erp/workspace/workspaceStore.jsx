@@ -1,5 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useMemo, useCallback } from 'react';
 
+const ActiveTabCtx = createContext(null);
+
 const STORAGE_KEY = 'erp.workspace.v1';
 const MAX_TABS = 12;
 
@@ -91,6 +93,15 @@ function reducer(state, action) {
       tabs.splice(to, 0, moved);
       return { ...state, tabs };
     }
+    case 'SET_DIRTY': {
+      const { key, dirty } = action;
+      const idx = state.tabs.findIndex((t) => t.key === key);
+      if (idx < 0) return state;
+      if (!!state.tabs[idx].dirty === !!dirty) return state;
+      const tabs = state.tabs.slice();
+      tabs[idx] = { ...tabs[idx], dirty: !!dirty };
+      return { ...state, tabs };
+    }
     default:
       return state;
   }
@@ -109,13 +120,14 @@ export function WorkspaceProvider({ children }) {
   const closeOthers = useCallback((key) => dispatch({ type: 'CLOSE_OTHERS', key }), []);
   const closeAll = useCallback(() => dispatch({ type: 'CLOSE_ALL' }), []);
   const reorderTab = useCallback((from, to) => dispatch({ type: 'REORDER', from, to }), []);
+  const setTabDirty = useCallback((key, dirty) => dispatch({ type: 'SET_DIRTY', key, dirty }), []);
 
   const value = useMemo(() => ({
     tabs: state.tabs,
     activeKey: state.activeKey,
     activeTab: state.tabs.find((t) => t.key === state.activeKey) || null,
-    openTab, closeTab, activateTab, closeOthers, closeAll, reorderTab,
-  }), [state, openTab, closeTab, activateTab, closeOthers, closeAll, reorderTab]);
+    openTab, closeTab, activateTab, closeOthers, closeAll, reorderTab, setTabDirty,
+  }), [state, openTab, closeTab, activateTab, closeOthers, closeAll, reorderTab, setTabDirty]);
 
   return <WorkspaceCtx.Provider value={value}>{children}</WorkspaceCtx.Provider>;
 }
@@ -124,4 +136,21 @@ export function useWorkspace() {
   const ctx = useContext(WorkspaceCtx);
   if (!ctx) throw new Error('useWorkspace must be used inside <WorkspaceProvider>');
   return ctx;
+}
+
+/** Provider — set by ErpWorkspace per-tab so descendants know which tab they're in. */
+export function ActiveTabProvider({ tab, children }) {
+  return <ActiveTabCtx.Provider value={tab}>{children}</ActiveTabCtx.Provider>;
+}
+
+/** Hook used by tab content to mark itself dirty. Wires the boolean into the workspace tab. */
+export function useTabDirty(dirty) {
+  const tab = useContext(ActiveTabCtx);
+  const { setTabDirty } = useWorkspace();
+  useEffect(() => {
+    if (!tab) return;
+    setTabDirty(tab.key, !!dirty);
+    // Clear on unmount so a closed tab doesn't leave a stale flag if reopened.
+    return () => setTabDirty(tab.key, false);
+  }, [tab, dirty, setTabDirty]);
 }
