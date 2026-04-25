@@ -101,10 +101,6 @@ export default function Sidebar() {
     { section: 'Artifacts' },
     { text: 'Artifacts', icon: <ArtifactIcon />, path: `${base}/artifacts` },
 
-    // ── ERP (Experimental) ──
-    { section: 'ERP (Experimental)' },
-    { text: 'Product', icon: <ErpProductIcon />, path: `${base}/erp/product`, iconColor: '#94bc66' },
-
     // ── CRM (feature-flagged) ──
     ...(FEATURES.crm ? [
       { section: 'CRM' },
@@ -150,6 +146,7 @@ export default function Sidebar() {
     // ── Experimental (spike/scratch surfaces, not production) ──
     { section: 'Experimental' },
     { text: 'LiveKit Call (exp)', icon: <VoiceIcon />, path: `${base}/experiments/livekit-call`, iconColor: 'var(--color-warning)' },
+    { text: 'ERP Product (exp)', icon: <ErpProductIcon />, path: `${base}/erp/product`, iconColor: '#94bc66' },
   ];
 
   const isActive = (path) => {
