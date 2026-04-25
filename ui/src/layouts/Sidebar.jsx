@@ -40,6 +40,7 @@ import {
   MonitorHeart as NmsIcon,
   Hub as ClusterIcon,
   Schedule as TemporalIcon,
+  Inventory as ErpProductIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -92,6 +93,10 @@ export default function Sidebar() {
     // ── Artifacts ──
     { section: 'Artifacts' },
     { text: 'Artifacts', icon: <ArtifactIcon />, path: `${base}/artifacts` },
+
+    // ── ERP (Experimental) ──
+    { section: 'ERP (Experimental)' },
+    { text: 'Product', icon: <ErpProductIcon />, path: `${base}/erp/product`, iconColor: '#94bc66' },
 
     // ── CRM (feature-flagged) ──
     ...(FEATURES.crm ? [

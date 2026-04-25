@@ -22,6 +22,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/odoo/health").permitAll()
                 .requestMatchers("/api/odoo/res.partner/**").permitAll()
                 .requestMatchers("/api/odoo/platform.tenant.config/**").permitAll()
+                .requestMatchers("/api/erp/products/_smoke").permitAll()
+                .requestMatchers("/api/erp/products/_smoke/**").permitAll()
                 // EspoCRM proxy — JWT required
                 .requestMatchers("/api/crm/**").authenticated()
                 // All other API calls require a valid JWT
