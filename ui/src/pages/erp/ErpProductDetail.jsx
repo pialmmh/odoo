@@ -106,8 +106,12 @@ const NEW_PRODUCT_DEFAULTS = {
   // wrong data.
 };
 
-export default function ErpProductDetail() {
-  const { tenant, id } = useParams();
+export default function ErpProductDetail({ idOverride }) {
+  const params = useParams();
+  const { tenant } = params;
+  // Inside the workspace shell each tab carries its own id —
+  // useParams alone would resolve to the active URL for ALL alive tabs.
+  const id = idOverride ?? params.id;
   const navigate = useNavigate();
   const { error: notifyError, success: notifySuccess } = useNotification();
 

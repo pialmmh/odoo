@@ -44,8 +44,7 @@ import Permissions from './pages/party/Permissions';
 import SyncJobs from './pages/party/SyncJobs';
 import CallHost from './call/CallHost';
 import LivekitCallExp from './pages/experiments/LivekitCallExp';
-import ErpProductList from './pages/erp/ErpProductList';
-import ErpProductDetail from './pages/erp/ErpProductDetail';
+import ErpWorkspace from './pages/erp/workspace/ErpWorkspace';
 import { FEATURES } from './config/platform';
 
 /** Block access to tenant URLs the user is not authorized for */
@@ -90,9 +89,7 @@ function TenantRoutes() {
       <Route path="nms/temporal/new" element={<NmsTemporalClusterEdit />} />
       <Route path="nms/temporal/:id/edit" element={<NmsTemporalClusterEdit />} />
       <Route path="purchase" element={<Purchase />} />
-      <Route path="erp/product" element={<ErpProductList />} />
-      <Route path="erp/product/new" element={<ErpProductDetail />} />
-      <Route path="erp/product/:id" element={<ErpProductDetail />} />
+      <Route path="erp/*" element={<ErpWorkspace />} />
       <Route path="rbac" element={<RBACManagement />} />
       {FEATURES.crm && <Route path="crm/*" element={<CrmIndex />} />}
       <Route path="experiments/livekit-call" element={<LivekitCallExp />} />
