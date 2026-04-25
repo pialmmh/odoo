@@ -17,6 +17,7 @@ import { getProduct } from '../../services/erpProducts';
 import { getTabRows, saveRow, saveRowByKeys, createRow } from '../../services/erpBundle';
 import { useNotification } from '../../components/ErrorNotification';
 import { evaluateDisplayLogic } from '../../lib/displayLogic';
+import { useTabDirty } from './workspace/workspaceStore';
 import EntityHeaderCard from '../crm/EntityHeaderCard';
 import { Panel } from '../crm/LeadPanelPrimitives';
 import productWindow from './m_product_window.json';
@@ -121,6 +122,11 @@ export default function ErpProductDetail({ idOverride }) {
   const [loading, setLoading] = useState(!isNew);
   const [activeTab, setActiveTab] = useState(0);
 
+  // Aggregate dirty signal from HeaderTab + ChildTab → workspace tab title gets a "*".
+  const [headerDirty, setHeaderDirty] = useState(false);
+  const [childDirty, setChildDirty] = useState(false);
+  useTabDirty(headerDirty || childDirty);
+
   const reload = useCallback(() => {
     if (isNew) return;
     let alive = true;
@@ -192,6 +198,7 @@ export default function ErpProductDetail({ idOverride }) {
           data={null}
           isNew
           defaults={NEW_PRODUCT_DEFAULTS}
+          onDirtyChange={setHeaderDirty}
           onCreated={(created) => {
             notifySuccess('Product created');
             navigate(`/${tenant}/erp/product/${created.m_product_id}`);
@@ -283,6 +290,7 @@ export default function ErpProductDetail({ idOverride }) {
                 spec={headerTabSpec}
                 data={data}
                 recordId={Number(id)}
+                onDirtyChange={setHeaderDirty}
                 onSaved={(updated) => {
                   setData((prev) => ({ ...prev, ...mapBundleToProduct(updated) }));
                   notifySuccess('Saved');
@@ -296,6 +304,7 @@ export default function ErpProductDetail({ idOverride }) {
                   tabIndex={activeTab}
                   tabSpec={productWindow.tabs[activeTab]}
                   parentId={data?.id ?? Number(id)}
+                  onDirtyChange={setChildDirty}
                   onSavedRow={() => notifySuccess('Saved')}
                   onError={(msg) => notifyError('Save failed', msg)}
                 />
@@ -330,7 +339,7 @@ function PrevNextNav({ id, tenant }) {
 }
 
 // ── Header tab — editable form bound to the AD spec ─────────────────────────
-function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, onError }) {
+function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, onError, onDirtyChange }) {
   // Original snapshot used to compute the dirty diff.
   // For new records: defaults are the "original"; everything beyond defaults is dirty.
   const original = useMemo(() => {
@@ -357,6 +366,7 @@ function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, 
     return diff;
   }, [form, original]);
   const isDirty = Object.keys(dirty).length > 0;
+  useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
 
   const fields = useMemo(() =>
     spec.fields.filter((f) => f.isDisplayed === 'Y').sort((a, b) => a.seqno - b.seqno),
@@ -591,7 +601,7 @@ function SaveBar({ isNew, dirtyCount, saving, onSave, onDiscard }) {
 }
 
 // ── Child tab — list of rows + side drawer for editing ──────────────────────
-function ChildTab({ tabIndex, tabSpec, parentId, onSavedRow, onError }) {
+function ChildTab({ tabIndex, tabSpec, parentId, onSavedRow, onError, onDirtyChange }) {
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -599,6 +609,7 @@ function ChildTab({ tabIndex, tabSpec, parentId, onSavedRow, onError }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [editing, setEditing] = useState(null);
+  useEffect(() => { onDirtyChange?.(editing != null); }, [editing, onDirtyChange]);
 
   const cols = useMemo(() => {
     if (!tabSpec) return [];
