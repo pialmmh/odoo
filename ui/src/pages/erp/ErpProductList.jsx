@@ -72,7 +72,7 @@ export default function ErpProductList() {
             variant="contained" color="primary" size="small"
             startIcon={<AddIcon />}
             onClick={() => navigate(`/${tenant}/erp/product/new`)}
-            sx={{ fontWeight: 600 }}
+            sx={{ fontWeight: 'var(--font-weight-semibold)' }}
           >
             New Product
           </Button>
@@ -107,15 +107,15 @@ export default function ErpProductList() {
               <Table size="small" stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 700 }}>Search Key</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Category</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>UOM</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>SKU</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }} align="center">Active</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }} align="center">Stocked</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }} align="center">Sold</TableCell>
+                    <TableCell sx={{ fontWeight: 'var(--font-weight-bold)' }}>Search Key</TableCell>
+                    <TableCell sx={{ fontWeight: 'var(--font-weight-bold)' }}>Name</TableCell>
+                    <TableCell sx={{ fontWeight: 'var(--font-weight-bold)' }}>Category</TableCell>
+                    <TableCell sx={{ fontWeight: 'var(--font-weight-bold)' }}>UOM</TableCell>
+                    <TableCell sx={{ fontWeight: 'var(--font-weight-bold)' }}>Type</TableCell>
+                    <TableCell sx={{ fontWeight: 'var(--font-weight-bold)' }}>SKU</TableCell>
+                    <TableCell sx={{ fontWeight: 'var(--font-weight-bold)' }} align="center">Active</TableCell>
+                    <TableCell sx={{ fontWeight: 'var(--font-weight-bold)' }} align="center">Stocked</TableCell>
+                    <TableCell sx={{ fontWeight: 'var(--font-weight-bold)' }} align="center">Sold</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -134,7 +134,7 @@ export default function ErpProductList() {
                       sx={{ cursor: 'pointer' }}
                     >
                       <TableCell>{p.value}</TableCell>
-                      <TableCell sx={{ fontWeight: 500 }}>{p.name}</TableCell>
+                      <TableCell sx={{ fontWeight: 'var(--font-weight-medium)' }}>{p.name}</TableCell>
                       <TableCell>{p.productCategoryName || '—'}</TableCell>
                       <TableCell>{p.uomName || '—'}</TableCell>
                       <TableCell>

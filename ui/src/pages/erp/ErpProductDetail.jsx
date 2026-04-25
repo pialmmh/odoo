@@ -607,9 +607,9 @@ function ChildTab({ tabIndex, tabSpec, parentId, onSavedRow, onError }) {
           <TableHead>
             <TableRow>
               {cols.map((col) => (
-                <TableCell key={col.columnName} sx={{ fontWeight: 700 }}>{col.label}</TableCell>
+                <TableCell key={col.columnName} sx={{ fontWeight: 'var(--font-weight-bold)' }}>{col.label}</TableCell>
               ))}
-              <TableCell sx={{ fontWeight: 700, width: 60 }} align="right">Edit</TableCell>
+              <TableCell sx={{ fontWeight: 'var(--font-weight-bold)', width: 60 }} align="right">Edit</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -703,7 +703,7 @@ function ChildRowEditDrawer({ open, row, compositeCols, singleIdCol, tabIndex, t
     <Drawer open={open} anchor="right" onClose={onClose}
             PaperProps={{ sx: { width: { xs: '100%', sm: 560 } } }}>
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
-        <Typography variant="h6" sx={{ flex: 1, fontWeight: 700 }}>
+        <Typography variant="h6" sx={{ flex: 1, fontWeight: 'var(--font-weight-bold)' }}>
           Edit {tabSpec.name}
         </Typography>
         <IconButton onClick={onClose}><CloseIcon /></IconButton>
