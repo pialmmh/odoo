@@ -208,7 +208,7 @@ export default function ErpProductDetail({ idOverride }) {
       ) : (
         <Box sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: '220px minmax(0, 1fr)' },
+          gridTemplateColumns: { xs: '1fr', md: '150px minmax(0, 1fr)' },
           gap: 2,
           alignItems: 'start',
         }}>
@@ -249,6 +249,10 @@ export default function ErpProductDetail({ idOverride }) {
                   justifyContent: 'flex-start',
                   textAlign: 'left',
                   minHeight: 'var(--space-8)',
+                  // Allow long labels (e.g. "Reserved Quantity Log") to wrap to a second line.
+                  whiteSpace: 'normal',
+                  lineHeight: 'var(--line-height-tight)',
+                  maxWidth: '100%',
                   py: 0.75,
                   pl: 'var(--space-3)',
                   pr: 'var(--space-2)',
