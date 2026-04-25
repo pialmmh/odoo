@@ -204,22 +204,31 @@ export default function ErpProductDetail() {
           <Paper variant="outlined" sx={{
             borderRadius: 1.5, overflow: 'hidden',
             position: { md: 'sticky' }, top: { md: 'var(--space-4)' },
-            // Cap height so the tab strip stays inside the viewport when there
-            // are many tabs; the inner <Tabs scrollable> shows arrow buttons.
             maxHeight: { md: '80vh' },
             display: 'flex', flexDirection: 'column',
-            bgcolor: 'background.default',
+            bgcolor: 'background.paper',
           }}>
             <Tabs
               value={activeTab}
               onChange={(_, v) => setActiveTab(v)}
               orientation="vertical"
               variant="scrollable"
+              scrollButtons={false}
               sx={{
                 flex: 1, minHeight: 0,
-                // Right-edge MUI indicator is redundant — we use a left
-                // accent stripe on the selected tab instead.
+                // Hidden — selection is signalled by the left accent stripe.
                 '& .MuiTabs-indicator': { display: 'none' },
+                // Slim native scrollbar for the tab list overflow.
+                '& .MuiTabs-scroller': {
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'var(--color-border) transparent',
+                  '&::-webkit-scrollbar': { width: '6px' },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: 'var(--color-border)',
+                    borderRadius: 'var(--radius-full)',
+                  },
+                  '&::-webkit-scrollbar-track': { background: 'transparent' },
+                },
                 '& .MuiTab-root': {
                   textTransform: 'none',
                   fontSize: 'var(--font-size-sm)',
@@ -229,12 +238,14 @@ export default function ErpProductDetail() {
                   justifyContent: 'flex-start',
                   textAlign: 'left',
                   minHeight: 'var(--space-8)',
-                  py: 1,
+                  py: 0.75,
                   pl: 'var(--space-3)',
                   pr: 'var(--space-2)',
                   borderLeft: '3px solid transparent',
+                  borderBottom: '1px solid var(--color-border-subtle)',
                   transition:
                     'background-color var(--transition-fast), color var(--transition-fast)',
+                  '&:last-of-type': { borderBottom: 'none' },
                   '&:hover': {
                     backgroundColor: 'var(--color-bg-muted)',
                     color: 'var(--color-text-primary)',
@@ -244,6 +255,9 @@ export default function ErpProductDetail() {
                     fontWeight: 'var(--font-weight-semibold)',
                     backgroundColor: 'var(--color-primary-bg)',
                     borderLeftColor: 'var(--color-primary)',
+                  },
+                  '&.Mui-selected:hover': {
+                    backgroundColor: 'var(--color-primary-bg)',
                   },
                   '&.Mui-focusVisible': {
                     backgroundColor: 'var(--color-bg-muted)',
