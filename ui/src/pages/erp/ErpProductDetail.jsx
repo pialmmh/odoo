@@ -626,6 +626,17 @@ function ChildTab({ tabIndex, tabSpec, parentId, onSavedRow, onError }) {
     isComposite
       ? compositeCols.every((c) => r[c.toLowerCase()] != null)
       : !!(singleIdCol && r[singleIdCol]);
+  // Active = the row currently being edited in the side drawer.
+  const isRowActive = (r) => {
+    if (!editing) return false;
+    if (isComposite) {
+      return compositeCols.every((c) => {
+        const k = c.toLowerCase();
+        return r[k] != null && r[k] === editing[k];
+      });
+    }
+    return singleIdCol && r[singleIdCol] != null && r[singleIdCol] === editing[singleIdCol];
+  };
 
   return (
     <Box>
@@ -640,21 +651,54 @@ function ChildTab({ tabIndex, tabSpec, parentId, onSavedRow, onError }) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((r, i) => (
-              <TableRow key={i} hover sx={{ cursor: isRowEditable(r) ? 'pointer' : 'default' }}
-                        onClick={() => isRowEditable(r) && setEditing(r)}>
-                {cols.map((col) => (
-                  <TableCell key={col.columnName}>
-                    {formatCell(r[col.columnName.toLowerCase()])}
+            {rows.map((r, i) => {
+              const editable = isRowEditable(r);
+              const active = isRowActive(r);
+              return (
+                <TableRow
+                  key={i}
+                  selected={active}
+                  onClick={() => editable && setEditing(r)}
+                  sx={{
+                    cursor: editable ? 'pointer' : 'default',
+                    transition: 'background-color var(--transition-fast)',
+                    // Tab-like states — same vocabulary as the vertical tab strip.
+                    '&:hover': editable ? {
+                      backgroundColor: active
+                        ? 'var(--color-primary-bg)'
+                        : 'var(--color-bg-muted)',
+                    } : undefined,
+                    // Selected (= drawer open editing this row) overrides
+                    // MUI's default selected pink with a primary tint and a
+                    // left accent stripe drawn on the first cell.
+                    '&.Mui-selected': {
+                      backgroundColor: 'var(--color-primary-bg)',
+                    },
+                    '&.Mui-selected:hover': {
+                      backgroundColor: 'var(--color-primary-bg)',
+                    },
+                    '& > td:first-of-type': {
+                      borderLeft: '3px solid transparent',
+                    },
+                    '&.Mui-selected > td:first-of-type': {
+                      borderLeft: '3px solid var(--color-primary)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                    },
+                  }}
+                >
+                  {cols.map((col) => (
+                    <TableCell key={col.columnName}>
+                      {formatCell(r[col.columnName.toLowerCase()])}
+                    </TableCell>
+                  ))}
+                  <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                    <IconButton size="small" disabled={!editable} onClick={() => setEditing(r)}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
                   </TableCell>
-                ))}
-                <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                  <IconButton size="small" disabled={!isRowEditable(r)} onClick={() => setEditing(r)}>
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
