@@ -18,8 +18,12 @@ import productWindow from './m_product_window.json';
 // land via the iDempiere REST plugin.
 const TAB_ORDER = productWindow.tabs.map((t) => t.name);
 
-export default function ErpProductDetail() {
-  const { tenant, id } = useParams();
+export default function ErpProductDetail({ idOverride }) {
+  const params = useParams();
+  const { tenant } = params;
+  // When mounted inside the workspace shell each tab carries its own id —
+  // useParams alone would resolve to the active URL for ALL alive tabs.
+  const id = idOverride ?? params.id;
   const navigate = useNavigate();
   const { error: notifyError } = useNotification();
 

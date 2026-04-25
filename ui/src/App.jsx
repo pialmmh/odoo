@@ -30,8 +30,7 @@ import NmsTemporalClusterEdit from './pages/nms/NmsTemporalClusterEdit';
 import RBACManagement from './pages/RBACManagement';
 import Purchase from './pages/Purchase';
 import CrmIndex from './pages/crm/CrmIndex';
-import ErpProductList from './pages/erp/ErpProductList';
-import ErpProductDetail from './pages/erp/ErpProductDetail';
+import ErpWorkspace from './pages/erp/workspace/ErpWorkspace';
 import { FEATURES } from './config/platform';
 
 /** Block access to tenant URLs the user is not authorized for */
@@ -76,8 +75,7 @@ function TenantRoutes() {
       <Route path="nms/temporal/new" element={<NmsTemporalClusterEdit />} />
       <Route path="nms/temporal/:id/edit" element={<NmsTemporalClusterEdit />} />
       <Route path="purchase" element={<Purchase />} />
-      <Route path="erp/product" element={<ErpProductList />} />
-      <Route path="erp/product/:id" element={<ErpProductDetail />} />
+      <Route path="erp/*" element={<ErpWorkspace />} />
       <Route path="rbac" element={<RBACManagement />} />
       {FEATURES.crm && <Route path="crm/*" element={<CrmIndex />} />}
       {isSuper && <Route path="tenants" element={<Tenants />} />}
