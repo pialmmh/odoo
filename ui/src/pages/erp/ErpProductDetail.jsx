@@ -18,11 +18,48 @@ import { getTabRows, saveRow, saveRowByKeys, createRow } from '../../services/er
 import { useNotification } from '../../components/ErrorNotification';
 import { evaluateDisplayLogic } from '../../lib/displayLogic';
 import EntityHeaderCard from '../crm/EntityHeaderCard';
+import { Panel } from '../crm/LeadPanelPrimitives';
 import productWindow from './m_product_window.json';
 
 const PRODUCT_WINDOW_ID = 140;
 const TAB_ORDER = productWindow.tabs.map((t) => t.name);
 const HEADER_TAB_INDEX = 0;
+
+// Logical sections for the Product header tab. Each entry becomes a
+// vertical Panel; fields not listed fall under "Other". Order matters —
+// cards render top to bottom in the order declared here.
+const HEADER_GROUPS = [
+  { id: 'identity', title: 'Identity', columns: [
+    'Value', 'Name', 'Description', 'Help', 'DocumentNote',
+    'UPC', 'SKU', 'VersionNo', 'IsActive', 'IsSummary',
+    'AD_Client_ID', 'AD_Org_ID',
+  ]},
+  { id: 'classification', title: 'Classification', columns: [
+    'M_Product_Category_ID', 'C_TaxCategory_ID', 'C_UOM_ID',
+    'ProductType', 'SalesRep_ID', 'C_RevenueRecognition_ID',
+    'R_MailText_ID', 'M_PartType_ID', 'Classification',
+    'Group1', 'Group2',
+  ]},
+  { id: 'flags', title: 'Inventory & Flags', columns: [
+    'IsStocked', 'IsSold', 'IsPurchased', 'IsManufactured',
+    'IsPhantom', 'IsKanban', 'IsDropShip', 'IsOwnBox',
+    'IsExcludeAutoDelivery', 'IsBOM', 'IsVerified', 'Processing',
+    'IsAutoProduce', 'IsBOMPriceOverride',
+    'IsInvoicePrintDetails', 'IsPickListPrintDetails',
+    'IsWebStoreFeatured', 'IsSelfService', 'M_Locator_ID',
+  ]},
+  { id: 'dimensions', title: 'Dimensions & Weight', columns: [
+    'Weight', 'Volume', 'ShelfWidth', 'ShelfHeight', 'ShelfDepth',
+    'UnitsPerPallet', 'UnitsPerPack',
+    'CustomsTariffNumber', 'M_FreightCategory_ID',
+  ]},
+  { id: 'lifecycle', title: 'Lifecycle & Attributes', columns: [
+    'Discontinued', 'DiscontinuedAt', 'S_ExpenseType_ID', 'S_Resource_ID',
+    'GuaranteeDays', 'GuaranteeDaysMin',
+    'M_AttributeSet_ID', 'M_AttributeSetInstance_ID',
+    'ImageURL', 'DescriptionURL', 'CopyFrom', 'LowLevel',
+  ]},
+];
 
 // Composite primary keys for tabs in the Product window. For tables not
 // listed here, we use the single-PK URL form ({Table}_ID).
@@ -144,69 +181,84 @@ export default function ErpProductDetail() {
         </Box>
       )}
 
-      {/* ── Tabs ─────────────────────────────────────────────────── */}
-      <Paper variant="outlined" sx={{ mb: 2, borderRadius: 1.5, overflow: 'hidden' }}>
-        {!isNew && (
-          <Tabs
-            value={activeTab}
-            onChange={(_, v) => setActiveTab(v)}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.default' }}
-          >
-            {TAB_ORDER.map((name) => (
-              <Tab
-                key={name}
-                label={name}
-                sx={{
+      {/* ── Tabs (vertical, left) + content (right) ──────────────── */}
+      {isNew ? (
+        <HeaderTab
+          spec={headerTabSpec}
+          data={null}
+          isNew
+          defaults={NEW_PRODUCT_DEFAULTS}
+          onCreated={(created) => {
+            notifySuccess('Product created');
+            navigate(`/${tenant}/erp/product/${created.m_product_id}`);
+          }}
+          onError={(msg) => notifyError('Create failed', msg)}
+        />
+      ) : (
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '220px minmax(0, 1fr)' },
+          gap: 2,
+          alignItems: 'start',
+        }}>
+          <Paper variant="outlined" sx={{
+            borderRadius: 1.5, overflow: 'hidden',
+            position: { md: 'sticky' }, top: { md: 'var(--space-4)' },
+          }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_, v) => setActiveTab(v)}
+              orientation="vertical"
+              variant="scrollable"
+              sx={{
+                borderRight: 1, borderColor: 'divider',
+                bgcolor: 'background.default',
+                '& .MuiTab-root': {
                   textTransform: 'none',
                   fontWeight: 'var(--font-weight-semibold)',
                   fontSize: 'var(--font-size-sm)',
+                  alignItems: 'flex-start',
+                  textAlign: 'left',
+                  minHeight: 'var(--space-8)',
+                  py: 1, px: 2,
+                },
+              }}
+            >
+              {TAB_ORDER.map((name) => <Tab key={name} label={name} />)}
+            </Tabs>
+          </Paper>
+
+          <Box sx={{ minWidth: 0 /* let inner content shrink past 'auto' */ }}>
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                <CircularProgress size={28} />
+              </Box>
+            ) : activeTab === HEADER_TAB_INDEX ? (
+              <HeaderTab
+                spec={headerTabSpec}
+                data={data}
+                recordId={Number(id)}
+                onSaved={(updated) => {
+                  setData((prev) => ({ ...prev, ...mapBundleToProduct(updated) }));
+                  notifySuccess('Saved');
                 }}
+                onError={(msg) => notifyError('Save failed', msg)}
               />
-            ))}
-          </Tabs>
-        )}
-        <Box sx={{ p: 2 }}>
-          {isNew ? (
-            <HeaderTab
-              spec={headerTabSpec}
-              data={null}
-              isNew
-              defaults={NEW_PRODUCT_DEFAULTS}
-              onCreated={(created) => {
-                notifySuccess('Product created');
-                navigate(`/${tenant}/erp/product/${created.m_product_id}`);
-              }}
-              onError={(msg) => notifyError('Create failed', msg)}
-            />
-          ) : loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-              <CircularProgress size={28} />
-            </Box>
-          ) : activeTab === HEADER_TAB_INDEX ? (
-            <HeaderTab
-              spec={headerTabSpec}
-              data={data}
-              recordId={Number(id)}
-              onSaved={(updated) => {
-                setData((prev) => ({ ...prev, ...mapBundleToProduct(updated) }));
-                notifySuccess('Saved');
-              }}
-              onError={(msg) => notifyError('Save failed', msg)}
-            />
-          ) : (
-            <ChildTab
-              key={activeTab}
-              tabIndex={activeTab}
-              tabSpec={productWindow.tabs[activeTab]}
-              parentId={data?.id ?? Number(id)}
-              onSavedRow={() => notifySuccess('Saved')}
-              onError={(msg) => notifyError('Save failed', msg)}
-            />
-          )}
+            ) : (
+              <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                <ChildTab
+                  key={activeTab}
+                  tabIndex={activeTab}
+                  tabSpec={productWindow.tabs[activeTab]}
+                  parentId={data?.id ?? Number(id)}
+                  onSavedRow={() => notifySuccess('Saved')}
+                  onError={(msg) => notifyError('Save failed', msg)}
+                />
+              </Paper>
+            )}
+          </Box>
         </Box>
-      </Paper>
+      )}
     </Box>
   );
 }
@@ -266,6 +318,29 @@ function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, 
     [spec]
   );
 
+  // Bucket fields by HEADER_GROUPS in declaration order. Anything not
+  // explicitly mapped goes into a trailing "Other" panel — visible
+  // signal that we missed a column instead of silently dropping it.
+  const grouped = useMemo(() => {
+    const colToGroup = new Map();
+    for (const g of HEADER_GROUPS) {
+      for (const c of g.columns) colToGroup.set(c, g.id);
+    }
+    const buckets = new Map(HEADER_GROUPS.map((g) => [g.id, []]));
+    const other = [];
+    for (const f of fields) {
+      const gid = colToGroup.get(f.columnName);
+      if (gid) buckets.get(gid).push(f);
+      else other.push(f);
+    }
+    // Each group keeps its declared column order so we don't fight the AD seqno.
+    for (const g of HEADER_GROUPS) {
+      const order = new Map(g.columns.map((c, i) => [c, i]));
+      buckets.get(g.id).sort((a, b) => (order.get(a.columnName) ?? 0) - (order.get(b.columnName) ?? 0));
+    }
+    return { buckets, other };
+  }, [fields]);
+
   const onChange = (col, v) => setForm((s) => ({ ...s, [col]: v }));
   const onDiscard = () => setForm(original);
 
@@ -294,26 +369,43 @@ function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, 
 
   if (!isNew && !data) return null;
 
+  // Render one Panel per group. Each panel uses a 2-column inner grid so
+  // fields stay readable instead of stretching across the full page.
+  const renderField = (f) => {
+    const visible = !f.displayLogic || evaluateDisplayLogic(f.displayLogic, form);
+    if (!visible) return null;
+    return (
+      <Grid item xs={12} sm={6} key={f.columnName}>
+        <FieldRenderer
+          field={f}
+          value={form[f.columnName]}
+          lookup={isNew ? null : readLookup(data, f.columnName)}
+          onChange={(v) => onChange(f.columnName, v)}
+        />
+      </Grid>
+    );
+  };
+
   return (
     <>
-      <Grid container spacing={1.5}>
-        {fields.map((f) => {
-          const visible = !f.displayLogic || evaluateDisplayLogic(f.displayLogic, form);
-          if (!visible) return null;
-          const span = Math.min(12, Math.max(2, f.columnSpan || 6));
-          const md = span * 2;
-          return (
-            <Grid item xs={12} md={md} key={f.columnName}>
-              <FieldRenderer
-                field={f}
-                value={form[f.columnName]}
-                lookup={isNew ? null : readLookup(data, f.columnName)}
-                onChange={(v) => onChange(f.columnName, v)}
-              />
+      {HEADER_GROUPS.map((g) => {
+        const items = grouped.buckets.get(g.id);
+        if (!items || items.length === 0) return null;
+        return (
+          <Panel key={g.id} title={g.title}>
+            <Grid container spacing={2}>
+              {items.map(renderField)}
             </Grid>
-          );
-        })}
-      </Grid>
+          </Panel>
+        );
+      })}
+      {grouped.other.length > 0 && (
+        <Panel title="Other">
+          <Grid container spacing={2}>
+            {grouped.other.map(renderField)}
+          </Grid>
+        </Panel>
+      )}
 
       {/* Sticky Save / Discard bar — always present in new mode. */}
       {(isDirty || isNew) && (
