@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   makeStyles, mergeClasses, tokens, Text, TabList, Tab, Spinner, Badge,
@@ -9,10 +9,11 @@ import {
 } from '@fluentui/react-components';
 import {
   ArrowClockwise20Regular, Save20Regular, Dismiss20Regular, Edit20Regular,
-  ChevronLeft20Regular, ChevronRight20Regular,
+  ChevronLeft20Regular, ChevronRight20Regular, Delete20Regular, Search20Regular,
 } from '@fluentui/react-icons';
 import {
-  getBPartner, getCaps, saveBPartner, createBPartner,
+  getBPartner, getCaps, saveBPartner, createBPartner, deleteBPartner,
+  getFieldLookup,
 } from '../../services/bpartners';
 import { getTabRows, saveRow, saveRowByKeys } from '../../services/erpBundle';
 import { useNotification } from '../../components/ErrorNotification';
@@ -365,6 +366,12 @@ export default function ErpBPartnerDetail({ idOverride }) {
   const id = idOverride ?? params.id;
   const navigate = useNavigate();
   const { error: notifyError, success: notifySuccess } = useNotification();
+  // useNotification returns new function refs each render; capture in a ref so
+  // they don't destabilise reload's deps and trip a render→reload loop.
+  const notifyErrorRef = useRef(notifyError);
+  const notifySuccessRef = useRef(notifySuccess);
+  notifyErrorRef.current = notifyError;
+  notifySuccessRef.current = notifySuccess;
 
   const isNew = id === 'new' || id == null;
 
@@ -389,10 +396,10 @@ export default function ErpBPartnerDetail({ idOverride }) {
     setLoading(true);
     getBPartner(id)
       .then((d) => { if (alive) setData(d); })
-      .catch((e) => notifyError('Failed to load partner', e?.response?.data?.message || e.message))
+      .catch((e) => notifyErrorRef.current('Failed to load partner', e?.response?.data?.message || e.message))
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [id, isNew, notifyError]);
+  }, [id, isNew]);
 
   useEffect(() => reload(), [reload]);
 
@@ -401,12 +408,37 @@ export default function ErpBPartnerDetail({ idOverride }) {
     []
   );
 
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const onDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteBPartner(Number(id));
+      notifySuccess('Business partner deleted');
+      navigate(`/${tenant}/erp/bpartner`);
+    } catch (e) {
+      const status = e?.response?.status;
+      const msg = status === 422
+        ? (e?.response?.data?.message || 'Cannot delete: referenced by other records.')
+        : (e?.response?.data?.message || e.message);
+      notifyError('Delete failed', msg);
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
   const headerActions = !isNew && (
     <div style={{ display: 'flex', gap: '4px' }}>
       <PrevNextNav id={id} tenant={tenant} />
       <Tooltip content="Refresh" relationship="label" withArrow={false}>
         <Button appearance="subtle" size="small" icon={<ArrowClockwise20Regular />} onClick={reload} />
       </Tooltip>
+      {writesEnabled && (
+        <Tooltip content="Delete" relationship="label" withArrow={false}>
+          <Button appearance="subtle" size="small" icon={<Delete20Regular />} onClick={() => setConfirmDelete(true)} disabled={deleting} />
+        </Tooltip>
+      )}
     </div>
   );
 
@@ -431,6 +463,25 @@ export default function ErpBPartnerDetail({ idOverride }) {
           <MessageBarBody>Editing is temporarily unavailable.</MessageBarBody>
         </MessageBar>
       )}
+
+      <Dialog open={confirmDelete} onOpenChange={(_, d) => { if (!d.open) setConfirmDelete(false); }}>
+        <DialogSurface style={{ maxWidth: 420 }}>
+          <DialogBody>
+            <DialogTitle>Delete this business partner?</DialogTitle>
+            <DialogContent>
+              <Text>This action cannot be undone. References from other records will block the deletion.</Text>
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" size="small" onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancel</Button>
+              <Button appearance="primary" size="small" onClick={onDelete}
+                      icon={deleting ? <Spinner size="tiny" /> : <Delete20Regular />} disabled={deleting}>
+                Delete
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+
 
       {!isNew && data && (
         <div className={styles.chipStrip}>
@@ -727,21 +778,10 @@ function FieldRenderer({ field, value, lookup, onChange }) {
             || ref === 'Locator (WH)' || ref === 'Product Attribute';
 
   if (isFk) {
-    const display = lookup || (value != null ? `#${value}` : '');
     return (
       <div style={{ gridColumn: 'span 4' }}>
-        <Field label={labelText} hint={editable ? null : 'Read-only'} size="small">
-          <Input
-            size="small"
-            value={display}
-            readOnly
-            contentAfter={editable ? (
-              <Tooltip content="Picker coming soon" relationship="label" withArrow={false}>
-                <Edit20Regular style={{ opacity: 0.5 }} />
-              </Tooltip>
-            ) : null}
-          />
-        </Field>
+        <FkField field={field} value={value} lookupDisplay={lookup} editable={editable}
+                 labelText={labelText} onChange={onChange} />
       </div>
     );
   }
@@ -1121,12 +1161,16 @@ function readLookup(data, columnName) {
   }
 }
 
+// The proxy already returns camelCase (cBPartnerId, isActive, …); legacy
+// erpBundle calls returned snake_case. Detect and pass-through if already
+// camelCase, otherwise camelize. Either way we get a flat object the detail
+// page can spread over its data state to surface callout side-effects.
 function mapBundleToBPartner(row) {
   if (!row) return {};
+  const looksCamel = Object.keys(row).some(k => /[A-Z]/.test(k) || k === 'id');
+  if (looksCamel) return row;
   const out = {};
-  for (const k of Object.keys(row)) {
-    out[camelize(k)] = row[k];
-  }
+  for (const k of Object.keys(row)) out[camelize(k)] = row[k];
   return out;
 }
 
@@ -1156,4 +1200,106 @@ function shallowEqual(a, b) {
   if (a === b) return true;
   if (a == null || b == null) return false;
   return String(a) === String(b);
+}
+
+// FK input + picker modal. Read-only Input shows the resolved display value;
+// click opens a dialog that hits /erp-api/window/{wid}/tab/{n}/field/{col}/lookup
+// (which honours AD_Val_Rule + IsParent in MLookup). Selecting a row sets the
+// raw ID via onChange, then the next save cycle gets the new id.
+function FkField({ field, value, lookupDisplay, editable, labelText, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const display = lookupDisplay || (value != null ? `#${value}` : '');
+
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    setLoading(true);
+    getFieldLookup(BPARTNER_WINDOW_ID, HEADER_TAB_INDEX, field.columnName, search)
+      .then((rows) => { if (alive) setItems(rows); })
+      .catch(() => { if (alive) setItems([]); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [open, field.columnName, search]);
+
+  const onSelect = (id) => {
+    onChange(id);
+    setOpen(false);
+    setSearch('');
+  };
+  const onClear = () => {
+    onChange(null);
+    setOpen(false);
+    setSearch('');
+  };
+
+  return (
+    <>
+      <Field label={labelText} hint={editable ? null : 'Read-only'} size="small">
+        <Input
+          size="small"
+          value={display}
+          readOnly
+          onClick={() => editable && setOpen(true)}
+          style={editable ? { cursor: 'pointer' } : undefined}
+          contentAfter={editable ? (
+            <Tooltip content="Open picker" relationship="label" withArrow={false}>
+              <Search20Regular
+                style={{ opacity: 0.7, cursor: 'pointer' }}
+                onClick={(e) => { e.stopPropagation(); setOpen(true); }}
+              />
+            </Tooltip>
+          ) : null}
+        />
+      </Field>
+      <Dialog open={open} onOpenChange={(_, d) => { if (!d.open) setOpen(false); }}>
+        <DialogSurface style={{ maxWidth: 560 }}>
+          <DialogBody>
+            <DialogTitle
+              action={<Button appearance="subtle" size="small" icon={<Dismiss20Regular />} onClick={() => setOpen(false)} />}
+            >
+              Select {field.label}
+            </DialogTitle>
+            <DialogContent>
+              <Input
+                size="small"
+                placeholder="Search…"
+                value={search}
+                onChange={(_, d) => setSearch(d.value)}
+                contentBefore={<Search20Regular />}
+                style={{ width: '100%', marginBottom: tokens.spacingVerticalS }}
+              />
+              <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
+                {loading ? (
+                  <div style={{ padding: tokens.spacingVerticalL, textAlign: 'center' }}><Spinner size="small" /></div>
+                ) : items.length === 0 ? (
+                  <div style={{ padding: tokens.spacingVerticalL, textAlign: 'center', color: tokens.colorNeutralForeground3 }}>No matches</div>
+                ) : (
+                  <Table size="small">
+                    <TableBody>
+                      {items.map((it) => (
+                        <TableRow
+                          key={it.id}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => onSelect(it.id)}
+                        >
+                          <TableCell>{it.name || it.value || `#${it.id}`}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="subtle" size="small" onClick={onClear} disabled={value == null}>Clear</Button>
+              <Button appearance="secondary" size="small" onClick={() => setOpen(false)}>Cancel</Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+    </>
+  );
 }

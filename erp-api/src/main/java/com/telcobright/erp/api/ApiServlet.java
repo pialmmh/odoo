@@ -5,13 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.adempiere.util.ServerContext;
+import org.compiere.model.GridField;
 import org.compiere.model.GridFieldVO;
+import org.compiere.model.GridTab;
 import org.compiere.model.GridTabVO;
+import org.compiere.model.GridWindow;
 import org.compiere.model.GridWindowVO;
 import org.compiere.model.MColumn;
 import org.compiere.model.MLookup;
 import org.compiere.model.MLookupFactory;
 import org.compiere.model.MLookupInfo;
+import org.compiere.model.MQuery;
 import org.compiere.model.MTable;
 import org.compiere.model.PO;
 import org.compiere.model.POInfo;
@@ -78,8 +82,24 @@ public class ApiServlet extends HttpServlet {
             Pattern.compile("^/window/(\\d+)/tab/(\\d+)/row$");
     private static final Pattern P_LOOKUP =
             Pattern.compile("^/lookup/(\\d+)$");
+    /** Per-field FK picker — resolves the right MLookup from the field's
+     *  AD column metadata (Table Direct, Table, Search, List, AD_Val_Rule). */
+    private static final Pattern P_FIELD_LOOKUP =
+            Pattern.compile("^/window/(\\d+)/tab/(\\d+)/field/([A-Za-z0-9_]+)/lookup$");
 
     private final ObjectMapper mapper = new ObjectMapper();
+    /** Per-request unique WindowNo so context entries written by GridTab
+     *  for one request can't bleed into another. iDempiere keys ctx as
+     *  {@code WindowNo|ColumnName}, so two concurrent requests sharing
+     *  WindowNo would corrupt each other's defaults / display logic. */
+    private final java.util.concurrent.atomic.AtomicInteger windowNoSeq =
+            new java.util.concurrent.atomic.AtomicInteger(20000);
+    private int nextWindowNo() {
+        // iDempiere reserves low numbers for real ZK windows; start well above.
+        int n = windowNoSeq.incrementAndGet();
+        if (n > 99999) { windowNoSeq.set(20000); n = windowNoSeq.incrementAndGet(); }
+        return n;
+    }
 
     /** AD_Reference.Name by displayType — what ZK / Info windows / the AD
      *  spec call each ref. {@link DisplayType#getDescription} returns the
@@ -185,6 +205,14 @@ public class ApiServlet extends HttpServlet {
                 writeJson(resp, lookupRows(refId, q));
                 return;
             }
+            if ((m = P_FIELD_LOOKUP.matcher(path)).matches()) {
+                int windowId = Integer.parseInt(m.group(1));
+                int tabIndex = Integer.parseInt(m.group(2));
+                String columnName = m.group(3);
+                String q = req.getParameter("q");
+                writeJson(resp, fieldLookup(windowId, tabIndex, columnName, q));
+                return;
+            }
             error(resp, 404, "not_found", "Unknown path: " + path);
         } catch (IllegalArgumentException e) {
             error(resp, 400, "bad_request", e.getMessage());
@@ -192,6 +220,16 @@ public class ApiServlet extends HttpServlet {
             log.severe("erp-api GET " + path + " failed: " + e);
             error(resp, 500, "internal_error", e.getMessage());
         }
+    }
+
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // HttpServlet doesn't dispatch PATCH; treat it as PUT (idempotent partial update).
+        if ("PATCH".equalsIgnoreCase(req.getMethod())) {
+            doPut(req, resp);
+            return;
+        }
+        super.service(req, resp);
     }
 
     @Override
@@ -211,11 +249,30 @@ public class ApiServlet extends HttpServlet {
             Map<String, Object> changeMap = new LinkedHashMap<>();
             changes.fields().forEachRemaining(e -> changeMap.put(e.getKey(), jsonToJava(e.getValue())));
             resp.setStatus(HttpServletResponse.SC_CREATED);
-            writeJson(resp, createPo(windowId, tabIndex, changeMap));
+            writeJson(resp, gridCreate(windowId, tabIndex, changeMap));
         } catch (PoSaveException e) {
             error(resp, 422, "save_failed", e.getMessage());
         } catch (Exception e) {
             log.severe("erp-api POST " + path + " failed: " + e);
+            error(resp, 500, "internal_error", e.getMessage());
+        }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String path = req.getPathInfo();
+        if (path == null) path = "";
+        try {
+            Matcher m = P_ROW.matcher(path);
+            if (!m.matches()) { error(resp, 404, "not_found", "Unknown path: " + path); return; }
+            int windowId = Integer.parseInt(m.group(1));
+            int tabIndex = Integer.parseInt(m.group(2));
+            long recordId = Long.parseLong(m.group(3));
+            writeJson(resp, gridDelete(windowId, tabIndex, recordId));
+        } catch (PoSaveException e) {
+            error(resp, 422, "delete_failed", e.getMessage());
+        } catch (Exception e) {
+            log.severe("erp-api DELETE " + path + " failed: " + e);
             error(resp, 500, "internal_error", e.getMessage());
         }
     }
@@ -236,7 +293,7 @@ public class ApiServlet extends HttpServlet {
                 int windowId = Integer.parseInt(m.group(1));
                 int tabIndex = Integer.parseInt(m.group(2));
                 long recordId = Long.parseLong(m.group(3));
-                writeJson(resp, savePo(windowId, tabIndex, recordId, null, changeMap));
+                writeJson(resp, gridSave(windowId, tabIndex, recordId, null, changeMap));
                 return;
             }
             if ((m = P_ROW_BY_KEYS.matcher(path)).matches()) {
@@ -248,7 +305,7 @@ public class ApiServlet extends HttpServlet {
                 }
                 Map<String, Object> keyMap = new LinkedHashMap<>();
                 keys.fields().forEachRemaining(e -> keyMap.put(e.getKey(), jsonToJava(e.getValue())));
-                writeJson(resp, savePo(windowId, tabIndex, 0L, keyMap, changeMap));
+                writeJson(resp, gridSave(windowId, tabIndex, 0L, keyMap, changeMap));
                 return;
             }
             error(resp, 404, "not_found", "Unknown path: " + path);
@@ -661,6 +718,285 @@ public class ApiServlet extends HttpServlet {
             try { trx.close(); } catch (Exception ignore) { }
             restoreCtx(prevCtx);
         }
+    }
+
+    /** Per-field picker rows. Resolves the field's actual lookup definition
+     *  (Table Direct uses parent table's Identifier columns; Table uses the
+     *  configured AD_Reference_Value_ID; List uses the AD_Reference list;
+     *  Search behaves like Table). Honours AD_Val_Rule and IsParent flags. */
+    private ObjectNode fieldLookup(int windowId, int tabIndex, String columnName, String q) throws Exception {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        int windowNo = nextWindowNo();
+        try {
+            GridWindowVO winVO = GridWindowVO.create(ctx, windowNo, windowId);
+            GridTabVO tabVO = winVO.Tabs.get(tabIndex);
+            GridFieldVO fv = null;
+            for (GridFieldVO f : tabVO.getFields()) {
+                if (columnName.equalsIgnoreCase(f.ColumnName)) { fv = f; break; }
+            }
+            if (fv == null) throw new IllegalArgumentException("Unknown column on tab: " + columnName);
+            int dt = fv.displayType;
+            MLookup lookup = MLookupFactory.get(ctx, windowNo, fv.AD_Column_ID, dt,
+                    Env.getLanguage(ctx), fv.ColumnName, fv.AD_Reference_Value_ID,
+                    fv.IsParent, fv.ValidationCode);
+            if (lookup == null) throw new IllegalStateException("No lookup for column " + columnName);
+            MLookupInfo info = lookup.getLookupInfo();
+            if (info == null || info.Query == null) {
+                ObjectNode empty = mapper.createObjectNode();
+                empty.set("items", mapper.createArrayNode());
+                return empty;
+            }
+            // Filter by display name if q given. MLookupInfo SQL has a standard
+            // column order: Key, Value, DisplayName(s), IsActive — same as
+            // lookupRows. Inject WHERE clause before ORDER BY.
+            String sql = info.Query;
+            if (q != null && !q.isBlank()) {
+                String safe = q.replace("'", "''").trim();
+                String filter = " UPPER(" + info.DisplayColumn + ") LIKE UPPER('%" + safe + "%') ";
+                int orderIdx = sql.toUpperCase().lastIndexOf(" ORDER BY ");
+                if (orderIdx >= 0) {
+                    String head = sql.substring(0, orderIdx);
+                    String tail = sql.substring(orderIdx);
+                    sql = head + (head.toUpperCase().contains(" WHERE ") ? " AND " : " WHERE ") + filter + tail;
+                } else {
+                    sql = sql + (sql.toUpperCase().contains(" WHERE ") ? " AND " : " WHERE ") + filter;
+                }
+            }
+            ObjectNode out = mapper.createObjectNode();
+            ArrayNode items = out.putArray("items");
+            try (PreparedStatement st = DB.prepareStatement(sql, null);
+                 ResultSet rs = st.executeQuery()) {
+                int count = 0;
+                while (rs.next() && count < 200) {
+                    ObjectNode r = items.addObject();
+                    int cc = rs.getMetaData().getColumnCount();
+                    if (cc >= 1) r.put("id", rs.getInt(1));
+                    if (cc >= 2) r.put("value", rs.getString(2));
+                    if (cc >= 3) r.put("name", rs.getString(3));
+                    count++;
+                }
+            }
+            return out;
+        } finally {
+            try { Env.clearWinContext(ctx, windowNo); } catch (Exception ignore) { }
+            restoreCtx(prevCtx);
+        }
+    }
+
+    // ─── GridTab-based writes — full-fidelity (callouts + validators + workflow) ───
+    //
+    // GridTab dispatches column callouts on setValue() and runs ModelValidators
+    // on dataSave(). PO.save()+set_ValueNoCheck (the legacy savePo above) hits
+    // validators but skips callouts — that's why callouts felt missing on the
+    // experimental Product page. These methods are the production write path.
+
+    /** Update existing row through GridTab. {@code recordId} is used for
+     *  single-PK tables; {@code keys} (column→value) for composite PKs. */
+    private ObjectNode gridSave(int windowId, int tabIndex, long recordId,
+                                Map<String, Object> keys, Map<String, Object> changes) throws Exception {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        int windowNo = nextWindowNo();
+        String trxName = Trx.createTrxName("erp-api-gsave");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            GridWindowVO winVO = GridWindowVO.create(ctx, windowNo, windowId);
+            GridWindow win = new GridWindow(winVO, true);
+            GridTab tab = win.getTab(tabIndex);
+            if (tab == null) throw new PoSaveException("Tab " + tabIndex + " not found in window " + windowId);
+            tab.initTab(false);
+
+            MQuery q;
+            if (keys != null && !keys.isEmpty()) {
+                q = new MQuery(tab.getTableName());
+                for (Map.Entry<String, Object> e : keys.entrySet()) {
+                    Object v = e.getValue();
+                    // Numeric values must go through the int-typed factory below
+                    // since MQuery.addRestriction quotes Object values as strings;
+                    // for composite-PK rows we hand-build a typed restriction.
+                    if (v instanceof Number n) {
+                        q.addRestriction(sanitizeColumn(e.getKey()) + "=" + n.longValue());
+                    } else {
+                        q.addRestriction(sanitizeColumn(e.getKey()), MQuery.EQUAL, v == null ? null : v.toString());
+                    }
+                }
+            } else {
+                String key = tab.getKeyColumnName();
+                if (key == null || key.isEmpty()) {
+                    throw new PoSaveException("Tab " + tabIndex + " has no single-PK column; pass composite keys");
+                }
+                // getEqualQuery serialises the int unquoted — required for numeric ID columns
+                q = MQuery.getEqualQuery(key, (int) recordId);
+            }
+            tab.setQuery(q);
+            tab.query(false);
+            if (tab.getRowCount() == 0) {
+                throw new PoSaveException("Row not found: " + tab.getTableName() +
+                        (keys != null ? " keys=" + keys : "[" + recordId + "]"));
+            }
+            tab.navigate(0);
+
+            applyChangesAndSave(tab, changes, false);
+            trx.commit(true);
+
+            int singleId = tab.getRecord_ID();
+            if (singleId > 0) {
+                ObjectNode out = singleRow(windowId, tabIndex, singleId);
+                if (out != null) return out;
+            }
+            return mapper.createObjectNode().put("ok", true);
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            try { Env.clearWinContext(ctx, windowNo); } catch (Exception ignore) { }
+            restoreCtx(prevCtx);
+        }
+    }
+
+    /** Create a new row through GridTab. Defaults are populated by GridTab.dataNew;
+     *  callouts fire on each setValue; validators + sequences fire on dataSave. */
+    private ObjectNode gridCreate(int windowId, int tabIndex, Map<String, Object> changes) throws Exception {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        int windowNo = nextWindowNo();
+        String trxName = Trx.createTrxName("erp-api-gcreate");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            GridWindowVO winVO = GridWindowVO.create(ctx, windowNo, windowId);
+            GridWindow win = new GridWindow(winVO, true);
+            GridTab tab = win.getTab(tabIndex);
+            if (tab == null) throw new PoSaveException("Tab " + tabIndex + " not found in window " + windowId);
+            tab.initTab(false);
+            // Initialise an empty result set so dataNew has somewhere to insert.
+            MQuery noMatch = new MQuery(tab.getTableName());
+            noMatch.addRestriction("1=2");
+            tab.setQuery(noMatch);
+            tab.query(false);
+            if (!tab.dataNew(false)) {
+                throw new PoSaveException("dataNew rejected — defaults init failed");
+            }
+
+            applyChangesAndSave(tab, changes, true);
+            trx.commit(true);
+
+            int newId = tab.getRecord_ID();
+            if (newId > 0) {
+                ObjectNode out = singleRow(windowId, tabIndex, newId);
+                if (out != null) return out;
+            }
+            return mapper.createObjectNode().put("ok", true);
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            try { Env.clearWinContext(ctx, windowNo); } catch (Exception ignore) { }
+            restoreCtx(prevCtx);
+        }
+    }
+
+    /** Delete a row through GridTab. Fires the same beforeDelete/afterDelete
+     *  ModelValidator hooks the ZK UI fires on Trash. */
+    private ObjectNode gridDelete(int windowId, int tabIndex, long recordId) throws Exception {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        int windowNo = nextWindowNo();
+        String trxName = Trx.createTrxName("erp-api-gdel");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            GridWindowVO winVO = GridWindowVO.create(ctx, windowNo, windowId);
+            GridWindow win = new GridWindow(winVO, true);
+            GridTab tab = win.getTab(tabIndex);
+            if (tab == null) throw new PoSaveException("Tab " + tabIndex + " not found in window " + windowId);
+            tab.initTab(false);
+
+            String key = tab.getKeyColumnName();
+            if (key == null || key.isEmpty()) {
+                throw new PoSaveException("Composite-PK delete not supported via single-id endpoint");
+            }
+            MQuery q = MQuery.getEqualQuery(key, (int) recordId);
+            tab.setQuery(q);
+            tab.query(false);
+            if (tab.getRowCount() == 0) {
+                throw new PoSaveException("Row not found: " + tab.getTableName() + "[" + recordId + "]");
+            }
+            tab.navigate(0);
+
+            if (!tab.dataDelete()) {
+                String err = retrieveLastError("dataDelete returned false");
+                throw new PoSaveException(err);
+            }
+            trx.commit(true);
+            return mapper.createObjectNode().put("ok", true).put("deleted", recordId);
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            try { Env.clearWinContext(ctx, windowNo); } catch (Exception ignore) { }
+            restoreCtx(prevCtx);
+        }
+    }
+
+    /** Apply each change via GridTab.setValue (fires callouts), then dataSave
+     *  (fires ModelValidators, sequence allocation, doc workflow). Throws on
+     *  the first rejected setValue or a save failure. */
+    private void applyChangesAndSave(GridTab tab, Map<String, Object> changes, boolean isNew) {
+        for (Map.Entry<String, Object> e : changes.entrySet()) {
+            GridField fld = tab.getField(e.getKey());
+            if (fld == null) {
+                throw new PoSaveException("Unknown column on " + tab.getTableName() + ": " + e.getKey());
+            }
+            Object coerced = coerceTo(fld.getDisplayType(), e.getValue());
+            String err = tab.setValue(fld, coerced);
+            if (err != null && !err.isEmpty() && !"NoError".equals(err)) {
+                throw new PoSaveException("setValue " + e.getKey() + ": " + err);
+            }
+        }
+        boolean ok = tab.dataSave(true);
+        if (!ok) {
+            throw new PoSaveException(retrieveLastError(
+                    isNew ? "dataSave (create) rejected" : "dataSave (update) rejected"));
+        }
+    }
+
+    private static String retrieveLastError(String dflt) {
+        org.compiere.util.ValueNamePair last = CLogger.retrieveError();
+        if (last != null && last.getName() != null && !last.getName().isEmpty()) {
+            return last.getName();
+        }
+        return dflt;
+    }
+
+    private static String sanitizeColumn(String s) {
+        return s == null ? "" : s.replaceAll("[^A-Za-z0-9_]", "");
+    }
+
+    /** Coerce raw JSON value to the type the GridField expects, by AD displayType.
+     *  Mirrors {@link #coerceTo(Class, Object)} but keyed on displayType (since
+     *  GridField exposes that, not the Java class). */
+    private Object coerceTo(int displayType, Object v) {
+        if (v == null) return null;
+        if (DisplayType.isID(displayType) || DisplayType.Integer == displayType) {
+            if (v instanceof Number n) return n.intValue();
+            return Integer.parseInt(v.toString());
+        }
+        if (DisplayType.isNumeric(displayType)) {
+            if (v instanceof java.math.BigDecimal bd) return bd;
+            if (v instanceof Number n) return new java.math.BigDecimal(n.toString());
+            return new java.math.BigDecimal(v.toString());
+        }
+        if (DisplayType.YesNo == displayType) {
+            if (v instanceof Boolean b) return b;
+            String s = v.toString();
+            return Boolean.valueOf(s) || "Y".equalsIgnoreCase(s);
+        }
+        if (DisplayType.isDate(displayType)) {
+            if (v instanceof java.sql.Timestamp t) return t;
+            String s = v.toString();
+            try { return Timestamp.from(Instant.parse(s)); } catch (Exception ignore) {}
+            try { return Timestamp.valueOf(java.time.LocalDate.parse(s).atStartOfDay()); } catch (Exception ignore) {}
+            return v;
+        }
+        return v.toString();
     }
 
     private PO loadPoByKeys(Properties ctx, MTable mt, String tableName, Map<String, Object> keys, String trxName) {

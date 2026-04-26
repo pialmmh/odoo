@@ -45,8 +45,10 @@ export async function getCaps() {
   }
 }
 
+// PUT instead of PATCH — APISIX route /api/erp/* doesn't whitelist PATCH.
+// The Spring proxy accepts both verbs interchangeably and forwards as PUT.
 export async function saveBPartner(id, changes) {
-  const resp = await api.patch(`/${id}`, { changes });
+  const resp = await api.put(`/${id}`, { changes });
   return resp.data;
 }
 
@@ -58,4 +60,14 @@ export async function createBPartner(changes) {
 export async function deleteBPartner(id) {
   const resp = await api.delete(`/${id}`);
   return resp.data;
+}
+
+// Per-field FK picker rows. windowId+tabIndex+columnName are AD identifiers;
+// the BFF builds the right MLookup (Table Direct/Table/Search/List) and
+// honours AD_Val_Rule + IsParent. Goes direct to the BFF — Spring proxy
+// does not need to add value here.
+export async function getFieldLookup(windowId, tabIndex, columnName, q) {
+  const url = `/erp-api/window/${windowId}/tab/${tabIndex}/field/${columnName}/lookup`;
+  const resp = await axios.get(url, { params: q ? { q } : {} });
+  return resp.data?.items || [];
 }

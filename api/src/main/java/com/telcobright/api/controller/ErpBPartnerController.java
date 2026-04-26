@@ -8,6 +8,9 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -78,11 +81,7 @@ public class ErpBPartnerController {
     // ── Capability probe ─────────────────────────────────────────────────────
     @GetMapping("/_caps")
     public Map<String, Object> caps() {
-        return Map.of(
-                "reads", true,
-                "writes", false,
-                "writeReason", "feature_pending"
-        );
+        return Map.of("reads", true, "writes", true);
     }
 
     // ── List ─────────────────────────────────────────────────────────────────
@@ -158,27 +157,90 @@ public class ErpBPartnerController {
         }
     }
 
-    // ── Writes (placeholder until BFF write path lands) ──────────────────────
+    // ── Writes — forward to BFF GridTab path (callouts + validators fire) ──
+
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody(required = false) Map<String, Object> body) {
-        return notImplemented("create");
+    public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
+        String url = props.getBffUrl()
+                + "/window/" + BPARTNER_WINDOW_ID
+                + "/tab/" + HEADER_TAB_INDEX + "/row";
+        return forwardWrite(HttpMethod.POST, url, body, "create", true);
     }
 
     @RequestMapping(value = "/{id}", method = {RequestMethod.PATCH, RequestMethod.PUT})
-    public ResponseEntity<?> update(@PathVariable long id, @RequestBody(required = false) Map<String, Object> body) {
-        return notImplemented("update");
+    public ResponseEntity<?> update(@PathVariable long id, @RequestBody Map<String, Object> body) {
+        String url = props.getBffUrl()
+                + "/window/" + BPARTNER_WINDOW_ID
+                + "/tab/" + HEADER_TAB_INDEX + "/row/" + id;
+        // Use PUT against the BFF — its servlet aliases PATCH to PUT internally,
+        // but RestTemplate's default factory rejects PATCH; PUT is the safe verb.
+        return forwardWrite(HttpMethod.PUT, url, body, "update", true);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable long id) {
-        return notImplemented("delete");
+        String url = props.getBffUrl()
+                + "/window/" + BPARTNER_WINDOW_ID
+                + "/tab/" + HEADER_TAB_INDEX + "/row/" + id;
+        try {
+            HttpHeaders h = new HttpHeaders();
+            h.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<JsonNode> resp = http.exchange(url, HttpMethod.DELETE,
+                    new HttpEntity<>(null, h), JsonNode.class);
+            return ResponseEntity.status(resp.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON).body(resp.getBody());
+        } catch (HttpStatusCodeException e) {
+            return mapUpstreamError("delete", e);
+        } catch (Exception e) {
+            log.error("bpartners delete failed", e);
+            return error("delete", e.getMessage());
+        }
     }
 
-    private ResponseEntity<?> notImplemented(String op) {
-        return ResponseEntity.status(501).body(Map.of(
-                "error", "not_implemented",
+    private ResponseEntity<?> forwardWrite(HttpMethod method, String url,
+                                           Map<String, Object> body, String op,
+                                           boolean wantDetailDto) {
+        try {
+            HttpHeaders h = new HttpHeaders();
+            h.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, h);
+            ResponseEntity<JsonNode> resp = http.exchange(url, method, entity, JsonNode.class);
+            JsonNode payload = resp.getBody();
+            // BFF returns either a refreshed snake_case row or {ok:true}; map a
+            // row to the same camelCase shape the GET endpoint emits.
+            Object out = (wantDetailDto && payload != null && payload.isObject() && payload.has("c_bpartner_id"))
+                    ? rowToDetailDto(payload) : payload;
+            return ResponseEntity.status(resp.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON).body(out);
+        } catch (HttpStatusCodeException e) {
+            return mapUpstreamError(op, e);
+        } catch (Exception e) {
+            log.error("bpartners {} failed", op, e);
+            return error(op, e.getMessage());
+        }
+    }
+
+    private ResponseEntity<?> mapUpstreamError(String op, HttpStatusCodeException e) {
+        // 422 from the BFF means a callout/validator/save rejected the request —
+        // pass the message through to the UI as a structured error.
+        int status = e.getStatusCode().value();
+        String message = e.getMessage();
+        try {
+            JsonNode body = mapper.readTree(e.getResponseBodyAsString());
+            if (body.has("message")) message = body.path("message").asText(message);
+        } catch (Exception ignore) {}
+        log.warn("bpartners {} upstream {}: {}", op, status, message);
+        if (status == 422) {
+            return ResponseEntity.status(422).body(Map.of(
+                    "error", "validation_failed",
+                    "operation", op,
+                    "message", message
+            ));
+        }
+        return ResponseEntity.status(status >= 400 && status < 600 ? status : 502).body(Map.of(
+                "error", "upstream_error",
                 "operation", op,
-                "message", "Editing is not yet available."
+                "message", message
         ));
     }
 
