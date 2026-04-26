@@ -1,0 +1,21 @@
+/**
+ * Map the call-window library's cc-* CSS variables to the host's MUI theme
+ * so the dialer automatically matches whichever tenant theme is active
+ * (green / blue / red / gray / orange / light-*).
+ *
+ * The host sets `--color-primary`, `--color-primary-hover`, `--color-primary-bg`
+ * on body per theme class (see src/context/ThemeContext.jsx).
+ *
+ * `--cc-primary-rgb` is the comma-separated R,G,B triplet used for rgba()
+ * glow/pulse effects. Pure CSS can't split a hex into r/g/b, so CallHost.jsx
+ * writes it from JS on theme change.
+ */
+.cc-root {
+  --cc-primary:      var(--color-primary, #94bc66);
+  --cc-primary-dark: var(--color-primary-hover, #6b8f4e);
+  --cc-primary-soft: var(--color-primary-bg, #cfe1ab);
+  --cc-spinner:      var(--color-primary, #94bc66);
+  --cc-badge-known-bg:    var(--color-primary-bg, #cfe1ab);
+  --cc-badge-known-color: var(--color-primary-hover, #6b8f4e);
+  /* --cc-primary-rgb is injected from JS by CallHost.jsx. */
+}

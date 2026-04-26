@@ -285,6 +285,11 @@ export const listLayoutSets = (params) =>
   get('/LayoutSet', { maxSize: 50, orderBy: 'name', order: 'asc', ...params });
 
 export const USER_TYPES = ['regular', 'admin', 'portal', 'api', 'system', 'super-admin'];
+
+// ── PBX Extension helpers ──
+export const listPbxExtensions           = ()     => get('/PbxExtension/list');
+export const assignPbxExtension          = (data) => post('/PbxExtension/assign', data);
+export const createAndAssignPbxExtension = (data) => post('/PbxExtension/createAndAssign', data);
 export const USER_SALUTATIONS = ['', 'Mr.', 'Mrs.', 'Ms.', 'Dr.'];
 export const USER_GENDERS = ['', 'Male', 'Female', 'Neutral'];
 export const AUTH_METHODS = ['', 'ApiKey', 'Hmac'];

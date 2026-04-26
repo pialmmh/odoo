@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams, Outlet } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
+import { FluentProvider } from '@fluentui/react-components';
+import { compactLightTheme, compactDarkTheme } from './theme/fluentTheme';
 import { ThemeRegistryProvider, useAppTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { TenantProvider } from './context/TenantContext';
@@ -133,22 +135,25 @@ function AppRoutes() {
 }
 
 function ThemedApp() {
-  const { muiTheme } = useAppTheme();
+  const { muiTheme, mode } = useAppTheme();
+  const fluentTheme = mode === 'dark' ? compactDarkTheme : compactLightTheme;
   return (
-    <ThemeProvider theme={muiTheme}>
-      <CssBaseline />
-      <NotificationProvider>
-        <AuthProvider>
-          <TenantProvider>
-            <BrowserRouter>
-              <CallHost>
-                <AppRoutes />
-              </CallHost>
-            </BrowserRouter>
-          </TenantProvider>
-        </AuthProvider>
-      </NotificationProvider>
-    </ThemeProvider>
+    <FluentProvider theme={fluentTheme} style={{ background: 'transparent' }}>
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        <NotificationProvider>
+          <AuthProvider>
+            <TenantProvider>
+              <BrowserRouter>
+                <CallHost>
+                  <AppRoutes />
+                </CallHost>
+              </BrowserRouter>
+            </TenantProvider>
+          </AuthProvider>
+        </NotificationProvider>
+      </ThemeProvider>
+    </FluentProvider>
   );
 }
 

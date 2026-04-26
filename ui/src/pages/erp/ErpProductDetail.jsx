@@ -1,34 +1,28 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Box, Paper, Typography, Tabs, Tab, Chip,
-  CircularProgress, Grid, TextField, IconButton, Tooltip,
-  FormControlLabel, Checkbox,
-  Table, TableHead, TableBody, TableRow, TableCell, TableContainer, TablePagination,
-  Drawer, Button, Stack, Alert,
-} from '@mui/material';
+  makeStyles, mergeClasses, tokens, Text, TabList, Tab, Spinner, Badge,
+  Input, Textarea, Field, Checkbox, Button, Tooltip,
+  Dialog, DialogSurface, DialogTitle, DialogBody, DialogContent, DialogActions,
+  Table, TableHeader, TableHeaderCell, TableRow, TableCell, TableBody,
+  Dropdown, Option, MessageBar, MessageBarBody,
+} from '@fluentui/react-components';
 import {
-  Refresh as RefreshIcon,
-  Save as SaveIcon, Close as CloseIcon, Edit as EditIcon,
-  ChevronLeft as PrevIcon, ChevronRight as NextIcon,
-  Inventory as ProductIcon,
-} from '@mui/icons-material';
+  ArrowClockwise20Regular, Save20Regular, Dismiss20Regular, Edit20Regular,
+  ChevronLeft20Regular, ChevronRight20Regular, Apps16Regular,
+} from '@fluentui/react-icons';
 import { getProduct } from '../../services/erpProducts';
 import { getTabRows, saveRow, saveRowByKeys, createRow } from '../../services/erpBundle';
 import { useNotification } from '../../components/ErrorNotification';
 import { evaluateDisplayLogic } from '../../lib/displayLogic';
 import { useTabDirty } from './workspace/workspaceStore';
-import EntityHeaderCard from '../crm/EntityHeaderCard';
-import { Panel } from '../crm/LeadPanelPrimitives';
+import { useErpTableStyles } from './components/erpTableStyles';
 import productWindow from './m_product_window.json';
 
 const PRODUCT_WINDOW_ID = 140;
 const TAB_ORDER = productWindow.tabs.map((t) => t.name);
 const HEADER_TAB_INDEX = 0;
 
-// Logical sections for the Product header tab. Each entry becomes a
-// vertical Panel; fields not listed fall under "Other". Order matters —
-// cards render top to bottom in the order declared here.
 const HEADER_GROUPS = [
   { id: 'identity', title: 'Identity', columns: [
     'Value', 'Name', 'Description', 'Help', 'DocumentNote',
@@ -62,8 +56,6 @@ const HEADER_GROUPS = [
   ]},
 ];
 
-// Composite primary keys for tabs in the Product window. For tables not
-// listed here, we use the single-PK URL form ({Table}_ID).
 const COMPOSITE_KEYS = {
   'M_ProductPrice':   ['M_PriceList_Version_ID', 'M_Product_ID'],
   'M_Product_Acct':   ['M_Product_ID', 'C_AcctSchema_ID'],
@@ -76,9 +68,6 @@ const COMPOSITE_KEYS = {
   'M_Storage':        ['M_Locator_ID', 'M_Product_ID', 'M_AttributeSetInstance_ID'],
 };
 
-// Defaults applied to a new Product before the user touches anything.
-// Matches iDempiere's AD-defaults for required fields on M_Product so
-// PO.save can succeed without the user filling every checkbox.
 const NEW_PRODUCT_DEFAULTS = {
   IsActive: true,
   IsSummary: false,
@@ -102,12 +91,293 @@ const NEW_PRODUCT_DEFAULTS = {
   ProductType: 'I',
   M_AttributeSetInstance_ID: 0,
   LowLevel: 0,
-  // C_UOM_ID, C_TaxCategory_ID, M_Product_Category_ID, Value, Name —
-  // user must fill these. We don't preselect to avoid silently shipping
-  // wrong data.
 };
 
+const useStyles = makeStyles({
+  page: { paddingBottom: '64px' /* room for sticky save bar */ },
+  entityHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalM,
+    paddingTop: tokens.spacingVerticalS,
+    paddingBottom: tokens.spacingVerticalS,
+    paddingLeft: tokens.spacingHorizontalS,
+    paddingRight: tokens.spacingHorizontalS,
+    marginBottom: tokens.spacingVerticalS,
+    borderBottomWidth: '1px',
+    borderBottomStyle: 'solid',
+    borderBottomColor: tokens.colorNeutralStroke2,
+  },
+  entityHeaderText: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 },
+  entityBreadcrumb: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+    color: tokens.colorBrandForeground1,
+    cursor: 'pointer',
+  },
+  entityHeaderActions: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalXS },
+  panel: {
+    marginBottom: tokens.spacingVerticalM,
+    borderRadius: tokens.borderRadiusMedium,
+    borderTopWidth: '1px',
+    borderRightWidth: '1px',
+    borderBottomWidth: '1px',
+    borderLeftWidth: '1px',
+    borderTopStyle: 'solid',
+    borderRightStyle: 'solid',
+    borderBottomStyle: 'solid',
+    borderLeftStyle: 'solid',
+    borderTopColor: tokens.colorNeutralStroke2,
+    borderRightColor: tokens.colorNeutralStroke2,
+    borderBottomColor: tokens.colorNeutralStroke2,
+    borderLeftColor: tokens.colorNeutralStroke2,
+    overflow: 'hidden',
+    backgroundColor: tokens.colorNeutralBackground1,
+  },
+  panelHeader: {
+    paddingTop: tokens.spacingVerticalXS,
+    paddingBottom: tokens.spacingVerticalXS,
+    paddingLeft: tokens.spacingHorizontalM,
+    paddingRight: tokens.spacingHorizontalM,
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderBottomWidth: '1px',
+    borderBottomStyle: 'solid',
+    borderBottomColor: tokens.colorNeutralStroke2,
+  },
+  panelBody: {
+    paddingTop: tokens.spacingVerticalM,
+    paddingBottom: tokens.spacingVerticalM,
+    paddingLeft: tokens.spacingHorizontalM,
+    paddingRight: tokens.spacingHorizontalM,
+  },
+  chipStrip: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+    flexWrap: 'wrap',
+    marginBottom: tokens.spacingVerticalM,
+    paddingTop: tokens.spacingVerticalS,
+    paddingBottom: tokens.spacingVerticalS,
+    paddingLeft: tokens.spacingHorizontalM,
+    paddingRight: tokens.spacingHorizontalM,
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderRadius: tokens.borderRadiusMedium,
+  },
+  layout: {
+    display: 'grid',
+    gridTemplateColumns: '160px minmax(0, 1fr)',
+    gap: tokens.spacingHorizontalM,
+    alignItems: 'start',
+  },
+  tabsPaper: {
+    borderRadius: tokens.borderRadiusMedium,
+    borderTopWidth: '1px',
+    borderRightWidth: '1px',
+    borderBottomWidth: '1px',
+    borderLeftWidth: '1px',
+    borderTopStyle: 'solid',
+    borderRightStyle: 'solid',
+    borderBottomStyle: 'solid',
+    borderLeftStyle: 'solid',
+    borderTopColor: tokens.colorNeutralStroke2,
+    borderRightColor: tokens.colorNeutralStroke2,
+    borderBottomColor: tokens.colorNeutralStroke2,
+    borderLeftColor: tokens.colorNeutralStroke2,
+    overflow: 'hidden',
+    position: 'sticky',
+    top: tokens.spacingVerticalL,
+    maxHeight: '80vh',
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: tokens.colorNeutralBackground1,
+  },
+  tabList: {
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    flex: 1,
+    paddingTop: tokens.spacingVerticalS,
+    paddingBottom: tokens.spacingVerticalS,
+    paddingLeft: tokens.spacingHorizontalXS,
+    paddingRight: tokens.spacingHorizontalXS,
+    rowGap: tokens.spacingVerticalXS,
+    // Flat menu-item rows: small grey leading icon, left-aligned text,
+    // light-grey resting background with vertical breathing room.
+    '& [role="tab"]': {
+      justifyContent: 'flex-start',
+      textAlign: 'left',
+      width: '100%',
+      minHeight: '32px',
+      paddingLeft: tokens.spacingHorizontalS,
+      paddingRight: tokens.spacingHorizontalS,
+      paddingTop: tokens.spacingVerticalSNudge,
+      paddingBottom: tokens.spacingVerticalSNudge,
+      columnGap: tokens.spacingHorizontalS,
+      borderTopRightRadius: tokens.borderRadiusMedium,
+      borderBottomRightRadius: tokens.borderRadiusMedium,
+      borderTopLeftRadius: tokens.borderRadiusMedium,
+      borderBottomLeftRadius: tokens.borderRadiusMedium,
+      color: tokens.colorNeutralForeground2,
+      backgroundColor: tokens.colorNeutralBackground2,
+      transitionProperty: 'background-color, color',
+      transitionDuration: tokens.durationFaster,
+      transitionTimingFunction: tokens.curveEasyEase,
+      '&:hover': {
+        backgroundColor: tokens.colorNeutralBackground2Hover,
+        color: tokens.colorNeutralForeground1,
+      },
+    },
+    // Force the Tab content span to align left even when text wraps
+    // (so multi-word labels like "Business Partner" don't appear centred).
+    '& [role="tab"] .fui-Tab__content, & [role="tab"] > span': {
+      textAlign: 'left',
+      flex: 1,
+      minWidth: 0,
+    },
+    '& [role="tab"][aria-selected="true"]': {
+      backgroundColor: tokens.colorBrandBackground2,
+      color: tokens.colorBrandForeground1,
+      fontWeight: tokens.fontWeightSemibold,
+      '&:hover': {
+        backgroundColor: tokens.colorBrandBackground2Hover,
+      },
+    },
+    // Small, muted leading icon — neutral grey, never brand.
+    '& [role="tab"] .fui-Tab__icon, & [role="tab"] svg': {
+      color: tokens.colorNeutralForeground3,
+      width: '16px',
+      height: '16px',
+      flexShrink: 0,
+    },
+    // Hide the default Fluent indicator bar (rounded pill is the cue instead).
+    '& .fui-Tab__indicator': { display: 'none' },
+  },
+  bodyCol: { minWidth: 0 },
+  loadWrap: {
+    display: 'flex', justifyContent: 'center',
+    paddingTop: tokens.spacingVerticalXXXL,
+    paddingBottom: tokens.spacingVerticalXXXL,
+  },
+  childPaper: {
+    borderRadius: tokens.borderRadiusMedium,
+    borderTopWidth: '1px',
+    borderRightWidth: '1px',
+    borderBottomWidth: '1px',
+    borderLeftWidth: '1px',
+    borderTopStyle: 'solid',
+    borderRightStyle: 'solid',
+    borderBottomStyle: 'solid',
+    borderLeftStyle: 'solid',
+    borderTopColor: tokens.colorNeutralStroke2,
+    borderRightColor: tokens.colorNeutralStroke2,
+    borderBottomColor: tokens.colorNeutralStroke2,
+    borderLeftColor: tokens.colorNeutralStroke2,
+    overflow: 'hidden',
+    backgroundColor: tokens.colorNeutralBackground1,
+  },
+  fieldGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: tokens.spacingHorizontalM,
+    rowGap: tokens.spacingVerticalS,
+  },
+  fkInputWrap: { position: 'relative' },
+  saveBar: {
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    paddingTop: tokens.spacingVerticalM,
+    paddingBottom: tokens.spacingVerticalM,
+    paddingLeft: tokens.spacingHorizontalM,
+    paddingRight: tokens.spacingHorizontalM,
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
+  saveBarPanel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalM,
+    paddingTop: tokens.spacingVerticalS,
+    paddingBottom: tokens.spacingVerticalS,
+    paddingLeft: tokens.spacingHorizontalL,
+    paddingRight: tokens.spacingHorizontalL,
+    borderTopWidth: '1px',
+    borderRightWidth: '1px',
+    borderBottomWidth: '1px',
+    borderLeftWidth: '1px',
+    borderTopStyle: 'solid',
+    borderRightStyle: 'solid',
+    borderBottomStyle: 'solid',
+    borderLeftStyle: 'solid',
+    borderTopColor: tokens.colorNeutralStroke2,
+    borderRightColor: tokens.colorNeutralStroke2,
+    borderBottomColor: tokens.colorNeutralStroke2,
+    borderLeftColor: tokens.colorNeutralStroke2,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground1,
+    boxShadow: tokens.shadow16,
+  },
+  saveBarActions: { display: 'flex', gap: tokens.spacingHorizontalS },
+  pager: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalM,
+    paddingTop: tokens.spacingVerticalS,
+    paddingBottom: tokens.spacingVerticalS,
+    paddingLeft: tokens.spacingHorizontalM,
+    paddingRight: tokens.spacingHorizontalM,
+    borderTopWidth: '1px',
+    borderTopStyle: 'solid',
+    borderTopColor: tokens.colorNeutralStroke2,
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground2,
+  },
+  pagerControls: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalXS },
+  childRow: {
+    cursor: 'pointer',
+    transitionProperty: 'background-color',
+    transitionDuration: tokens.durationFaster,
+    transitionTimingFunction: tokens.curveEasyEase,
+    '& > td:first-of-type': {
+      borderLeftWidth: '3px',
+      borderLeftStyle: 'solid',
+      borderLeftColor: 'transparent',
+    },
+    '&:hover': { backgroundColor: tokens.colorNeutralBackground2 },
+  },
+  childRowDisabled: {
+    cursor: 'default',
+    '&:hover': { backgroundColor: 'transparent' },
+  },
+  childRowActive: {
+    backgroundColor: tokens.colorBrandBackground2,
+    '&:hover': { backgroundColor: tokens.colorBrandBackground2 },
+    '& > td:first-of-type': {
+      borderLeftWidth: '3px',
+      borderLeftStyle: 'solid',
+      borderLeftColor: tokens.colorBrandStroke1,
+      fontWeight: tokens.fontWeightSemibold,
+    },
+  },
+  emptyChild: {
+    paddingTop: tokens.spacingVerticalXXL,
+    paddingBottom: tokens.spacingVerticalXXL,
+    textAlign: 'center',
+    color: tokens.colorNeutralForeground3,
+  },
+  drawerForm: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: tokens.spacingHorizontalM,
+    rowGap: tokens.spacingVerticalS,
+  },
+});
+
 export default function ErpProductDetail({ idOverride }) {
+  const styles = useStyles();
   const params = useParams();
   const { tenant } = params;
   // Inside the workspace shell each tab carries its own id —
@@ -122,7 +392,6 @@ export default function ErpProductDetail({ idOverride }) {
   const [loading, setLoading] = useState(!isNew);
   const [activeTab, setActiveTab] = useState(0);
 
-  // Aggregate dirty signal from HeaderTab + ChildTab → workspace tab title gets a "*".
   const [headerDirty, setHeaderDirty] = useState(false);
   const [childDirty, setChildDirty] = useState(false);
   useTabDirty(headerDirty || childDirty);
@@ -145,15 +414,13 @@ export default function ErpProductDetail({ idOverride }) {
     []
   );
 
-  // Action slot (right side of EntityHeaderCard) — Prev/Next/Refresh on
-  // existing records, hidden in create mode.
   const headerActions = !isNew && (
-    <Stack direction="row" spacing={0.5}>
+    <div style={{ display: 'flex', gap: '4px' }}>
       <PrevNextNav id={id} tenant={tenant} />
-      <Tooltip title="Refresh">
-        <IconButton size="small" onClick={reload}><RefreshIcon /></IconButton>
+      <Tooltip content="Refresh" relationship="label" withArrow={false}>
+        <Button appearance="subtle" size="small" icon={<ArrowClockwise20Regular />} onClick={reload} />
       </Tooltip>
-    </Stack>
+    </div>
   );
 
   const subtitle = isNew
@@ -163,35 +430,28 @@ export default function ErpProductDetail({ idOverride }) {
       : null;
 
   return (
-    <Box sx={{ pb: 8 /* room for sticky save bar */ }}>
-      {/* ── Header — CRM EntityHeaderCard pattern ─────────────────── */}
-      <EntityHeaderCard
-        icon={<ProductIcon />}
-        entityLabel="Products"
+    <div className={styles.page}>
+      <EntityHeader
         backTo={`/${tenant}/erp/product`}
+        entityLabel="Products"
         title={isNew ? 'New Product' : (loading ? 'Loading…' : (data?.name || `#${id}`))}
         subtitle={subtitle}
         actions={headerActions}
       />
 
-      {/* Status chip strip — sits in CRM "action bar" style row below the header. */}
       {!isNew && data && (
-        <Box sx={{
-          display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap',
-          mb: 1.5, px: 1.5, py: 1,
-          bgcolor: 'background.default', borderRadius: 1,
-        }}>
-          {data.isActive    ? <Chip label="Active"    size="small" color="success" variant="outlined" />
-                            : <Chip label="Inactive"  size="small" variant="outlined" />}
-          {data.isSummary   && <Chip label="Summary"   size="small" variant="outlined" />}
-          {data.isStocked   && <Chip label="Stocked"   size="small" variant="outlined" />}
-          {data.isSold      && <Chip label="Sold"      size="small" variant="outlined" />}
-          {data.isPurchased && <Chip label="Purchased" size="small" variant="outlined" />}
-          {data.isBOM       && <Chip label="BOM"       size="small" variant="outlined" />}
-        </Box>
+        <div className={styles.chipStrip}>
+          {data.isActive
+            ? <Badge appearance="outline" color="success" size="small">Active</Badge>
+            : <Badge appearance="outline" size="small">Inactive</Badge>}
+          {data.isSummary   && <Badge appearance="outline" size="small">Summary</Badge>}
+          {data.isStocked   && <Badge appearance="outline" size="small">Stocked</Badge>}
+          {data.isSold      && <Badge appearance="outline" size="small">Sold</Badge>}
+          {data.isPurchased && <Badge appearance="outline" size="small">Purchased</Badge>}
+          {data.isBOM       && <Badge appearance="outline" size="small">BOM</Badge>}
+        </div>
       )}
 
-      {/* ── Tabs (vertical, left) + content (right) ──────────────── */}
       {isNew ? (
         <HeaderTab
           spec={headerTabSpec}
@@ -206,89 +466,24 @@ export default function ErpProductDetail({ idOverride }) {
           onError={(msg) => notifyError('Create failed', msg)}
         />
       ) : (
-        <Box sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: '150px minmax(0, 1fr)' },
-          gap: 2,
-          alignItems: 'start',
-        }}>
-          <Paper variant="outlined" sx={{
-            borderRadius: 1.5, overflow: 'hidden',
-            position: { md: 'sticky' }, top: { md: 'var(--space-4)' },
-            maxHeight: { md: '80vh' },
-            display: 'flex', flexDirection: 'column',
-            bgcolor: 'background.paper',
-          }}>
-            <Tabs
-              value={activeTab}
-              onChange={(_, v) => setActiveTab(v)}
-              orientation="vertical"
-              variant="scrollable"
-              scrollButtons={false}
-              sx={{
-                flex: 1, minHeight: 0,
-                // Hidden — selection is signalled by the left accent stripe.
-                '& .MuiTabs-indicator': { display: 'none' },
-                // Slim native scrollbar for the tab list overflow.
-                '& .MuiTabs-scroller': {
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: 'var(--color-border) transparent',
-                  '&::-webkit-scrollbar': { width: '6px' },
-                  '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: 'var(--color-border)',
-                    borderRadius: 'var(--radius-full)',
-                  },
-                  '&::-webkit-scrollbar-track': { background: 'transparent' },
-                },
-                '& .MuiTab-root': {
-                  textTransform: 'none',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--color-text-secondary)',
-                  alignItems: 'flex-start',
-                  justifyContent: 'flex-start',
-                  textAlign: 'left',
-                  minHeight: 'var(--space-8)',
-                  // Allow long labels (e.g. "Reserved Quantity Log") to wrap to a second line.
-                  whiteSpace: 'normal',
-                  lineHeight: 'var(--line-height-tight)',
-                  maxWidth: '100%',
-                  py: 0.75,
-                  pl: 'var(--space-3)',
-                  pr: 'var(--space-2)',
-                  borderLeft: '3px solid transparent',
-                  borderBottom: '1px solid var(--color-border-subtle)',
-                  transition:
-                    'background-color var(--transition-fast), color var(--transition-fast)',
-                  '&:last-of-type': { borderBottom: 'none' },
-                  '&:hover': {
-                    backgroundColor: 'var(--color-bg-muted)',
-                    color: 'var(--color-text-primary)',
-                  },
-                  '&.Mui-selected': {
-                    color: 'var(--color-primary)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                    backgroundColor: 'var(--color-primary-bg)',
-                    borderLeftColor: 'var(--color-primary)',
-                  },
-                  '&.Mui-selected:hover': {
-                    backgroundColor: 'var(--color-primary-bg)',
-                  },
-                  '&.Mui-focusVisible': {
-                    backgroundColor: 'var(--color-bg-muted)',
-                  },
-                },
-              }}
+        <div className={styles.layout}>
+          <div className={styles.tabsPaper}>
+            <TabList
+              vertical
+              selectedValue={String(activeTab)}
+              onTabSelect={(_e, data) => setActiveTab(Number(data.value))}
+              className={styles.tabList}
+              size="small"
             >
-              {TAB_ORDER.map((name) => <Tab key={name} label={name} />)}
-            </Tabs>
-          </Paper>
+              {TAB_ORDER.map((name, i) => (
+                <Tab key={name} value={String(i)}>{name}</Tab>
+              ))}
+            </TabList>
+          </div>
 
-          <Box sx={{ minWidth: 0 /* let inner content shrink past 'auto' */ }}>
+          <div className={styles.bodyCol}>
             {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress size={28} />
-              </Box>
+              <div className={styles.loadWrap}><Spinner size="small" /></div>
             ) : activeTab === HEADER_TAB_INDEX ? (
               <HeaderTab
                 spec={headerTabSpec}
@@ -302,50 +497,86 @@ export default function ErpProductDetail({ idOverride }) {
                 onError={(msg) => notifyError('Save failed', msg)}
               />
             ) : (
-              <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
-                <ChildTab
-                  key={activeTab}
-                  tabIndex={activeTab}
-                  tabSpec={productWindow.tabs[activeTab]}
-                  parentId={data?.id ?? Number(id)}
-                  onDirtyChange={setChildDirty}
-                  onSavedRow={() => notifySuccess('Saved')}
-                  onError={(msg) => notifyError('Save failed', msg)}
-                />
-              </Paper>
+              <ChildTab
+                key={activeTab}
+                tabIndex={activeTab}
+                tabSpec={productWindow.tabs[activeTab]}
+                parentId={data?.id ?? Number(id)}
+                onDirtyChange={setChildDirty}
+                onSavedRow={() => notifySuccess('Saved')}
+                onError={(msg) => notifyError('Save failed', msg)}
+              />
             )}
-          </Box>
-        </Box>
+          </div>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }
 
-// ── Prev/Next record nav (browser-style for adjacent products) ──────────────
+// ── Prev/Next record nav ────────────────────────────────────────────────────
 function PrevNextNav({ id, tenant }) {
   const navigate = useNavigate();
   const go = (delta) => {
-    // Naive: just advance the id. Production version would query the list
-    // for the actual previous/next based on current sort.
     const next = Number(id) + delta;
     if (next > 0) navigate(`/${tenant}/erp/product/${next}`);
   };
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Tooltip title="Previous record">
-        <IconButton size="small" onClick={() => go(-1)}><PrevIcon /></IconButton>
+    <div style={{ display: 'flex' }}>
+      <Tooltip content="Previous record" relationship="label" withArrow={false}>
+        <Button appearance="subtle" size="small" icon={<ChevronLeft20Regular />} onClick={() => go(-1)} />
       </Tooltip>
-      <Tooltip title="Next record">
-        <IconButton size="small" onClick={() => go(+1)}><NextIcon /></IconButton>
+      <Tooltip content="Next record" relationship="label" withArrow={false}>
+        <Button appearance="subtle" size="small" icon={<ChevronRight20Regular />} onClick={() => go(+1)} />
       </Tooltip>
-    </Box>
+    </div>
   );
 }
 
-// ── Header tab — editable form bound to the AD spec ─────────────────────────
+// ── Header tab ──────────────────────────────────────────────────────────────
+function EntityHeader({ backTo, entityLabel, title, subtitle, actions }) {
+  const styles = useStyles();
+  const navigate = useNavigate();
+  return (
+    <div className={styles.entityHeader}>
+      <div className={styles.entityHeaderText}>
+        <div
+          className={styles.entityBreadcrumb}
+          onClick={() => backTo && navigate(backTo)}
+          role={backTo ? 'button' : undefined}
+        >
+          <ChevronLeft20Regular />
+          <Text size={200} weight="medium">{entityLabel}</Text>
+        </div>
+        <Text size={500} weight="semibold" truncate wrap={false}>{title}</Text>
+        {subtitle && (
+          <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>{subtitle}</Text>
+        )}
+      </div>
+      {actions && <div className={styles.entityHeaderActions}>{actions}</div>}
+    </div>
+  );
+}
+
+function Panel({ title, children, actions }) {
+  const styles = useStyles();
+  return (
+    <div className={styles.panel}>
+      {title && (
+        <div className={styles.panelHeader} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <Text size={300} weight="semibold">{title}</Text>
+          {actions && <div>{actions}</div>}
+        </div>
+      )}
+      <div className={styles.panelBody}>{children}</div>
+    </div>
+  );
+}
+
 function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, onError, onDirtyChange }) {
-  // Original snapshot used to compute the dirty diff.
-  // For new records: defaults are the "original"; everything beyond defaults is dirty.
+  const styles = useStyles();
   const original = useMemo(() => {
     if (isNew) {
       const o = {};
@@ -359,8 +590,6 @@ function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, 
 
   const [form, setForm] = useState(original);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => { setForm(original); }, [original]);
 
   const dirty = useMemo(() => {
     const diff = {};
@@ -377,9 +606,6 @@ function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, 
     [spec]
   );
 
-  // Bucket fields by HEADER_GROUPS in declaration order. Anything not
-  // explicitly mapped goes into a trailing "Other" panel — visible
-  // signal that we missed a column instead of silently dropping it.
   const grouped = useMemo(() => {
     const colToGroup = new Map();
     for (const g of HEADER_GROUPS) {
@@ -392,7 +618,6 @@ function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, 
       if (gid) buckets.get(gid).push(f);
       else other.push(f);
     }
-    // Each group keeps its declared column order so we don't fight the AD seqno.
     for (const g of HEADER_GROUPS) {
       const order = new Map(g.columns.map((c, i) => [c, i]));
       buckets.get(g.id).sort((a, b) => (order.get(a.columnName) ?? 0) - (order.get(b.columnName) ?? 0));
@@ -407,9 +632,7 @@ function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, 
     setSaving(true);
     try {
       if (isNew) {
-        // Send defaults + user-edits (everything we have) so PO sees mandatory flags.
         const payload = { ...form };
-        // Strip null/undefined to keep the payload clean.
         for (const k of Object.keys(payload)) {
           if (payload[k] === null || payload[k] === undefined) delete payload[k];
         }
@@ -428,20 +651,17 @@ function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, 
 
   if (!isNew && !data) return null;
 
-  // Render one Panel per group. Each panel uses a 2-column inner grid so
-  // fields stay readable instead of stretching across the full page.
   const renderField = (f) => {
     const visible = !f.displayLogic || evaluateDisplayLogic(f.displayLogic, form);
     if (!visible) return null;
     return (
-      <Grid item xs={12} sm={6} key={f.columnName}>
-        <FieldRenderer
-          field={f}
-          value={form[f.columnName]}
-          lookup={isNew ? null : readLookup(data, f.columnName)}
-          onChange={(v) => onChange(f.columnName, v)}
-        />
-      </Grid>
+      <FieldRenderer
+        key={f.columnName}
+        field={f}
+        value={form[f.columnName]}
+        lookup={isNew ? null : readLookup(data, f.columnName)}
+        onChange={(v) => onChange(f.columnName, v)}
+      />
     );
   };
 
@@ -452,21 +672,16 @@ function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, 
         if (!items || items.length === 0) return null;
         return (
           <Panel key={g.id} title={g.title}>
-            <Grid container spacing={2}>
-              {items.map(renderField)}
-            </Grid>
+            <div className={styles.fieldGrid}>{items.map(renderField)}</div>
           </Panel>
         );
       })}
       {grouped.other.length > 0 && (
         <Panel title="Other">
-          <Grid container spacing={2}>
-            {grouped.other.map(renderField)}
-          </Grid>
+          <div className={styles.fieldGrid}>{grouped.other.map(renderField)}</div>
         </Panel>
       )}
 
-      {/* Sticky Save / Discard bar — always present in new mode. */}
       {(isDirty || isNew) && (
         <SaveBar
           isNew={isNew}
@@ -480,24 +695,30 @@ function HeaderTab({ spec, data, recordId, isNew, defaults, onSaved, onCreated, 
   );
 }
 
-// ── Field renderer — editable inputs by AD reference type ───────────────────
+// ── Field renderer ──────────────────────────────────────────────────────────
 function FieldRenderer({ field, value, lookup, onChange }) {
   const ref = field.reference;
   const editable = field.isUpdateable === 'Y' && !field.readOnlyLogic;
+  const labelText = field.label + (field.isMandatory === 'Y' ? ' *' : '');
 
   if (ref === 'Yes-No') {
+    // Align with sibling Field+Input cells: those reserve vertical space for a
+    // label above the input. Push the checkbox down so its baseline matches the
+    // input controls in the same row.
     return (
-      <FormControlLabel
-        control={
-          <Checkbox
-            size="small"
-            checked={value === true || value === 'Y'}
-            onChange={(e) => onChange(e.target.checked)}
-            disabled={!editable}
-          />
-        }
-        label={field.label + (field.isMandatory === 'Y' ? ' *' : '')}
-      />
+      <div style={{
+        display: 'flex',
+        alignItems: 'flex-end',
+        minHeight: '46px',
+        paddingBottom: '4px',
+      }}>
+        <Checkbox
+          checked={value === true || value === 'Y'}
+          onChange={(_e, data) => onChange(!!data.checked)}
+          disabled={!editable}
+          label={labelText}
+        />
+      </div>
     );
   }
 
@@ -505,107 +726,126 @@ function FieldRenderer({ field, value, lookup, onChange }) {
             || ref === 'Locator (WH)' || ref === 'Product Attribute';
 
   if (isFk) {
-    // For now show the resolved name; FK typeahead picker comes later.
     const display = lookup || (value != null ? `#${value}` : '');
     return (
-      <TextField
-        label={field.label + (field.isMandatory === 'Y' ? ' *' : '')}
-        value={display}
-        fullWidth size="small" variant="outlined"
-        InputProps={{ readOnly: true, endAdornment: editable
-            ? <Tooltip title="Picker coming soon"><EditIcon sx={{ fontSize: 'var(--font-size-base)', color: 'action.disabled' }} /></Tooltip>
-            : null }}
-        helperText={editable ? null : 'Read-only'}
-      />
+      <Field label={labelText} hint={editable ? null : 'Read-only'} size="small">
+        <Input
+          size="small"
+          value={display}
+          readOnly
+          contentAfter={editable ? (
+            <Tooltip content="Picker coming soon" relationship="label" withArrow={false}>
+              <Edit20Regular style={{ opacity: 0.5 }} />
+            </Tooltip>
+          ) : null}
+        />
+      </Field>
     );
   }
 
   if (ref === 'Integer' || ref === 'Number' || ref === 'Amount'
       || ref === 'Quantity' || ref === 'Costs+Prices') {
     return (
-      <TextField
-        label={field.label + (field.isMandatory === 'Y' ? ' *' : '')}
-        type="number"
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-        fullWidth size="small" variant="outlined"
-        disabled={!editable}
-      />
+      <Field label={labelText} size="small">
+        <Input
+          size="small"
+          type="number"
+          value={value == null ? '' : String(value)}
+          onChange={(_e, data) => onChange(data.value === '' ? null : Number(data.value))}
+          disabled={!editable}
+        />
+      </Field>
     );
   }
 
   if (ref === 'Date') {
     return (
-      <TextField
-        label={field.label + (field.isMandatory === 'Y' ? ' *' : '')}
-        type="date"
-        value={(value || '').toString().split('T')[0]}
-        onChange={(e) => onChange(e.target.value || null)}
-        fullWidth size="small" variant="outlined"
-        InputLabelProps={{ shrink: true }}
-        disabled={!editable}
-      />
+      <Field label={labelText} size="small">
+        <Input
+          size="small"
+          type="date"
+          value={(value || '').toString().split('T')[0]}
+          onChange={(_e, data) => onChange(data.value || null)}
+          disabled={!editable}
+        />
+      </Field>
     );
   }
 
   if (ref === 'Button') {
     return (
-      <Button variant="outlined" size="small" disabled>
-        {field.label}
-      </Button>
+      <Button appearance="outline" size="small" disabled>{field.label}</Button>
     );
   }
 
-  // String / Text / Memo / URL / List (fallback)
-  const multiline = ref === 'Text' || ref === 'Memo';
+  // String / Text / Memo / URL / List — single-line Input by default so every
+  // cell in a row has the same height. Only the explicit Memo reference (true
+  // long-form notes) gets a Textarea.
+  if (ref === 'Memo') {
+    return (
+      <Field label={labelText} size="small">
+        <Textarea
+          size="small"
+          value={value ?? ''}
+          onChange={(_e, data) => onChange(data.value)}
+          disabled={!editable}
+          rows={3}
+        />
+      </Field>
+    );
+  }
   return (
-    <TextField
-      label={field.label + (field.isMandatory === 'Y' ? ' *' : '')}
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value)}
-      fullWidth size="small" variant="outlined"
-      multiline={multiline}
-      minRows={multiline ? 2 : undefined}
-      disabled={!editable}
-    />
+    <Field label={labelText} size="small">
+      <Input
+        size="small"
+        value={value ?? ''}
+        onChange={(_e, data) => onChange(data.value)}
+        disabled={!editable}
+      />
+    </Field>
   );
 }
 
-// ── Sticky save / discard bar ───────────────────────────────────────────────
+// ── Sticky save bar ─────────────────────────────────────────────────────────
 function SaveBar({ isNew, dirtyCount, saving, onSave, onDiscard }) {
+  const styles = useStyles();
   return (
-    <Box sx={{
-      position: 'fixed', bottom: 0, left: 0, right: 0,
-      zIndex: 10, p: 1.5,
-      display: 'flex', justifyContent: 'flex-end',
-    }}>
-      <Paper variant="outlined" sx={{
-        display: 'flex', alignItems: 'center', px: 2, py: 1, gap: 2,
-        borderRadius: 1.5, bgcolor: 'background.paper',
-        boxShadow: 'var(--shadow-dropdown)',
-      }}>
-        <Typography variant="body2">
+    <div className={styles.saveBar}>
+      <div className={styles.saveBarPanel}>
+        <Text size={300}>
           {isNew
             ? 'New product (unsaved)'
             : `${dirtyCount} unsaved change${dirtyCount === 1 ? '' : 's'}`}
-        </Typography>
-        <Stack direction="row" spacing={1}>
-          <Button onClick={onDiscard} disabled={saving || isNew}
-                  startIcon={<CloseIcon />} size="small">
+        </Text>
+        <div className={styles.saveBarActions}>
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<Dismiss20Regular />}
+            onClick={onDiscard}
+            disabled={saving || isNew}
+          >
             {isNew ? 'Reset' : 'Discard'}
           </Button>
-          <Button onClick={onSave} disabled={saving} variant="contained" size="small"
-                  startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <SaveIcon />}>
+          <Button
+            appearance="primary"
+            size="small"
+            icon={saving ? <Spinner size="tiny" /> : <Save20Regular />}
+            onClick={onSave}
+            disabled={saving}
+          >
             {isNew ? 'Create' : 'Save'}
           </Button>
-        </Stack>
-      </Paper>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }
 
-// ── Child tab — list of rows + side drawer for editing ──────────────────────
+// ── Child tab ───────────────────────────────────────────────────────────────
 function ChildTab({ tabIndex, tabSpec, parentId, onSavedRow, onError, onDirtyChange }) {
+  const styles = useStyles();
+  const tableStyles = useErpTableStyles();
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -635,21 +875,19 @@ function ChildTab({ tabIndex, tabSpec, parentId, onSavedRow, onError, onDirtyCha
   useEffect(reload, [reload]);
 
   if (loading && rows.length === 0) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>;
+    return <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 0' }}><Spinner size="small" /></div>;
   }
-  if (errorMsg) return <Alert severity="error">{errorMsg}</Alert>;
-  if (rows.length === 0) {
+  if (errorMsg) {
     return (
-      <Box sx={{ py: 4, textAlign: 'center', color: 'text.secondary' }}>
-        <Typography variant="body2">No rows for this tab.</Typography>
-      </Box>
+      <MessageBar intent="error">
+        <MessageBarBody>{errorMsg}</MessageBarBody>
+      </MessageBar>
     );
   }
+  if (rows.length === 0) {
+    return <div className={styles.emptyChild}>No rows for this tab.</div>;
+  }
 
-  // Resolve key strategy:
-  //   - composite key configured → carry the whole row to the drawer; keys
-  //     resolved from the row at save time
-  //   - single PK → use {Table}_ID
   const compositeCols = COMPOSITE_KEYS[tabSpec.tableName];
   const isComposite = !!compositeCols;
   const singleIdCol = !isComposite
@@ -659,7 +897,6 @@ function ChildTab({ tabIndex, tabSpec, parentId, onSavedRow, onError, onDirtyCha
     isComposite
       ? compositeCols.every((c) => r[c.toLowerCase()] != null)
       : !!(singleIdCol && r[singleIdCol]);
-  // Active = the row currently being edited in the side drawer.
   const isRowActive = (r) => {
     if (!editing) return false;
     if (isComposite) {
@@ -671,97 +908,93 @@ function ChildTab({ tabIndex, tabSpec, parentId, onSavedRow, onError, onDirtyCha
     return singleIdCol && r[singleIdCol] != null && r[singleIdCol] === editing[singleIdCol];
   };
 
+  const totalPages = Math.max(1, Math.ceil(total / size));
+  const start = total === 0 ? 0 : page * size + 1;
+  const end = Math.min(total, (page + 1) * size);
+
   return (
-    <Box>
-      <TableContainer>
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow>
-              {cols.map((col) => (
-                <TableCell key={col.columnName} sx={{ fontWeight: 'var(--font-weight-bold)' }}>{col.label}</TableCell>
-              ))}
-              <TableCell sx={{ fontWeight: 'var(--font-weight-bold)', width: 60 }} align="right">Edit</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.map((r, i) => {
-              const editable = isRowEditable(r);
-              const active = isRowActive(r);
-              return (
-                <TableRow
-                  key={i}
-                  selected={active}
-                  onClick={() => editable && setEditing(r)}
-                  sx={{
-                    cursor: editable ? 'pointer' : 'default',
-                    transition: 'background-color var(--transition-fast)',
-                    // Tab-like states — same vocabulary as the vertical tab strip.
-                    '&:hover': editable ? {
-                      backgroundColor: active
-                        ? 'var(--color-primary-bg)'
-                        : 'var(--color-bg-muted)',
-                    } : undefined,
-                    // Selected (= drawer open editing this row) overrides
-                    // MUI's default selected pink with a primary tint and a
-                    // left accent stripe drawn on the first cell.
-                    '&.Mui-selected': {
-                      backgroundColor: 'var(--color-primary-bg)',
-                    },
-                    '&.Mui-selected:hover': {
-                      backgroundColor: 'var(--color-primary-bg)',
-                    },
-                    '& > td:first-of-type': {
-                      borderLeft: '3px solid transparent',
-                    },
-                    '&.Mui-selected > td:first-of-type': {
-                      borderLeft: '3px solid var(--color-primary)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                    },
-                  }}
-                >
-                  {cols.map((col) => (
-                    <TableCell key={col.columnName}>
-                      {formatCell(r[col.columnName.toLowerCase()])}
-                    </TableCell>
-                  ))}
-                  <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                    <IconButton size="small" disabled={!editable} onClick={() => setEditing(r)}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
+    <div className={styles.childPaper}>
+      <Table size="small">
+        <TableHeader>
+          <TableRow className={tableStyles.headerRow}>
+            {cols.map((col) => (
+              <TableHeaderCell key={col.columnName}>{col.label}</TableHeaderCell>
+            ))}
+            <TableHeaderCell style={{ width: 60, textAlign: 'right' }}>Edit</TableHeaderCell>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((r, i) => {
+            const editable = isRowEditable(r);
+            const active = isRowActive(r);
+            return (
+              <TableRow
+                key={i}
+                className={mergeClasses(
+                  styles.childRow,
+                  !editable && styles.childRowDisabled,
+                  active && styles.childRowActive,
+                )}
+                onClick={() => editable && setEditing(r)}
+              >
+                {cols.map((col) => (
+                  <TableCell key={col.columnName}>
+                    {formatCell(r[col.columnName.toLowerCase()])}
                   </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        component="div"
-        count={total} page={page}
-        onPageChange={(_, p) => setPage(p)}
-        rowsPerPage={size}
-        onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
-        rowsPerPageOptions={[25, 50, 100]}
-      />
-      <ChildRowEditDrawer
-        open={!!editing}
-        row={editing}
-        compositeCols={compositeCols}
-        singleIdCol={singleIdCol}
-        tabIndex={tabIndex}
-        tabSpec={tabSpec}
-        onClose={() => setEditing(null)}
-        onSaved={() => { setEditing(null); reload(); onSavedRow?.(); }}
-        onError={onError}
-      />
-    </Box>
+                ))}
+                <TableCell style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    appearance="subtle"
+                    size="small"
+                    icon={<Edit20Regular />}
+                    disabled={!editable}
+                    onClick={() => setEditing(r)}
+                  />
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+      <div className={styles.pager}>
+        <Text size={200}>Rows per page:</Text>
+        <Dropdown
+          size="small"
+          value={String(size)}
+          selectedOptions={[String(size)]}
+          onOptionSelect={(_e, data) => { setSize(parseInt(data.optionValue, 10)); setPage(0); }}
+          style={{ minWidth: 0, width: 84 }}
+        >
+          {[25, 50, 100].map((n) => (
+            <Option key={n} value={String(n)} text={String(n)}>{n}</Option>
+          ))}
+        </Dropdown>
+        <Text size={200}>{start}–{end} of {total}</Text>
+        <div className={styles.pagerControls}>
+          <Button appearance="subtle" size="small" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</Button>
+          <Button appearance="subtle" size="small" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+        </div>
+      </div>
+      {editing && (
+        <ChildRowEditDrawer
+          row={editing}
+          compositeCols={compositeCols}
+          singleIdCol={singleIdCol}
+          tabIndex={tabIndex}
+          tabSpec={tabSpec}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); reload(); onSavedRow?.(); }}
+          onError={onError}
+        />
+      )}
+    </div>
   );
 }
 
 // ── Drawer that edits a single child row ────────────────────────────────────
-function ChildRowEditDrawer({ open, row, compositeCols, singleIdCol, tabIndex, tabSpec, onClose, onSaved, onError }) {
+function ChildRowEditDrawer({ row, compositeCols, singleIdCol, tabIndex, tabSpec, onClose, onSaved, onError }) {
+  const styles = useStyles();
   const original = useMemo(() => {
-    if (!row || !tabSpec) return {};
     const o = {};
     for (const f of tabSpec.fields) o[f.columnName] = row[f.columnName.toLowerCase()];
     return o;
@@ -769,9 +1002,6 @@ function ChildRowEditDrawer({ open, row, compositeCols, singleIdCol, tabIndex, t
 
   const [form, setForm] = useState(original);
   const [saving, setSaving] = useState(false);
-  useEffect(() => { setForm(original); }, [original]);
-
-  if (!row || !tabSpec) return <Drawer open={open} anchor="right" onClose={onClose} />;
 
   const fields = tabSpec.fields
     .filter((f) => f.isDisplayed === 'Y')
@@ -804,43 +1034,52 @@ function ChildRowEditDrawer({ open, row, compositeCols, singleIdCol, tabIndex, t
   };
 
   return (
-    <Drawer open={open} anchor="right" onClose={onClose}
-            PaperProps={{ sx: { width: { xs: '100%', sm: 560 } } }}>
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
-        <Typography variant="h6" sx={{ flex: 1, fontWeight: 'var(--font-weight-bold)' }}>
-          Edit {tabSpec.name}
-        </Typography>
-        <IconButton onClick={onClose}><CloseIcon /></IconButton>
-      </Box>
-      <Box sx={{ p: 2, flex: 1, overflowY: 'auto' }}>
-        <Grid container spacing={1.5}>
-          {fields.map((f) => {
-            const visible = !f.displayLogic || evaluateDisplayLogic(f.displayLogic, form);
-            if (!visible) return null;
-            const span = Math.min(12, Math.max(2, f.columnSpan || 6));
-            const md = span * 2;
-            return (
-              <Grid item xs={12} md={md} key={f.columnName}>
-                <FieldRenderer
-                  field={f}
-                  value={form[f.columnName]}
-                  lookup={null}
-                  onChange={(v) => setForm((s) => ({ ...s, [f.columnName]: v }))}
-                />
-              </Grid>
-            );
-          })}
-        </Grid>
-      </Box>
-      <Box sx={{ p: 2, display: 'flex', gap: 1, borderTop: 1, borderColor: 'divider', justifyContent: 'flex-end' }}>
-        <Button onClick={onClose} disabled={saving}>Cancel</Button>
-        <Button variant="contained" onClick={onSave}
-                disabled={!isDirty || saving}
-                startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <SaveIcon />}>
-          Save
-        </Button>
-      </Box>
-    </Drawer>
+    <Dialog
+      open
+      onOpenChange={(_, data) => { if (!data.open) onClose?.(); }}
+      modalType="non-modal"
+    >
+      <DialogSurface style={{ maxWidth: 560 }}>
+        <DialogBody>
+          <DialogTitle
+            action={
+              <Button appearance="subtle" size="small" icon={<Dismiss20Regular />} onClick={onClose} />
+            }
+          >
+            Edit {tabSpec.name}
+          </DialogTitle>
+          <DialogContent>
+            <div className={styles.drawerForm}>
+              {fields.map((f) => {
+                const visible = !f.displayLogic || evaluateDisplayLogic(f.displayLogic, form);
+                if (!visible) return null;
+                return (
+                  <FieldRenderer
+                    key={f.columnName}
+                    field={f}
+                    value={form[f.columnName]}
+                    lookup={null}
+                    onChange={(v) => setForm((s) => ({ ...s, [f.columnName]: v }))}
+                  />
+                );
+              })}
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button appearance="secondary" size="small" onClick={onClose} disabled={saving}>Cancel</Button>
+            <Button
+              appearance="primary"
+              size="small"
+              onClick={onSave}
+              disabled={!isDirty || saving}
+              icon={saving ? <Spinner size="tiny" /> : <Save20Regular />}
+            >
+              Save
+            </Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
   );
 }
 
@@ -873,8 +1112,6 @@ function readLookup(data, columnName) {
   }
 }
 
-// Map the bundle's flat lowercase row back into the camelCase shape the
-// /api/erp/products/:id endpoint returns, for in-place state updates after save.
 function mapBundleToProduct(row) {
   if (!row) return {};
   const out = {};

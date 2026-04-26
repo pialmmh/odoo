@@ -85,3 +85,35 @@ systems we integrate with. This includes, but is not limited to:
 | Keycloak realm     | Tenant                               |
 | APISIX route       | (never mention — it's infrastructure)|
 | Kafka topic        | Event / Notification (if user-visible at all) |
+
+## UI Layout & Theming Discipline
+
+Pairs with the `fluent-ui-forms` and `mui-forms` skills under `.claude/skills/`.
+
+### Project UI Stack
+
+- **Component library**: **Fluent UI v9** (`@fluentui/react-components`) for new work and the ERP/Sidebar surfaces already migrated. **MUI v6** is *legacy* — only edit it in place; do not introduce new MUI screens. Never import from any other UI library.
+- **Density**: Comfortable (Fluent default; do not override per-component)
+- **Theme file**: `ui/src/theme/theme.js` (MUI), Fluent theme is bound in `ui/src/App.jsx` via `webLightTheme` / `webDarkTheme`
+- **Locale direction**: LTR
+
+### UI Generation Rules
+
+When generating ANY form, dialog, modal, settings panel, table filter bar, or input layout:
+
+1. **Invoke the matching skill first.** Fluent file → `fluent-ui-forms`. MUI file → `mui-forms`. Both enforce the same 12-column grid contract.
+2. **State the column-span plan before writing JSX.** Every row gets a comment line first, e.g. `{/* Row 1: ProductCode(md=2) + VendorCode(md=2) + Price(md=4) + Tier(md=4) = 12 ✓ */}`.
+3. **Theming lock.** Colors, spacing, typography, radii come from theme tokens (`tokens.*` in Fluent, `theme.palette.*` / `theme.spacing()` in MUI). No raw hex, no raw px, no inline styles except SVG icons.
+4. **Component reuse before creation.** `grep -r "ComponentName" ui/src/components/` before creating a new component.
+5. **Field count thresholds (apply automatically — do not ask):**
+   - 1–6 fields: flat layout
+   - 7–12: subtitle headers between clusters
+   - 13–24: tabs
+   - 25+: vertical-tab left rail or wizard
+6. **Responsive contract.** Each row declares spans for `xs/sm/md`. At `xs`: dialogs go fullscreen, action bars stack (primary on top), touch targets ≥ 44×44px, fields full-width.
+7. **Pre-flight check.** After writing the form, walk the skill's checklist and report which boxes pass; fix failures before returning.
+8. **Griffel longhand only.** Fluent's `makeStyles` rejects shorthand for RTL safety. Use `borderTopWidth`/`Style`/`Color` etc., not `border:`. Same for `padding`, `outline`, `transition`.
+
+### Quick forms / broken-form diagnosis
+
+"Quick" does not mean "skip the rules." When the user shows a broken form, diagnose against the skill's checklist explicitly (column sum, label pattern, alignment, span vs content, spacing grid, action-bar divider, responsive) before proposing the fixed JSX.
