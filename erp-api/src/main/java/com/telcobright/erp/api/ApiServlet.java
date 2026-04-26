@@ -4,11 +4,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.adempiere.util.ServerContext;
+import org.compiere.model.GridFieldVO;
+import org.compiere.model.GridTabVO;
+import org.compiere.model.GridWindowVO;
+import org.compiere.model.MColumn;
+import org.compiere.model.MLookup;
+import org.compiere.model.MLookupFactory;
+import org.compiere.model.MLookupInfo;
 import org.compiere.model.MTable;
 import org.compiere.model.PO;
 import org.compiere.model.POInfo;
+import org.compiere.model.Query;
+import org.compiere.util.CLogger;
+import org.compiere.util.DB;
+import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
-import org.adempiere.util.ServerContext;
 import org.compiere.util.Trx;
 
 import javax.servlet.ServletException;
@@ -17,15 +28,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -34,18 +44,27 @@ import java.util.regex.Pattern;
 /**
  * Front controller for /erp-api/* endpoints.
  *
- *   GET /erp-api/health
- *   GET /erp-api/window/{adWindowId}/spec
- *   GET /erp-api/window/{adWindowId}/tab/{tabIndex}/rows
+ *   GET  /erp-api/health
+ *   GET  /erp-api/window/{wid}/spec
+ *   GET  /erp-api/window/{wid}/tab/{i}/rows?search=&parentId=&page=&size=&sort=&dir=
+ *   GET  /erp-api/window/{wid}/tab/{i}/row/{id}
+ *   GET  /erp-api/lookup/{refId}?q=&parent=
  *
- * Reads only for the trial. Connects directly to iDempiere's Postgres so
- * the bundle resolves without a Require-Bundle on org.adempiere.base.
- * Writes (PATCH/save/action) will land in a follow-up via GridTab and at
- * that point we'll switch to {@code DB.getConnectionRO()} from iDempiere's
- * own pool.
+ * READS go through iDempiere's model classes — the same entry points the ZK
+ * UI uses: {@link GridWindowVO} for window meta, {@link Query} for list rows,
+ * {@link MTable}+{@link PO} for single rows, {@link MLookupFactory} for FK
+ * display name resolution. No raw SQL against AD or tenant tables here.
+ *
+ * WRITES (PUT/POST) currently go through {@link PO#save()} with
+ * {@code set_ValueNoCheck} — that fires Model Validators and sequence
+ * allocation but skips column callouts. The proper write path
+ * ({@code GridTab.setValue} → {@code dataSave}) is queued separately.
+ * The orchestrix Spring Boot proxy gates access to writes (returns 501
+ * for the BPartner POC).
  */
 public class ApiServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
+    private static final CLogger log = CLogger.getCLogger(ApiServlet.class);
 
     private static final Pattern P_SPEC =
             Pattern.compile("^/window/(\\d+)/spec$");
@@ -57,24 +76,72 @@ public class ApiServlet extends HttpServlet {
             Pattern.compile("^/window/(\\d+)/tab/(\\d+)/row$");
     private static final Pattern P_NEW_ROW =
             Pattern.compile("^/window/(\\d+)/tab/(\\d+)/row$");
-
-    private static final String JDBC_URL =
-            "jdbc:postgresql://127.0.0.1:5433/idempiere";
-    private static final String DB_USER = "adempiere";
-    private static final String DB_PASS = "adempiere";
+    private static final Pattern P_LOOKUP =
+            Pattern.compile("^/lookup/(\\d+)$");
 
     private final ObjectMapper mapper = new ObjectMapper();
 
+    /** AD_Reference.Name by displayType — what ZK / Info windows / the AD
+     *  spec call each ref. {@link DisplayType#getDescription} returns the
+     *  Java identifier ("TableDir", "YesNo") which doesn't match AD_Reference;
+     *  the React side keys on the AD spelling ("Table Direct", "Yes-No"),
+     *  so we normalize here. */
+    private static final Map<Integer, String> AD_REF_NAME = Map.ofEntries(
+            Map.entry(10, "String"),
+            Map.entry(11, "Integer"),
+            Map.entry(12, "Amount"),
+            Map.entry(13, "ID"),
+            Map.entry(14, "Text"),
+            Map.entry(15, "Date"),
+            Map.entry(16, "DateTime"),
+            Map.entry(17, "List"),
+            Map.entry(18, "Table"),
+            Map.entry(19, "Table Direct"),
+            Map.entry(20, "Yes-No"),
+            Map.entry(21, "Location (Address)"),
+            Map.entry(22, "Number"),
+            Map.entry(23, "Binary"),
+            Map.entry(24, "Time"),
+            Map.entry(25, "Account"),
+            Map.entry(26, "RowID"),
+            Map.entry(27, "Color"),
+            Map.entry(28, "Button"),
+            Map.entry(29, "Quantity"),
+            Map.entry(30, "Search"),
+            Map.entry(31, "Locator (WH)"),
+            Map.entry(32, "Image"),
+            Map.entry(33, "Assignment"),
+            Map.entry(34, "Memo"),
+            Map.entry(35, "PAttribute"),
+            Map.entry(36, "Costs+Prices"),
+            Map.entry(37, "FilePath"),
+            Map.entry(38, "FileName"),
+            Map.entry(39, "URL"),
+            Map.entry(40, "Printer Format"),
+            Map.entry(42, "Chart"),
+            Map.entry(50, "Single Selection Grid"),
+            Map.entry(51, "Multiple Selection Grid"),
+            Map.entry(52, "Chosen Multiple Selection List"),
+            Map.entry(53, "Chosen Multiple Selection Search"),
+            Map.entry(54, "Chosen Multiple Selection Table"),
+            Map.entry(55, "Image BLOB"),
+            Map.entry(57, "Multiple Selection Tree")
+    );
+
+    private static String referenceName(int displayType) {
+        String n = AD_REF_NAME.get(displayType);
+        return n != null ? n : DisplayType.getDescription(displayType);
+    }
+
     @Override
     public void init() {
-        // Force-register the postgres driver — DriverManager service-loader
-        // doesn't always find drivers cleanly across OSGi classloaders.
+        // postgres driver registration is unnecessary for the read path now
+        // (iDempiere already manages its own pool via DB.*). Keep the call
+        // for the legacy write health check below.
         try { Class.forName("org.postgresql.Driver"); } catch (Exception ignore) { }
     }
 
-    private Connection openConn() throws SQLException {
-        return DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS);
-    }
+    // ─── HTTP dispatch ──────────────────────────────────────────────────────
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -91,6 +158,15 @@ public class ApiServlet extends HttpServlet {
                 writeJson(resp, windowSpec(windowId));
                 return;
             }
+            if ((m = P_ROW.matcher(path)).matches()) {
+                int windowId = Integer.parseInt(m.group(1));
+                int tabIndex = Integer.parseInt(m.group(2));
+                long recordId = Long.parseLong(m.group(3));
+                ObjectNode row = singleRow(windowId, tabIndex, recordId);
+                if (row == null) { error(resp, 404, "not_found", "Row " + recordId + " not found"); return; }
+                writeJson(resp, row);
+                return;
+            }
             if ((m = P_ROWS.matcher(path)).matches()) {
                 int windowId = Integer.parseInt(m.group(1));
                 int tabIndex = Integer.parseInt(m.group(2));
@@ -98,12 +174,22 @@ public class ApiServlet extends HttpServlet {
                 int size = clamp(parseInt(req.getParameter("size"), 50), 1, 200);
                 String search = req.getParameter("search");
                 Long parentId = parseLong(req.getParameter("parentId"));
-                writeJson(resp, tabRows(windowId, tabIndex, search, parentId, page, size));
+                String sort = req.getParameter("sort");
+                String dir = req.getParameter("dir");
+                writeJson(resp, tabRows(windowId, tabIndex, search, parentId, page, size, sort, dir));
+                return;
+            }
+            if ((m = P_LOOKUP.matcher(path)).matches()) {
+                int refId = Integer.parseInt(m.group(1));
+                String q = req.getParameter("q");
+                writeJson(resp, lookupRows(refId, q));
                 return;
             }
             error(resp, 404, "not_found", "Unknown path: " + path);
+        } catch (IllegalArgumentException e) {
+            error(resp, 400, "bad_request", e.getMessage());
         } catch (Exception e) {
-            log("erp-api: " + path + " failed", e);
+            log.severe("erp-api GET " + path + " failed: " + e);
             error(resp, 500, "internal_error", e.getMessage());
         }
     }
@@ -129,7 +215,7 @@ public class ApiServlet extends HttpServlet {
         } catch (PoSaveException e) {
             error(resp, 422, "save_failed", e.getMessage());
         } catch (Exception e) {
-            log("erp-api POST: " + path + " failed", e);
+            log.severe("erp-api POST " + path + " failed: " + e);
             error(resp, 500, "internal_error", e.getMessage());
         }
     }
@@ -169,12 +255,12 @@ public class ApiServlet extends HttpServlet {
         } catch (PoSaveException e) {
             error(resp, 422, "save_failed", e.getMessage());
         } catch (Exception e) {
-            log("erp-api PUT: " + path + " failed", e);
+            log.severe("erp-api PUT " + path + " failed: " + e);
             error(resp, 500, "internal_error", e.getMessage());
         }
     }
 
-    // ─── Endpoints ──────────────────────────────────────────────────────────
+    // ─── READ ENDPOINTS — entry points the ZK UI uses ─────────────────────
 
     private ObjectNode healthBody() {
         ObjectNode n = mapper.createObjectNode();
@@ -182,205 +268,514 @@ public class ApiServlet extends HttpServlet {
         n.put("bundle", "com.telcobright.erp.api");
         n.put("version", "1.0.0");
         n.put("timestamp", Instant.now().toString());
-        try (Connection c = openConn()) {
-            n.put("dbReachable", c != null && !c.isClosed());
-        } catch (Exception e) {
-            n.put("dbReachable", false);
-            n.put("dbError", e.getMessage());
-        }
         return n;
     }
 
     /**
-     * Builds the AD spec for a window: tabs and their fields, the same
-     * shape we baked into m_product_window.json. Generic over windowId.
+     * Window spec via {@link GridWindowVO#create(Properties, int, int)} — the
+     * same call ZK's {@code AbstractADWindowContent} makes (line 333 of that
+     * file). Walks {@code vo.Tabs} → {@code tabVO.getFields()} (lists of VO
+     * objects already enriched with UserDef overrides and ASP filtering).
+     * No raw SQL — the VO's internal SQL handles AD_Window/AD_Tab/AD_Field.
      */
-    private ObjectNode windowSpec(int windowId) throws SQLException {
-        ObjectNode root = mapper.createObjectNode();
-        try (Connection c = openConn()) {
-            // Window header
-            try (PreparedStatement st = c.prepareStatement(
-                    "SELECT name FROM adempiere.ad_window WHERE ad_window_id = ?")) {
-                st.setInt(1, windowId);
-                try (ResultSet rs = st.executeQuery()) {
-                    if (!rs.next()) throw new SQLException("Unknown window id " + windowId);
-                    root.put("windowId", windowId);
-                    root.put("name", rs.getString("name"));
-                }
+    private ObjectNode windowSpec(int windowId) {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        try {
+            GridWindowVO winVO = GridWindowVO.create(ctx, 0, windowId);
+            if (winVO == null) {
+                throw new IllegalArgumentException("Unknown window id " + windowId);
             }
-            // Tabs
+            ObjectNode root = mapper.createObjectNode();
+            root.put("windowId", winVO.AD_Window_ID);
+            root.put("name", winVO.Name);
             ArrayNode tabs = root.putArray("tabs");
-            String tabSql =
-                    "SELECT t.ad_tab_id, t.seqno, t.name, t.tablevel, t.isreadonly, t.issinglerow, " +
-                    "       tbl.tablename " +
-                    "FROM adempiere.ad_tab t " +
-                    "JOIN adempiere.ad_table tbl ON tbl.ad_table_id = t.ad_table_id " +
-                    "WHERE t.ad_window_id = ? AND t.isactive = 'Y' " +
-                    "ORDER BY t.seqno";
-            try (PreparedStatement st = c.prepareStatement(tabSql)) {
-                st.setInt(1, windowId);
-                try (ResultSet rs = st.executeQuery()) {
-                    while (rs.next()) {
-                        ObjectNode tab = tabs.addObject();
-                        int tabId = rs.getInt("ad_tab_id");
-                        tab.put("seqno", rs.getInt("seqno"));
-                        tab.put("name", rs.getString("name"));
-                        tab.put("tableName", rs.getString("tablename"));
-                        tab.put("tableLevel", rs.getInt("tablevel"));
-                        tab.put("isReadOnly", "Y".equals(rs.getString("isreadonly")));
-                        tab.put("isSingleRow", "Y".equals(rs.getString("issinglerow")));
-                        tab.set("fields", fieldsForTab(c, tabId));
-                    }
+            int seq = 0;
+            for (GridTabVO tabVO : winVO.Tabs) {
+                seq += 10;
+                ObjectNode tab = tabs.addObject();
+                tab.put("seqno", seq);
+                tab.put("name", tabVO.Name);
+                tab.put("tableName", tabVO.TableName);
+                tab.put("tableLevel", tabVO.TabLevel);
+                tab.put("isReadOnly", tabVO.IsReadOnly);
+                tab.put("isSingleRow", tabVO.IsSingleRow);
+                ArrayNode fields = tab.putArray("fields");
+                for (GridFieldVO fv : tabVO.getFields()) {
+                    ObjectNode f = fields.addObject();
+                    f.put("seqno", fv.SeqNo);
+                    f.put("label", fv.Header);
+                    f.put("columnName", fv.ColumnName);
+                    f.put("reference", referenceName(fv.displayType));
+                    f.put("displayType", fv.displayType);
+                    f.put("isMandatory", fv.IsMandatory);
+                    f.put("isUpdateable", fv.IsUpdateable);
+                    f.put("fieldLength", fv.DisplayLength);
+                    f.put("defaultValue", emptyToNull(fv.DefaultValue));
+                    f.put("callout", emptyToNull(fv.Callout));
+                    f.putNull("valRuleId");
+                    f.put("validationCode", emptyToNull(fv.ValidationCode));
+                    f.put("isDisplayed", fv.IsDisplayed);
+                    f.put("isDisplayedGrid", fv.IsDisplayedGrid);
+                    f.put("seqNoGrid", fv.SeqNoGrid);
+                    f.put("displayLogic", emptyToNull(fv.DisplayLogic));
+                    f.put("readOnlyLogic", emptyToNull(fv.ReadOnlyLogic));
+                    f.put("columnSpan", fv.ColumnSpan > 0 ? fv.ColumnSpan : 2);
+                    f.put("isSameLine", fv.IsSameLine);
+                    f.put("isIdentifier", fv.IsKey);
+                    f.put("fieldGroup", emptyToNull(fv.FieldGroup));
                 }
             }
+            return root;
+        } finally {
+            restoreCtx(prevCtx);
         }
-        return root;
-    }
-
-    private ArrayNode fieldsForTab(Connection c, int tabId) throws SQLException {
-        ArrayNode out = mapper.createArrayNode();
-        String sql =
-                "SELECT f.seqno, f.name AS label, c.columnname, r.name AS reference, " +
-                "       c.ismandatory, c.isupdateable, c.fieldlength, c.defaultvalue, c.callout, " +
-                "       c.ad_val_rule_id, f.isdisplayed, f.isdisplayedgrid, f.seqnogrid, " +
-                "       f.displaylogic, f.readonlylogic, f.columnspan, f.issameline, " +
-                "       c.isidentifier, c.isselectioncolumn " +
-                "FROM adempiere.ad_field f " +
-                "JOIN adempiere.ad_column c ON c.ad_column_id = f.ad_column_id " +
-                "JOIN adempiere.ad_reference r ON r.ad_reference_id = c.ad_reference_id " +
-                "WHERE f.ad_tab_id = ? AND f.isactive = 'Y' " +
-                "ORDER BY f.seqno";
-        try (PreparedStatement st = c.prepareStatement(sql)) {
-            st.setInt(1, tabId);
-            try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    ObjectNode f = out.addObject();
-                    f.put("seqno", rs.getInt("seqno"));
-                    f.put("label", rs.getString("label"));
-                    f.put("columnName", rs.getString("columnname"));
-                    f.put("reference", rs.getString("reference"));
-                    f.put("isMandatory", "Y".equals(rs.getString("ismandatory")));
-                    f.put("isUpdateable", "Y".equals(rs.getString("isupdateable")));
-                    f.put("fieldLength", rs.getInt("fieldlength"));
-                    f.put("defaultValue", rs.getString("defaultvalue"));
-                    f.put("callout", rs.getString("callout"));
-                    int valRule = rs.getInt("ad_val_rule_id");
-                    if (rs.wasNull()) f.putNull("valRuleId"); else f.put("valRuleId", valRule);
-                    f.put("isDisplayed", "Y".equals(rs.getString("isdisplayed")));
-                    f.put("isDisplayedGrid", "Y".equals(rs.getString("isdisplayedgrid")));
-                    f.put("seqNoGrid", rs.getInt("seqnogrid"));
-                    f.put("displayLogic", rs.getString("displaylogic"));
-                    f.put("readOnlyLogic", rs.getString("readonlylogic"));
-                    f.put("columnSpan", rs.getInt("columnspan"));
-                    f.put("isSameLine", "Y".equals(rs.getString("issameline")));
-                    f.put("isIdentifier", "Y".equals(rs.getString("isidentifier")));
-                    f.put("isSelectionColumn", "Y".equals(rs.getString("isselectioncolumn")));
-                }
-            }
-        }
-        return out;
     }
 
     /**
-     * Lists rows for a given tab. Supports parent-link filtering for child
-     * tabs via the AD parent_column_id (falls back to {@code <ParentTable>_ID}).
-     * FK display resolution and AD_Val_Rule enforcement come later when the
-     * write path arrives via GridTab.
+     * Paginated list of rows for a tab via {@link Query} — the same model
+     * class iDempiere's Info windows use under the hood. FK columns shown in
+     * the grid get {@code <col>_display} attached, resolved through
+     * {@link MLookupFactory#get(Properties, int, int, int, ...)} +
+     * {@link MLookup#getDisplay(Object)} — exactly how ZK renders FK cells.
      */
     private ObjectNode tabRows(int windowId, int tabIndex, String search,
-                               Long parentId, int page, int size) throws SQLException {
-        ObjectNode out = mapper.createObjectNode();
-        try (Connection c = openConn()) {
-            String tableName;
-            int adTableId;
-            String parentColumn = null;
-            try (PreparedStatement st = c.prepareStatement(
-                    "SELECT t.ad_tab_id, t.ad_table_id, tbl.tablename, " +
-                    "       (SELECT pc.columnname FROM adempiere.ad_column pc WHERE pc.ad_column_id = t.parent_column_id) AS parent_col " +
-                    "FROM adempiere.ad_tab t " +
-                    "JOIN adempiere.ad_table tbl ON tbl.ad_table_id = t.ad_table_id " +
-                    "WHERE t.ad_window_id = ? AND t.isactive = 'Y' ORDER BY t.seqno OFFSET ? FETCH FIRST 1 ROWS ONLY")) {
-                st.setInt(1, windowId);
-                st.setInt(2, tabIndex);
-                try (ResultSet rs = st.executeQuery()) {
-                    if (!rs.next()) throw new SQLException("Tab " + tabIndex + " not found in window " + windowId);
-                    tableName = rs.getString("tablename");
-                    adTableId = rs.getInt("ad_table_id");
-                    parentColumn = rs.getString("parent_col");
+                               Long parentId, int page, int size,
+                               String sortField, String sortDir) {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        try {
+            GridWindowVO winVO = GridWindowVO.create(ctx, 0, windowId);
+            if (winVO == null) throw new IllegalArgumentException("Unknown window id " + windowId);
+            if (tabIndex < 0 || tabIndex >= winVO.Tabs.size()) {
+                throw new IllegalArgumentException("Tab " + tabIndex + " out of range for window " + windowId);
+            }
+            GridTabVO tabVO = winVO.Tabs.get(tabIndex);
+            String tableName = tabVO.TableName;
+            POInfo pi = POInfo.getPOInfo(ctx, tabVO.AD_Table_ID);
+            if (pi == null) throw new IllegalStateException("POInfo missing for " + tableName);
+
+            // Build where clause + params
+            StringBuilder where = new StringBuilder();
+            List<Object> params = new ArrayList<>();
+            if (tabVO.WhereClause != null && !tabVO.WhereClause.isEmpty()) {
+                where.append(tabVO.WhereClause);
+            }
+            if (parentId != null && tabVO.TabLevel > 0) {
+                String parentCol = resolveParentLinkColumn(ctx, winVO, tabIndex);
+                if (parentCol != null) {
+                    if (where.length() > 0) where.append(" AND ");
+                    where.append(parentCol).append("=?");
+                    params.add(parentId);
                 }
             }
-            String safeTable = tableName.replaceAll("[^A-Za-z0-9_]", "");
-
-            // Order column: prefer <Table>_ID, fall back to AD IsKey columns,
-            // fall back to "1" (first column). Composite-key tables (like
-            // M_Product_Acct, M_Product_PO) don't have a single PK.
-            String orderCol = "1";
-            try (PreparedStatement st = c.prepareStatement(
-                    "SELECT columnname FROM adempiere.ad_column WHERE ad_table_id = ? AND iskey = 'Y' ORDER BY ad_column_id")) {
-                st.setInt(1, adTableId);
-                try (ResultSet rs = st.executeQuery()) {
-                    StringBuilder sb = new StringBuilder();
-                    while (rs.next()) {
-                        if (sb.length() > 0) sb.append(", ");
-                        sb.append(rs.getString("columnname").replaceAll("[^A-Za-z0-9_]", ""));
+            if (search != null && !search.isBlank()) {
+                String like = "%" + search.toLowerCase().trim() + "%";
+                StringBuilder sb = new StringBuilder("(");
+                boolean first = true;
+                for (String col : new String[]{"Value", "Name", "TaxID", "DocumentNo"}) {
+                    if (pi.getColumnIndex(col) >= 0) {
+                        if (!first) sb.append(" OR ");
+                        sb.append("LOWER(COALESCE(").append(col).append("::text,'')) LIKE ?");
+                        params.add(like);
+                        first = false;
                     }
-                    if (sb.length() > 0) orderCol = sb.toString();
+                }
+                if (!first) {
+                    sb.append(")");
+                    if (where.length() > 0) where.append(" AND ");
+                    where.append(sb);
                 }
             }
 
-            // Default child-link convention if AD didn't name one: <ParentTable>_ID.
-            // For Product window, every child has M_Product_ID.
-            if (parentColumn == null && parentId != null) parentColumn = "M_Product_ID";
-            String safeParentCol = parentColumn == null ? null
-                    : parentColumn.replaceAll("[^A-Za-z0-9_]", "");
+            // Build the Query — same constructor signature ZK uses for ad-hoc reads
+            Query q = new Query(ctx, tableName, where.toString(), null);
+            if (!params.isEmpty()) q.setParameters(params.toArray());
 
-            StringBuilder whereSb = new StringBuilder("ad_client_id IN (0, 11)");
-            if (parentId != null && safeParentCol != null) {
-                whereSb.append(" AND ").append(safeParentCol).append(" = ?");
+            String orderBy = null;
+            if (sortField != null && !sortField.isBlank()) {
+                String safeField = sortField.replaceAll("[^A-Za-z0-9_]", "");
+                String d = "desc".equalsIgnoreCase(sortDir) ? "DESC" : "ASC";
+                orderBy = safeField + " " + d;
+            } else if (tabVO.OrderByClause != null && !tabVO.OrderByClause.isEmpty()) {
+                orderBy = tabVO.OrderByClause;
             }
-            boolean hasSearch = search != null && !search.isBlank();
-            String like = hasSearch ? "%" + search.toLowerCase().trim() + "%" : null;
-            if (hasSearch) {
-                whereSb.append(" AND (LOWER(COALESCE(value::text,'')) LIKE ? OR LOWER(COALESCE(name::text,'')) LIKE ?)");
-            }
-            String where = whereSb.toString();
-            String selectSql = "SELECT * FROM adempiere." + safeTable +
-                    " WHERE " + where + " ORDER BY " + orderCol + " LIMIT ? OFFSET ?";
-            String countSql = "SELECT COUNT(*) FROM adempiere." + safeTable + " WHERE " + where;
+            if (orderBy != null) q.setOrderBy(orderBy);
 
+            long total = q.count();
+            q.setPage(size, page);
+            List<PO> rows = q.list();
+
+            // Pre-build MLookup per FK column shown in grid — one lookup per
+            // column, reused across rows (the lookup's data set is cached
+            // internally by MLookupFactory).
+            Map<String, MLookup> lookups = new HashMap<>();
+            for (GridFieldVO fv : tabVO.getFields()) {
+                if (fv.IsDisplayedGrid && DisplayType.isLookup(fv.displayType) && !fv.IsKey) {
+                    try {
+                        MLookup lk = MLookupFactory.get(ctx, 0, fv.AD_Column_ID, fv.displayType,
+                                Env.getLanguage(ctx), fv.ColumnName,
+                                fv.AD_Reference_Value_ID, fv.IsParent, fv.ValidationCode);
+                        if (lk != null) lookups.put(fv.ColumnName, lk);
+                    } catch (Exception e) { /* skip uncreatable lookup */ }
+                }
+            }
+
+            ObjectNode out = mapper.createObjectNode();
             ArrayNode items = out.putArray("items");
-            try (PreparedStatement st = c.prepareStatement(selectSql)) {
-                int i = 1;
-                if (parentId != null && safeParentCol != null) st.setLong(i++, parentId);
-                if (hasSearch) { st.setString(i++, like); st.setString(i++, like); }
-                st.setInt(i++, size);
-                st.setInt(i, page * size);
-                try (ResultSet rs = st.executeQuery()) {
-                    ResultSetMetaData md = rs.getMetaData();
-                    while (rs.next()) {
-                        ObjectNode row = items.addObject();
-                        for (int col = 1; col <= md.getColumnCount(); col++) {
-                            putColumn(row, md.getColumnLabel(col), rs.getObject(col));
-                        }
+            for (PO po : rows) {
+                ObjectNode row = items.addObject();
+                for (int i = 0; i < pi.getColumnCount(); i++) {
+                    String col = pi.getColumnName(i);
+                    Object val = po.get_Value(i);
+                    putColumn(row, col, val);
+                    MLookup lk = lookups.get(col);
+                    if (lk != null && val != null) {
+                        try {
+                            String disp = lk.getDisplay(val);
+                            if (disp != null && !disp.isBlank() && !disp.startsWith("<")) {
+                                row.put(col.toLowerCase() + "_display", disp);
+                            }
+                        } catch (Exception ignore) { /* FK display optional */ }
                     }
                 }
-            }
-            long total;
-            try (PreparedStatement st = c.prepareStatement(countSql)) {
-                int i = 1;
-                if (parentId != null && safeParentCol != null) st.setLong(i++, parentId);
-                if (hasSearch) { st.setString(i++, like); st.setString(i, like); }
-                try (ResultSet rs = st.executeQuery()) { rs.next(); total = rs.getLong(1); }
             }
             out.put("windowId", windowId);
             out.put("tabIndex", tabIndex);
             out.put("tableName", tableName);
-            if (parentColumn != null) out.put("parentColumn", parentColumn);
             out.put("page", page);
             out.put("size", size);
             out.put("total", total);
+            return out;
+        } finally {
+            restoreCtx(prevCtx);
         }
-        return out;
+    }
+
+    /**
+     * Single-row read via {@link MTable#get(Properties, int)}+
+     * {@link MTable#getPO(int, String)} — the canonical model entry point
+     * ZK uses to load a record into a {@code GridTab}. All FK columns get
+     * a {@code <col>_display} sibling for the human-readable display name.
+     */
+    private ObjectNode singleRow(int windowId, int tabIndex, long recordId) {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        try {
+            GridWindowVO winVO = GridWindowVO.create(ctx, 0, windowId);
+            if (winVO == null) throw new IllegalArgumentException("Unknown window id " + windowId);
+            if (tabIndex < 0 || tabIndex >= winVO.Tabs.size()) {
+                throw new IllegalArgumentException("Tab " + tabIndex + " out of range for window " + windowId);
+            }
+            GridTabVO tabVO = winVO.Tabs.get(tabIndex);
+            MTable mt = MTable.get(ctx, tabVO.AD_Table_ID);
+            if (mt == null) throw new IllegalStateException("MTable not found for id " + tabVO.AD_Table_ID);
+            PO po = mt.getPO((int) recordId, null);
+            if (po == null || po.get_ID() <= 0) return null;
+
+            POInfo pi = POInfo.getPOInfo(ctx, tabVO.AD_Table_ID);
+            Map<String, MLookup> lookups = new HashMap<>();
+            for (GridFieldVO fv : tabVO.getFields()) {
+                if (DisplayType.isLookup(fv.displayType) && !fv.IsKey) {
+                    try {
+                        MLookup lk = MLookupFactory.get(ctx, 0, fv.AD_Column_ID, fv.displayType,
+                                Env.getLanguage(ctx), fv.ColumnName,
+                                fv.AD_Reference_Value_ID, fv.IsParent, fv.ValidationCode);
+                        if (lk != null) lookups.put(fv.ColumnName, lk);
+                    } catch (Exception e) { /* skip */ }
+                }
+            }
+
+            ObjectNode row = mapper.createObjectNode();
+            for (int i = 0; i < pi.getColumnCount(); i++) {
+                String col = pi.getColumnName(i);
+                Object val = po.get_Value(i);
+                putColumn(row, col, val);
+                MLookup lk = lookups.get(col);
+                if (lk != null && val != null) {
+                    try {
+                        String disp = lk.getDisplay(val);
+                        if (disp != null && !disp.isBlank() && !disp.startsWith("<")) {
+                            row.put(col.toLowerCase() + "_display", disp);
+                        }
+                    } catch (Exception ignore) { }
+                }
+            }
+            return row;
+        } finally {
+            restoreCtx(prevCtx);
+        }
+    }
+
+    /**
+     * AD_Reference dropdown rows via {@link MLookupFactory#getLookupInfo}.
+     * The returned {@link MLookupInfo} carries the canonical SQL ZK uses for
+     * the same dropdown — we execute it via {@link DB#prepareStatement}.
+     * Capped at 50 rows for the POC; pagination + parent filtering is a
+     * follow-up when the React side grows a typeahead picker.
+     */
+    private ObjectNode lookupRows(int adReferenceId, String q) {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        try {
+            MLookupInfo info;
+            try {
+                info = MLookupFactory.getLookupInfo(ctx, 0, 0, DisplayType.Table,
+                        Env.getLanguage(ctx), null, adReferenceId, false, null);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Could not resolve AD_Reference " + adReferenceId + ": " + e.getMessage());
+            }
+            ObjectNode out = mapper.createObjectNode();
+            ArrayNode items = out.putArray("items");
+            if (info == null || info.Query == null) {
+                out.put("note", "no lookup info for ref " + adReferenceId);
+                return out;
+            }
+            // Filter by display name if q given. The MLookupInfo SQL has a
+            // standard column order: Key, Value, DisplayName(s)…
+            String sql = info.Query;
+            if (q != null && !q.isBlank()) {
+                String safe = q.replace("'", "''").trim();
+                String filter = " UPPER(" + info.DisplayColumn + ") LIKE UPPER('%" + safe + "%') ";
+                int orderIdx = sql.toUpperCase().lastIndexOf(" ORDER BY ");
+                if (orderIdx >= 0) {
+                    String head = sql.substring(0, orderIdx);
+                    String tail = sql.substring(orderIdx);
+                    sql = head + (head.toUpperCase().contains(" WHERE ") ? " AND " : " WHERE ") + filter + tail;
+                } else {
+                    sql = sql + (sql.toUpperCase().contains(" WHERE ") ? " AND " : " WHERE ") + filter;
+                }
+            }
+            try (PreparedStatement st = DB.prepareStatement(sql, null)) {
+                ResultSet rs = st.executeQuery();
+                int count = 0;
+                while (rs.next() && count < 50) {
+                    ObjectNode item = items.addObject();
+                    int colCount = rs.getMetaData().getColumnCount();
+                    if (colCount >= 1) item.put("id", rs.getInt(1));
+                    if (colCount >= 2) item.put("value", rs.getString(2));
+                    if (colCount >= 3) item.put("name", rs.getString(3));
+                    count++;
+                }
+                rs.close();
+            } catch (Exception e) {
+                throw new IllegalStateException("Lookup query failed: " + e.getMessage(), e);
+            }
+            return out;
+        } finally {
+            restoreCtx(prevCtx);
+        }
+    }
+
+    // ─── WRITE PATH (legacy — proxy returns 501 for new entities) ────────
+
+    private ObjectNode savePo(int windowId, int tabIndex, long recordId,
+                              Map<String, Object> keys, Map<String, Object> changes) throws Exception {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        String trxName = Trx.createTrxName("erp-api-save");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            GridWindowVO winVO = GridWindowVO.create(ctx, 0, windowId);
+            GridTabVO tabVO = winVO.Tabs.get(tabIndex);
+            MTable mt = MTable.get(ctx, tabVO.AD_Table_ID);
+            if (mt == null) throw new IllegalStateException("MTable not found for id " + tabVO.AD_Table_ID);
+            PO po;
+            if (keys != null && !keys.isEmpty()) {
+                po = loadPoByKeys(ctx, mt, tabVO.TableName, keys, trxName);
+            } else {
+                po = mt.getPO((int) recordId, trxName);
+            }
+            if (po == null || po.get_ID() < 0) {
+                throw new PoSaveException("Row not found: " + tabVO.TableName +
+                        (keys != null ? " keys=" + keys : "[" + recordId + "]"));
+            }
+            POInfo pi = POInfo.getPOInfo(ctx, tabVO.AD_Table_ID);
+            for (Map.Entry<String, Object> e : changes.entrySet()) {
+                int idx = po.get_ColumnIndex(e.getKey());
+                if (idx < 0) throw new PoSaveException("Unknown column on " + tabVO.TableName + ": " + e.getKey());
+                Class<?> cls = pi != null ? pi.getColumnClass(idx) : Object.class;
+                Object coerced = coerceTo(cls, e.getValue());
+                if (!po.set_ValueNoCheck(e.getKey(), coerced)) {
+                    throw new PoSaveException("set_Value rejected " + e.getKey() +
+                            " (column read-only or value invalid?)");
+                }
+            }
+            if (!po.save()) {
+                org.compiere.util.ValueNamePair last = CLogger.retrieveError();
+                throw new PoSaveException(last != null ? last.getName() : "PO.save() returned false");
+            }
+            trx.commit(true);
+            int singleId = po.get_ID();
+            if (singleId > 0) {
+                ObjectNode out = singleRow(windowId, tabIndex, singleId);
+                if (out != null) return out;
+            }
+            return mapper.createObjectNode().put("ok", true);
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            restoreCtx(prevCtx);
+        }
+    }
+
+    private ObjectNode createPo(int windowId, int tabIndex, Map<String, Object> changes) throws Exception {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        String trxName = Trx.createTrxName("erp-api-create");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            GridWindowVO winVO = GridWindowVO.create(ctx, 0, windowId);
+            GridTabVO tabVO = winVO.Tabs.get(tabIndex);
+            MTable mt = MTable.get(ctx, tabVO.AD_Table_ID);
+            if (mt == null) throw new IllegalStateException("MTable not found for id " + tabVO.AD_Table_ID);
+            PO po = mt.getPO(0, trxName);
+            if (po == null) throw new PoSaveException("Could not instantiate PO for " + tabVO.TableName);
+            POInfo pi = POInfo.getPOInfo(ctx, tabVO.AD_Table_ID);
+            for (Map.Entry<String, Object> e : changes.entrySet()) {
+                int idx = po.get_ColumnIndex(e.getKey());
+                if (idx < 0) throw new PoSaveException("Unknown column on " + tabVO.TableName + ": " + e.getKey());
+                Class<?> cls = pi != null ? pi.getColumnClass(idx) : Object.class;
+                Object coerced = coerceTo(cls, e.getValue());
+                if (!po.set_ValueNoCheck(e.getKey(), coerced)) {
+                    throw new PoSaveException("set_Value rejected " + e.getKey() + " on new row");
+                }
+            }
+            if (!po.save()) {
+                org.compiere.util.ValueNamePair last = CLogger.retrieveError();
+                throw new PoSaveException(last != null ? last.getName() : "PO.save() returned false");
+            }
+            trx.commit(true);
+            int newId = po.get_ID();
+            if (newId > 0) {
+                ObjectNode out = singleRow(windowId, tabIndex, newId);
+                if (out != null) return out;
+            }
+            return mapper.createObjectNode().put("ok", true);
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            restoreCtx(prevCtx);
+        }
+    }
+
+    private PO loadPoByKeys(Properties ctx, MTable mt, String tableName, Map<String, Object> keys, String trxName) {
+        StringBuilder where = new StringBuilder();
+        List<Object> params = new ArrayList<>();
+        for (Map.Entry<String, Object> e : keys.entrySet()) {
+            String safeCol = e.getKey().replaceAll("[^A-Za-z0-9_]", "");
+            if (where.length() > 0) where.append(" AND ");
+            where.append(safeCol).append("=?");
+            params.add(e.getValue());
+        }
+        List<PO> hits = new Query(ctx, tableName, where.toString(), trxName)
+                .setParameters(params.toArray()).list();
+        return hits.isEmpty() ? null : hits.get(0);
+    }
+
+    // ─── HELPERS ────────────────────────────────────────────────────────────
+
+    /**
+     * Bootstrap a request context. Hard-coded GardenWorld super-admin —
+     * client 11, org *, user 100 (SuperUser), role 102. When Keycloak JWT
+     * validation lands, this resolves the calling user's iDempiere role.
+     * Documented as a known POC gap in the BFF handoff.
+     */
+    private Properties newRequestContext() {
+        Properties ctx = new Properties();
+        Env.setContext(ctx, "#AD_Client_ID", 11);
+        Env.setContext(ctx, "#AD_Org_ID", 0);
+        Env.setContext(ctx, "#AD_User_ID", 100);
+        Env.setContext(ctx, "#AD_Role_ID", 102);
+        Env.setContext(ctx, "#Date", new Timestamp(System.currentTimeMillis()));
+        Env.setContext(ctx, "#AD_Language", "en_US");
+        return ctx;
+    }
+
+    private void restoreCtx(Properties prevCtx) {
+        if (prevCtx != null) ServerContext.setCurrentInstance(prevCtx);
+        else ServerContext.dispose();
+    }
+
+    /**
+     * Resolve the column on the current (child) tab that links to its
+     * parent tab's PK. Honours {@code Parent_Column_ID} from AD when set,
+     * else falls back to the convention {@code <ParentTable>_ID}.
+     */
+    private String resolveParentLinkColumn(Properties ctx, GridWindowVO winVO, int tabIndex) {
+        GridTabVO tabVO = winVO.Tabs.get(tabIndex);
+        if (tabVO.Parent_Column_ID > 0) {
+            try {
+                MColumn pcol = MColumn.get(ctx, tabVO.Parent_Column_ID);
+                if (pcol != null) return pcol.getColumnName();
+            } catch (Exception ignore) { }
+        }
+        // Walk up to the closest tab with a smaller TabLevel
+        for (int i = tabIndex - 1; i >= 0; i--) {
+            if (winVO.Tabs.get(i).TabLevel < tabVO.TabLevel) {
+                return winVO.Tabs.get(i).TableName + "_ID";
+            }
+        }
+        return null;
+    }
+
+    private void putColumn(ObjectNode row, String label, Object val) {
+        String key = label.toLowerCase();
+        if (val == null) { row.putNull(key); return; }
+        if (val instanceof Number n) {
+            if (val instanceof Integer || val instanceof Long || val instanceof Short || val instanceof Byte)
+                row.put(key, n.longValue());
+            else row.put(key, n.doubleValue());
+        } else if (val instanceof Boolean b) {
+            row.put(key, b);
+        } else if (val instanceof Timestamp ts) {
+            row.put(key, ts.toInstant().toString());
+        } else if (val instanceof java.sql.Date d) {
+            row.put(key, d.toLocalDate().toString());
+        } else if (val instanceof String s) {
+            // Y/N → boolean for flag-style columns
+            if ((s.equals("Y") || s.equals("N")) && (key.startsWith("is") || key.startsWith("has"))) {
+                row.put(key, "Y".equals(s));
+            } else {
+                row.put(key, s);
+            }
+        } else {
+            row.put(key, val.toString());
+        }
+    }
+
+    private static String emptyToNull(String s) {
+        return (s == null || s.isEmpty()) ? null : s;
+    }
+
+    private void writeJson(HttpServletResponse resp, Object body) throws IOException {
+        resp.setStatus(HttpServletResponse.SC_OK);
+        resp.setContentType("application/json; charset=utf-8");
+        resp.setHeader("Cache-Control", "no-store");
+        try (PrintWriter w = resp.getWriter()) {
+            mapper.writeValue(w, body);
+        }
+    }
+
+    private void error(HttpServletResponse resp, int status, String code, String message) throws IOException {
+        resp.setStatus(status);
+        resp.setContentType("application/json; charset=utf-8");
+        ObjectNode n = mapper.createObjectNode();
+        n.put("ok", false);
+        n.put("error", code);
+        if (message != null) n.put("message", message);
+        try (PrintWriter w = resp.getWriter()) {
+            mapper.writeValue(w, n);
+        }
+    }
+
+    private static int parseInt(String s, int dflt) {
+        if (s == null || s.isBlank()) return dflt;
+        try { return Integer.parseInt(s.trim()); } catch (NumberFormatException e) { return dflt; }
     }
 
     private static Long parseLong(String s) {
@@ -388,199 +783,23 @@ public class ApiServlet extends HttpServlet {
         try { return Long.parseLong(s.trim()); } catch (NumberFormatException e) { return null; }
     }
 
-    // ─── Write path ─────────────────────────────────────────────────────────
+    private static int clamp(int v, int lo, int hi) {
+        return v < lo ? lo : (v > hi ? hi : v);
+    }
 
-    /**
-     * Updates a single row via {@code PO.saveEx()}. Goes through the model
-     * layer so ModelValidators, sequences, and change-log fire — without
-     * the full GridTab UI machinery (which is overkill for an HTTP request).
-     * Callouts are NOT fired (those are GridTab-specific); we'll add a
-     * separate /callout endpoint when needed.
-     */
-    private ObjectNode savePo(int windowId, int tabIndex, long recordId,
-                              Map<String, Object> keys, Map<String, Object> changes) throws Exception {
-        String tableName;
-        int adTableId;
-        try (Connection c = openConn();
-             PreparedStatement st = c.prepareStatement(
-                     "SELECT t.ad_table_id, tbl.tablename FROM adempiere.ad_tab t " +
-                     "JOIN adempiere.ad_table tbl ON tbl.ad_table_id = t.ad_table_id " +
-                     "WHERE t.ad_window_id = ? AND t.isactive = 'Y' " +
-                     "ORDER BY t.seqno OFFSET ? FETCH FIRST 1 ROWS ONLY")) {
-            st.setInt(1, windowId);
-            st.setInt(2, tabIndex);
-            try (ResultSet rs = st.executeQuery()) {
-                if (!rs.next()) throw new IllegalArgumentException("Tab " + tabIndex + " not found in window " + windowId);
-                adTableId = rs.getInt("ad_table_id");
-                tableName = rs.getString("tablename");
-            }
-        }
-        Properties ctx = newRequestContext();
-        Properties prevCtx = ServerContext.getCurrentInstance();
-        ServerContext.setCurrentInstance(ctx);
-        String trxName = Trx.createTrxName("erp-api-save");
-        Trx trx = Trx.get(trxName, true);
-        try {
-            MTable mt = MTable.get(ctx, adTableId);
-            if (mt == null) throw new IllegalStateException("MTable not found for id " + adTableId);
-            PO po;
-            if (keys != null && !keys.isEmpty()) {
-                po = loadPoByKeys(mt, tableName, keys, trxName);
-            } else {
-                po = mt.getPO((int) recordId, trxName);
-            }
-            if (po == null || po.get_ID() < 0) {
-                throw new PoSaveException("Row not found: " + tableName + (keys != null ? " keys=" + keys : "[" + recordId + "]"));
-            }
-            POInfo pi = POInfo.getPOInfo(ctx, adTableId);
-            for (Map.Entry<String, Object> e : changes.entrySet()) {
-                int idx = po.get_ColumnIndex(e.getKey());
-                if (idx < 0) {
-                    throw new PoSaveException("Unknown column on " + tableName + ": " + e.getKey());
-                }
-                Class<?> cls = pi != null ? pi.getColumnClass(idx) : Object.class;
-                Object coerced = coerceTo(cls, e.getValue());
-                // set_ValueNoCheck bypasses some "system" guards; set_ValueOfColumn
-                // is the gentler public path. Use the latter; PO's beforeSave still
-                // catches type problems.
-                if (!po.set_ValueNoCheck(e.getKey(), coerced)) {
-                    throw new PoSaveException("set_Value rejected " + e.getKey()
-                            + " (column read-only or value invalid?)");
-                }
-            }
-            boolean ok = po.save();
-            if (!ok) {
-                org.compiere.util.ValueNamePair last = org.compiere.util.CLogger.retrieveError();
-                String msg = last != null ? last.getName() : "PO.save() returned false";
-                throw new PoSaveException(msg);
-            }
-            trx.commit(true);
-            // Re-read the row from the DB so the UI sees any model-side
-            // coercion / sequence allocation. For composite keys, identify
-            // by the same keys map.
-            int singleId = po.get_ID();
-            if (singleId > 0) return readSingleRow(adTableId, tableName, singleId);
-            return readRowByKeys(tableName, keys);
-        } finally {
-            try { trx.close(); } catch (Exception ignore) { }
-            if (prevCtx != null) ServerContext.setCurrentInstance(prevCtx);
-            else ServerContext.dispose();
-        }
+    private static Object jsonToJava(JsonNode n) {
+        if (n == null || n.isNull()) return null;
+        if (n.isBoolean()) return n.booleanValue();
+        if (n.isIntegralNumber()) return n.longValue();
+        if (n.isFloatingPointNumber()) return n.doubleValue();
+        if (n.isTextual()) return n.textValue();
+        return n.toString();
     }
 
     /**
-     * Insert a new row via {@code PO.save()} on a fresh PO. Same model-layer
-     * guarantees as the update path: ModelValidators, sequence allocation
-     * for {@code Value} / {@code DocumentNo}, change-log writes.
-     */
-    private ObjectNode createPo(int windowId, int tabIndex, Map<String, Object> changes) throws Exception {
-        String tableName;
-        int adTableId;
-        try (Connection c = openConn();
-             PreparedStatement st = c.prepareStatement(
-                     "SELECT t.ad_table_id, tbl.tablename FROM adempiere.ad_tab t " +
-                     "JOIN adempiere.ad_table tbl ON tbl.ad_table_id = t.ad_table_id " +
-                     "WHERE t.ad_window_id = ? AND t.isactive = 'Y' " +
-                     "ORDER BY t.seqno OFFSET ? FETCH FIRST 1 ROWS ONLY")) {
-            st.setInt(1, windowId);
-            st.setInt(2, tabIndex);
-            try (ResultSet rs = st.executeQuery()) {
-                if (!rs.next()) throw new IllegalArgumentException("Tab " + tabIndex + " not found in window " + windowId);
-                adTableId = rs.getInt("ad_table_id");
-                tableName = rs.getString("tablename");
-            }
-        }
-        Properties ctx = newRequestContext();
-        Properties prevCtx = ServerContext.getCurrentInstance();
-        ServerContext.setCurrentInstance(ctx);
-        String trxName = Trx.createTrxName("erp-api-create");
-        Trx trx = Trx.get(trxName, true);
-        try {
-            MTable mt = MTable.get(ctx, adTableId);
-            if (mt == null) throw new IllegalStateException("MTable not found for id " + adTableId);
-            PO po = mt.getPO(0, trxName);   // 0 → new instance
-            if (po == null) throw new PoSaveException("Could not instantiate PO for " + tableName);
-            POInfo pi = POInfo.getPOInfo(ctx, adTableId);
-            for (Map.Entry<String, Object> e : changes.entrySet()) {
-                int idx = po.get_ColumnIndex(e.getKey());
-                if (idx < 0) throw new PoSaveException("Unknown column on " + tableName + ": " + e.getKey());
-                Class<?> cls = pi != null ? pi.getColumnClass(idx) : Object.class;
-                Object coerced = coerceTo(cls, e.getValue());
-                if (!po.set_ValueNoCheck(e.getKey(), coerced)) {
-                    throw new PoSaveException("set_Value rejected " + e.getKey() + " on new row");
-                }
-            }
-            boolean ok = po.save();
-            if (!ok) {
-                org.compiere.util.ValueNamePair last = org.compiere.util.CLogger.retrieveError();
-                throw new PoSaveException(last != null ? last.getName() : "PO.save() returned false");
-            }
-            trx.commit(true);
-            int newId = po.get_ID();
-            if (newId > 0) return readSingleRow(adTableId, tableName, newId);
-            // Composite-key row: re-read by the keys we just set.
-            Map<String, Object> keys = new LinkedHashMap<>();
-            for (String col : changes.keySet()) {
-                if (col.endsWith("_ID")) keys.put(col, changes.get(col));
-            }
-            return readRowByKeys(tableName, keys);
-        } finally {
-            try { trx.close(); } catch (Exception ignore) { }
-            if (prevCtx != null) ServerContext.setCurrentInstance(prevCtx);
-            else ServerContext.dispose();
-        }
-    }
-
-    private PO loadPoByKeys(MTable mt, String tableName, Map<String, Object> keys, String trxName) {
-        StringBuilder where = new StringBuilder();
-        java.util.List<Object> params = new java.util.ArrayList<>();
-        for (Map.Entry<String, Object> e : keys.entrySet()) {
-            String safeCol = e.getKey().replaceAll("[^A-Za-z0-9_]", "");
-            if (where.length() > 0) where.append(" AND ");
-            where.append(safeCol).append(" = ?");
-            params.add(e.getValue());
-        }
-        java.util.List<PO> hits = new org.compiere.model.Query(
-                ServerContext.getCurrentInstance(), tableName, where.toString(), trxName)
-                .setParameters(params.toArray())
-                .list();
-        if (hits.isEmpty()) return null;
-        return hits.get(0);
-    }
-
-    private ObjectNode readRowByKeys(String tableName, Map<String, Object> keys) throws SQLException {
-        String safeTable = tableName.replaceAll("[^A-Za-z0-9_]", "");
-        StringBuilder where = new StringBuilder();
-        for (String k : keys.keySet()) {
-            String safeCol = k.replaceAll("[^A-Za-z0-9_]", "");
-            if (where.length() > 0) where.append(" AND ");
-            where.append(safeCol).append(" = ?");
-        }
-        try (Connection c = openConn();
-             PreparedStatement st = c.prepareStatement(
-                     "SELECT * FROM adempiere." + safeTable + " WHERE " + where)) {
-            int i = 1;
-            for (Object v : keys.values()) {
-                if (v instanceof Number n) st.setLong(i++, n.longValue());
-                else st.setString(i++, String.valueOf(v));
-            }
-            try (ResultSet rs = st.executeQuery()) {
-                if (!rs.next()) return null;
-                ObjectNode row = mapper.createObjectNode();
-                ResultSetMetaData md = rs.getMetaData();
-                for (int j = 1; j <= md.getColumnCount(); j++) {
-                    putColumn(row, md.getColumnLabel(j), rs.getObject(j));
-                }
-                return row;
-            }
-        }
-    }
-
-    /**
-     * Coerce a JSON-decoded value (Boolean / Long / Double / String) to the
-     * exact type PO expects for a column. iDempiere's PO compares old vs new
-     * values using Object.equals; if the types differ, the column never gets
-     * marked dirty and save() silently no-ops.
+     * Coerce JSON-decoded values to the type PO expects for that column. PO
+     * compares old vs new with {@code Object.equals}; if types differ the
+     * column never gets marked dirty and {@code save()} silently no-ops.
      */
     private Object coerceTo(Class<?> cls, Object v) {
         if (v == null) return null;
@@ -611,129 +830,18 @@ public class ApiServlet extends HttpServlet {
             if (v instanceof String s) return s.isEmpty() ? null : s;
             return v.toString();
         }
-        if (cls == java.sql.Timestamp.class) {
-            if (v instanceof java.sql.Timestamp ts) return ts;
+        if (cls == Timestamp.class) {
+            if (v instanceof Timestamp ts) return ts;
             if (v instanceof String s && !s.isBlank()) {
-                // Accept "2026-04-25" or full ISO.
                 String t = s.length() == 10 ? s + " 00:00:00" : s.replace('T', ' ').replace("Z", "");
-                return java.sql.Timestamp.valueOf(t);
+                return Timestamp.valueOf(t);
             }
             return null;
         }
         return v;
     }
 
-    private ObjectNode readSingleRow(int adTableId, String tableName, int recordId) throws SQLException {
-        String safeTable = tableName.replaceAll("[^A-Za-z0-9_]", "");
-        // Use the AD's IsKey columns to identify the row.
-        try (Connection c = openConn()) {
-            String pkCol;
-            try (PreparedStatement st = c.prepareStatement(
-                    "SELECT columnname FROM adempiere.ad_column WHERE ad_table_id = ? AND iskey = 'Y' ORDER BY ad_column_id LIMIT 1")) {
-                st.setInt(1, adTableId);
-                try (ResultSet rs = st.executeQuery()) {
-                    pkCol = rs.next() ? rs.getString("columnname").replaceAll("[^A-Za-z0-9_]", "") : safeTable + "_ID";
-                }
-            }
-            try (PreparedStatement st = c.prepareStatement(
-                    "SELECT * FROM adempiere." + safeTable + " WHERE " + pkCol + " = ?")) {
-                st.setInt(1, recordId);
-                try (ResultSet rs = st.executeQuery()) {
-                    if (!rs.next()) return null;
-                    ObjectNode row = mapper.createObjectNode();
-                    ResultSetMetaData md = rs.getMetaData();
-                    for (int i = 1; i <= md.getColumnCount(); i++) {
-                        putColumn(row, md.getColumnLabel(i), rs.getObject(i));
-                    }
-                    return row;
-                }
-            }
-        }
-    }
-
-    /**
-     * Build the iDempiere context for a request. For now: hard-coded GardenWorld
-     * super-admin context (client 11, org *, user 100, role 102). When we wire
-     * Keycloak JWT, this is where we resolve the current user's iDempiere role.
-     */
-    private Properties newRequestContext() {
-        Properties ctx = new Properties();
-        Env.setContext(ctx, "#AD_Client_ID", 11);
-        Env.setContext(ctx, "#AD_Org_ID", 0);
-        Env.setContext(ctx, "#AD_User_ID", 100);
-        Env.setContext(ctx, "#AD_Role_ID", 102);
-        Env.setContext(ctx, "#Date", new Timestamp(System.currentTimeMillis()));
-        Env.setContext(ctx, "#AD_Language", "en_US");
-        return ctx;
-    }
-
-    private static Object jsonToJava(JsonNode n) {
-        if (n == null || n.isNull()) return null;
-        if (n.isBoolean()) return n.booleanValue();
-        if (n.isIntegralNumber()) return n.longValue();
-        if (n.isFloatingPointNumber()) return n.doubleValue();
-        if (n.isTextual()) return n.textValue();
-        return n.toString();
-    }
-
     private static class PoSaveException extends RuntimeException {
         PoSaveException(String m) { super(m); }
-    }
-
-    // ─── Helpers ────────────────────────────────────────────────────────────
-
-    private void putColumn(ObjectNode row, String label, Object val) {
-        String key = label.toLowerCase();
-        if (val == null) { row.putNull(key); return; }
-        if (val instanceof Number n) {
-            if (val instanceof Integer || val instanceof Long || val instanceof Short || val instanceof Byte)
-                row.put(key, n.longValue());
-            else row.put(key, n.doubleValue());
-        } else if (val instanceof Boolean b) {
-            row.put(key, b);
-        } else if (val instanceof Timestamp ts) {
-            row.put(key, ts.toInstant().toString());
-        } else if (val instanceof java.sql.Date d) {
-            row.put(key, d.toLocalDate().toString());
-        } else if (val instanceof String s) {
-            // Y/N → boolean for convenience on flag-like cols
-            if ((s.equals("Y") || s.equals("N")) && (key.startsWith("is") || key.startsWith("has"))) {
-                row.put(key, "Y".equals(s));
-            } else {
-                row.put(key, s);
-            }
-        } else {
-            row.put(key, val.toString());
-        }
-    }
-
-    private void writeJson(HttpServletResponse resp, Object body) throws IOException {
-        resp.setStatus(HttpServletResponse.SC_OK);
-        resp.setContentType("application/json; charset=utf-8");
-        resp.setHeader("Cache-Control", "no-store");
-        try (PrintWriter w = resp.getWriter()) {
-            mapper.writeValue(w, body);
-        }
-    }
-
-    private void error(HttpServletResponse resp, int status, String code, String message) throws IOException {
-        resp.setStatus(status);
-        resp.setContentType("application/json; charset=utf-8");
-        ObjectNode n = mapper.createObjectNode();
-        n.put("ok", false);
-        n.put("error", code);
-        if (message != null) n.put("message", message);
-        try (PrintWriter w = resp.getWriter()) {
-            mapper.writeValue(w, n);
-        }
-    }
-
-    private static int parseInt(String s, int dflt) {
-        if (s == null || s.isBlank()) return dflt;
-        try { return Integer.parseInt(s.trim()); } catch (NumberFormatException e) { return dflt; }
-    }
-
-    private static int clamp(int v, int lo, int hi) {
-        return v < lo ? lo : (v > hi ? hi : v);
     }
 }

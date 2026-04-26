@@ -1,152 +1,275 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { makeStyles, mergeClasses, tokens, Text } from '@fluentui/react-components';
 import {
-  Drawer, List, ListItemButton, ListItemIcon, ListItemText,
-  Toolbar, Typography, Box, Divider,
-} from '@mui/material';
-import {
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  Subscriptions as SubIcon,
-  Receipt as InvoiceIcon,
-  Business as TenantIcon,
-  Assessment as ARIcon,
-  Payments as PaymentsIcon,
-  ShoppingCart as ProductsIcon,
-  PriceChange as PricingIcon,
-  History as HistoryIcon,
-  Settings as SettingsIcon,
-  Lan as InfraIcon,
-  DeviceHub as CatalogDeviceIcon,
-  VpnKey as SSHIcon,
-  Inventory2 as ArtifactIcon,
-  AdminPanelSettings as RBACIcon,
-  AddShoppingCart as PurchaseIcon,
-  ContactPhone as CrmIcon,
-  PersonAdd as LeadsIcon,
-  Person as ContactsIcon,
-  Business as AccountsIcon,
-  TrendingUp as OpportunitiesIcon,
-  SupportAgent as CasesIcon,
-  TaskAlt as TasksIcon,
-  VideoCall as MeetingsIcon,
-  Dashboard as MeetingDashIcon,
-  MeetingRoom as RoomsIcon,
-  CalendarMonth as CalendarIcon,
-  Email as EmailsIcon,
-  Campaign as CampaignIcon,
-  Phone as VoiceIcon,
-  DialerSip as ExtensionIcon,
-  Policy as PolicyIcon,
-  Tune as AdminToolsIcon,
-  MonitorHeart as NmsIcon,
-  Hub as ClusterIcon,
-  Schedule as TemporalIcon,
-  Handshake as PartnerIcon,
-  ManageAccounts as PartyUserIcon,
-  AssignmentInd as RoleIcon,
-  Key as PermissionIcon,
-  Sync as SyncIcon,
-  CorporateFare as OperatorIcon,
-  Inventory as ErpProductIcon,
-} from '@mui/icons-material';
+  Board20Regular, People20Regular, ArrowSync20Regular, Receipt20Regular,
+  Building20Regular, ChartMultiple20Regular, Money20Regular, Cart20Regular,
+  Tag20Regular, History20Regular, Settings20Regular, PlugConnected20Regular,
+  Connector20Regular, Key20Regular, Box20Regular, Shield20Regular,
+  CoinStack20Regular, PersonAdd20Regular, Person20Regular, ArrowTrending20Regular,
+  Headset20Regular, TaskListSquareLtr20Regular, Video20Regular,
+  MeetNow20Regular, CalendarMonth20Regular, Mail20Regular, Megaphone20Regular,
+  Phone20Regular, ShieldCheckmark20Regular, Options20Regular, HeartPulse20Regular,
+  Clock20Regular, Handshake20Regular, PeopleSettings20Regular,
+  PersonAvailable20Regular, BuildingFactory20Regular,
+} from '@fluentui/react-icons';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { useTenant } from '../context/TenantContext';
 import { useRBAC } from '../hooks/useRBAC';
 import config, { FEATURES } from '../config/platform';
+import { SIDEBAR_ICON_COLORS, SIDEBAR_TEXT_COLOR } from '../theme/fluentTheme';
 
 const DRAWER_WIDTH = 240;
 
+const useStyles = makeStyles({
+  drawer: {
+    width: `${DRAWER_WIDTH}px`,
+    flexShrink: 0,
+    height: '100vh',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: tokens.colorNeutralBackground1,
+    borderRightWidth: '1px',
+    borderRightStyle: 'solid',
+    borderRightColor: tokens.colorNeutralStroke2,
+    position: 'sticky',
+    top: 0,
+    alignSelf: 'flex-start',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    paddingTop: tokens.spacingVerticalS,
+    paddingBottom: tokens.spacingVerticalS,
+    paddingLeft: tokens.spacingHorizontalM,
+    paddingRight: tokens.spacingHorizontalM,
+    minHeight: '64px',
+    boxSizing: 'border-box',
+    borderBottomWidth: '1px',
+    borderBottomStyle: 'solid',
+    borderBottomColor: tokens.colorNeutralStroke2,
+  },
+  brandSquare: {
+    width: '32px',
+    height: '32px',
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorBrandBackground,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    color: tokens.colorNeutralForegroundOnBrand,
+    fontWeight: tokens.fontWeightBold,
+    fontSize: tokens.fontSizeBase200,
+    flexShrink: 0,
+  },
+  headerText: {
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
+  },
+  tenantName: {
+    fontWeight: tokens.fontWeightBold,
+    lineHeight: tokens.lineHeightBase200,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  tenantSlug: {
+    fontSize: tokens.fontSizeBase100,
+    color: tokens.colorNeutralForeground3,
+    lineHeight: tokens.lineHeightBase100,
+  },
+  list: {
+    flex: 1,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    paddingTop: tokens.spacingVerticalXS,
+    paddingBottom: tokens.spacingVerticalXS,
+    paddingLeft: tokens.spacingHorizontalXS,
+    paddingRight: tokens.spacingHorizontalXS,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  section: {
+    paddingTop: tokens.spacingVerticalS,
+    paddingBottom: '2px',
+    paddingLeft: tokens.spacingHorizontalS,
+    paddingRight: tokens.spacingHorizontalS,
+    fontSize: tokens.fontSizeBase100,
+    fontWeight: tokens.fontWeightSemibold,
+    color: tokens.colorNeutralForeground3,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+  },
+  item: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    paddingTop: tokens.spacingVerticalSNudge,
+    paddingBottom: tokens.spacingVerticalSNudge,
+    paddingLeft: tokens.spacingHorizontalS,
+    paddingRight: tokens.spacingHorizontalS,
+    borderRadius: tokens.borderRadiusMedium,
+    cursor: 'pointer',
+    color: SIDEBAR_TEXT_COLOR,
+    fontSize: tokens.fontSizeBase300,
+    fontWeight: tokens.fontWeightMedium,
+    // Resting tile gets a light-grey wash so the rail reads like a list of
+    // chips, matching the ERP product page's vertical tab strip.
+    backgroundColor: tokens.colorNeutralBackground2,
+    // Strip the UA <button> border on all four sides so items don't render
+    // with a visible rectangle outline. Plus appearance:none to drop any
+    // remaining native chrome.
+    appearance: 'none',
+    borderTopWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderLeftWidth: 0,
+    borderTopStyle: 'none',
+    borderRightStyle: 'none',
+    borderBottomStyle: 'none',
+    borderLeftStyle: 'none',
+    outlineStyle: 'none',
+    textAlign: 'left',
+    width: '100%',
+    minHeight: '34px',
+    transitionProperty: 'background-color',
+    transitionDuration: tokens.durationFaster,
+    transitionTimingFunction: tokens.curveEasyEase,
+    '&:hover': {
+      backgroundColor: tokens.colorNeutralBackground2Hover,
+      color: tokens.colorNeutralForeground1,
+    },
+    '&:focus-visible': {
+      outlineWidth: '2px',
+      outlineStyle: 'solid',
+      outlineColor: tokens.colorStrokeFocus2,
+      outlineOffset: '-2px',
+    },
+  },
+  itemActive: {
+    backgroundColor: tokens.colorBrandBackground2,
+    color: tokens.colorBrandForeground1,
+    fontWeight: tokens.fontWeightSemibold,
+    '&:hover': {
+      backgroundColor: tokens.colorBrandBackground2Hover,
+      color: tokens.colorBrandForeground1,
+    },
+  },
+  itemIcon: {
+    flexShrink: 0,
+    width: '20px',
+    height: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: tokens.colorNeutralForeground1,
+    // Restore the icon to 20 px even though the global compact-theme rule in
+    // index.css shrinks Fluent's 20 px icons to 16 px. Sidebar wants the
+    // larger glyph for navigation legibility.
+    '& svg[width="20"][height="20"]': {
+      width: '20px',
+      height: '20px',
+    },
+  },
+  itemIconActive: {
+    color: tokens.colorBrandForeground1,
+  },
+  itemText: {
+    flex: 1,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+});
+
 export default function Sidebar() {
+  const styles = useStyles();
   const location = useLocation();
   const navigate = useNavigate();
   const { tenant: tenantSlug } = useParams();
   const { isSuper } = useAuth();
-  const { brand } = useAppTheme();
+  // brand kept for backwards compat with anything that still imports it; not used here.
+  useAppTheme();
   const { tenantName } = useTenant();
   const { canMenu } = useRBAC();
 
   const base = tenantSlug ? `/${tenantSlug}` : '';
 
-  // Menu organized by category. `null` items are section headers.
   const menu = [
-    // ── Overview ──
-    { text: 'Dashboard', icon: <DashboardIcon />, path: `${base}/`, iconColor: '#a4c2dc' },
+    { text: 'Dashboard', icon: <Board20Regular />, path: `${base}/`, iconColor: SIDEBAR_ICON_COLORS.blue },
 
-    // ── Billing ──
     { section: 'Billing' },
-    { text: 'Customers', icon: <PeopleIcon />, path: `${base}/customers`, iconColor: '#f5b945' },
-    { text: 'Subscriptions', icon: <SubIcon />, path: `${base}/subscriptions` },
-    { text: 'Invoices', icon: <InvoiceIcon />, path: `${base}/invoices`, iconColor: '#94bc66' },
-    { text: 'Payments', icon: <PaymentsIcon />, path: `${base}/payments`, iconColor: '#d4a5c9' },
-    { text: 'Products', icon: <ProductsIcon />, path: `${base}/products` },
-    { text: 'Pricing', icon: <PricingIcon />, path: `${base}/pricing` },
-    { text: 'Rate History', icon: <HistoryIcon />, path: `${base}/rate-history` },
-    { text: 'AR Report', icon: <ARIcon />, path: `${base}/reports/ar` },
-    { text: 'Purchase', icon: <PurchaseIcon />, path: `${base}/purchase` },
+    { text: 'Customers', icon: <People20Regular />, path: `${base}/customers`, iconColor: SIDEBAR_ICON_COLORS.amber },
+    { text: 'Subscriptions', icon: <ArrowSync20Regular />, path: `${base}/subscriptions` },
+    { text: 'Invoices', icon: <Receipt20Regular />, path: `${base}/invoices`, iconColor: SIDEBAR_ICON_COLORS.green },
+    { text: 'Payments', icon: <Money20Regular />, path: `${base}/payments`, iconColor: SIDEBAR_ICON_COLORS.pink },
+    { text: 'Products', icon: <Cart20Regular />, path: `${base}/products` },
+    { text: 'Pricing', icon: <Tag20Regular />, path: `${base}/pricing` },
+    { text: 'Rate History', icon: <History20Regular />, path: `${base}/rate-history` },
+    { text: 'AR Report', icon: <ChartMultiple20Regular />, path: `${base}/reports/ar` },
+    { text: 'Purchase', icon: <CoinStack20Regular />, path: `${base}/purchase` },
 
-    // ── Infrastructure ──
     { section: 'Infrastructure' },
-    { text: 'Infra', icon: <InfraIcon />, path: `${base}/infra`, iconColor: '#a4c2dc' },
-    { text: 'Device Catalog', icon: <CatalogDeviceIcon />, path: `${base}/infra/catalog` },
-    { text: 'SSH', icon: <SSHIcon />, path: `${base}/infra/ssh` },
+    { text: 'Infra', icon: <PlugConnected20Regular />, path: `${base}/infra`, iconColor: SIDEBAR_ICON_COLORS.blue },
+    { text: 'Device Catalog', icon: <Connector20Regular />, path: `${base}/infra/catalog` },
+    { text: 'SSH', icon: <Key20Regular />, path: `${base}/infra/ssh` },
 
-    // ── NMS ──
     { section: 'NMS' },
-    { text: 'NMS Overview', icon: <NmsIcon />, path: `${base}/nms`, iconColor: 'var(--color-success)' },
-    { text: 'Galera Cluster', icon: <ClusterIcon />, path: `${base}/nms/galera`, iconColor: 'var(--color-primary)' },
-    { text: 'Temporal Clusters', icon: <TemporalIcon />, path: `${base}/nms/temporal`, iconColor: 'var(--color-warning)' },
+    { text: 'NMS Overview', icon: <HeartPulse20Regular />, path: `${base}/nms` },
+    { text: 'Galera Cluster', icon: <Connector20Regular />, path: `${base}/nms/galera` },
+    { text: 'Temporal Clusters', icon: <Clock20Regular />, path: `${base}/nms/temporal` },
 
-    // ── Artifacts ──
     { section: 'Artifacts' },
-    { text: 'Artifacts', icon: <ArtifactIcon />, path: `${base}/artifacts` },
+    { text: 'Artifacts', icon: <Box20Regular />, path: `${base}/artifacts` },
 
-    // ── CRM (feature-flagged) ──
     ...(FEATURES.crm ? [
       { section: 'CRM' },
-      { text: 'Leads',         icon: <LeadsIcon />,         path: `${base}/crm/leads`,         iconColor: '#d4a5c9' },
-      { text: 'Contacts',      icon: <ContactsIcon />,      path: `${base}/crm/contacts`,      iconColor: '#a4c2dc' },
-      { text: 'Accounts',      icon: <AccountsIcon />,      path: `${base}/crm/accounts`,      iconColor: '#f5b945' },
-      { text: 'Opportunities', icon: <OpportunitiesIcon />, path: `${base}/crm/opportunities`, iconColor: '#94bc66' },
-      { text: 'Cases',         icon: <CasesIcon />,         path: `${base}/crm/cases` },
-      { text: 'Tasks',         icon: <TasksIcon />,         path: `${base}/crm/tasks` },
-      { text: 'Meetings',      icon: <MeetingsIcon />,      path: `${base}/crm/meetings`,      iconColor: '#a4c2dc' },
-      { text: 'Meeting Dashboard', icon: <MeetingDashIcon />, path: `${base}/crm/meetings/dashboard` },
-      { text: 'Rooms (Admin)', icon: <RoomsIcon />,         path: `${base}/crm/meetings/rooms` },
-      { text: 'Demo Room',     icon: <MeetingsIcon />,      path: `${base}/crm/meetings/demo/room` },
-      { text: 'Calendar',      icon: <CalendarIcon />,      path: `${base}/crm/calendar` },
-      { text: 'Emails',        icon: <EmailsIcon />,        path: `${base}/crm/emails` },
-      { text: 'Extension Management', icon: <ExtensionIcon />, path: `${base}/crm/admin/pbxExtensions` },
-      { text: 'Administration', icon: <AdminToolsIcon />,    path: `${base}/crm/admin` },
+      { text: 'Leads',         icon: <PersonAdd20Regular />,         path: `${base}/crm/leads`,         iconColor: SIDEBAR_ICON_COLORS.pink },
+      { text: 'Contacts',      icon: <Person20Regular />,            path: `${base}/crm/contacts`,      iconColor: SIDEBAR_ICON_COLORS.blue },
+      { text: 'Accounts',      icon: <Building20Regular />,          path: `${base}/crm/accounts`,      iconColor: SIDEBAR_ICON_COLORS.amber },
+      { text: 'Opportunities', icon: <ArrowTrending20Regular />,     path: `${base}/crm/opportunities`, iconColor: SIDEBAR_ICON_COLORS.green },
+      { text: 'Cases',         icon: <Headset20Regular />,           path: `${base}/crm/cases` },
+      { text: 'Tasks',         icon: <TaskListSquareLtr20Regular />, path: `${base}/crm/tasks` },
+      { text: 'Meetings',      icon: <Video20Regular />,             path: `${base}/crm/meetings`,      iconColor: SIDEBAR_ICON_COLORS.blue },
+      { text: 'Meeting Dashboard', icon: <Board20Regular />,         path: `${base}/crm/meetings/dashboard` },
+      { text: 'Rooms (Admin)', icon: <MeetNow20Regular />,           path: `${base}/crm/meetings/rooms` },
+      { text: 'Demo Room',     icon: <Video20Regular />,             path: `${base}/crm/meetings/demo/room` },
+      { text: 'Calendar',      icon: <CalendarMonth20Regular />,     path: `${base}/crm/calendar` },
+      { text: 'Emails',        icon: <Mail20Regular />,              path: `${base}/crm/emails` },
+      { text: 'Extension Management', icon: <Phone20Regular />,      path: `${base}/crm/admin/pbxExtensions` },
+      { text: 'Administration', icon: <Options20Regular />,          path: `${base}/crm/admin` },
 
       { section: 'Campaign' },
-      { text: 'Campaigns', icon: <CampaignIcon />, path: `${base}/crm/campaigns` },
-      { text: 'Policies',  icon: <PolicyIcon />,   path: `${base}/crm/campaigns/policies` },
+      { text: 'Campaigns', icon: <Megaphone20Regular />,             path: `${base}/crm/campaigns` },
+      { text: 'Policies',  icon: <ShieldCheckmark20Regular />,       path: `${base}/crm/campaigns/policies` },
     ] : []),
 
-    // ── Party (tenant-scoped) ──
     { section: 'Party' },
-    { text: 'Partners',    icon: <PartnerIcon />,    path: `${base}/party/partners`,    iconColor: '#f5b945' },
-    { text: 'Party Users', icon: <PartyUserIcon />,  path: `${base}/party/users`,       iconColor: '#a4c2dc' },
-    { text: 'Roles',       icon: <RoleIcon />,       path: `${base}/party/roles`,       iconColor: '#94bc66' },
-    { text: 'Permissions', icon: <PermissionIcon />, path: `${base}/party/permissions` },
-    { text: 'Sync Jobs',   icon: <SyncIcon />,       path: `${base}/party/sync-jobs`,   iconColor: 'var(--color-warning)' },
+    { text: 'Partners',    icon: <Handshake20Regular />,             path: `${base}/party/partners` },
+    { text: 'Party Users', icon: <PeopleSettings20Regular />,        path: `${base}/party/users` },
+    { text: 'Roles',       icon: <PersonAvailable20Regular />,       path: `${base}/party/roles` },
+    { text: 'Permissions', icon: <Key20Regular />,                   path: `${base}/party/permissions` },
+    { text: 'Sync Jobs',   icon: <ArrowSync20Regular />,             path: `${base}/party/sync-jobs` },
 
-    // ── Admin ──
     { section: 'Admin' },
-    { text: 'RBAC', icon: <RBACIcon />, path: `${base}/rbac` },
-    { text: 'Tenants', icon: <TenantIcon />, path: `${base}/tenants` },
+    { text: 'RBAC', icon: <Shield20Regular />, path: `${base}/rbac` },
+    { text: 'Tenants', icon: <Building20Regular />, path: `${base}/tenants` },
     ...(isSuper ? [
-      { text: 'Operators',      icon: <OperatorIcon />,  path: `${base}/party/admin/operators` },
-      { text: 'Party Tenants',  icon: <TenantIcon />,    path: `${base}/party/admin/tenants` },
-      { text: 'Operator Users', icon: <PartyUserIcon />, path: `${base}/party/admin/operator-users` },
+      { text: 'Operators',      icon: <BuildingFactory20Regular />, path: `${base}/party/admin/operators` },
+      { text: 'Party Tenants',  icon: <Building20Regular />,        path: `${base}/party/admin/tenants` },
+      { text: 'Operator Users', icon: <PeopleSettings20Regular />,  path: `${base}/party/admin/operator-users` },
     ] : []),
-    { text: 'Settings', icon: <SettingsIcon />, path: `${base}/settings` },
+    { text: 'Settings', icon: <Settings20Regular />, path: `${base}/settings` },
 
-    // ── Experimental (spike/scratch surfaces, not production) ──
     { section: 'Experimental' },
-    { text: 'LiveKit Call (exp)', icon: <VoiceIcon />, path: `${base}/experiments/livekit-call`, iconColor: 'var(--color-warning)' },
-    { text: 'ERP Product (exp)', icon: <ErpProductIcon />, path: `${base}/erp/product`, iconColor: 'var(--color-success)' },
+    { text: 'LiveKit Call (exp)', icon: <Phone20Regular />, path: `${base}/experiments/livekit-call` },
+    { text: 'ERP Product (exp)', icon: <Box20Regular />, path: `${base}/erp/product` },
+    { text: 'ERP Business Partner (exp)', icon: <People20Regular />, path: `${base}/erp/bpartner` },
   ];
 
   const isActive = (path) => {
@@ -154,25 +277,19 @@ export default function Sidebar() {
     if (path === `${base}/`) return loc === `${base}/` || loc === `${base}`;
     if (path === `${base}/infra`) return loc === `${base}/infra`;
     if (path === `${base}/nms`) return loc === `${base}/nms`;
-    // Campaigns parent vs Policies sibling: don't highlight parent
-    // when on /policies child.
     if (path === `${base}/crm/campaigns`)
       return loc.startsWith(path) && !loc.startsWith(`${path}/policies`);
-    // Administration parent vs sibling admin items that have their own
-    // sidebar entry (PBX Extensions, etc.) — don't highlight Administration
-    // when on one of those.
     if (path === `${base}/crm/admin`)
       return loc.startsWith(path) && !loc.startsWith(`${path}/pbxExtensions`);
     return loc.startsWith(path);
   };
 
-  // Filter items by RBAC, and hide section headers if all their items are hidden
+  // Filter items by RBAC, hide section headers whose items are all hidden.
   const visibleItems = [];
   let i = 0;
   while (i < menu.length) {
     const item = menu[i];
     if (item.section) {
-      // Collect following non-section items
       const sectionItems = [];
       let j = i + 1;
       while (j < menu.length && !menu[j].section) {
@@ -180,106 +297,70 @@ export default function Sidebar() {
         j++;
       }
       if (sectionItems.length > 0) {
-        visibleItems.push(item); // section header
+        visibleItems.push(item);
         visibleItems.push(...sectionItems);
       }
       i = j;
     } else {
-      // Top-level item (Dashboard)
       if (canMenu(item.text)) visibleItems.push(item);
       i++;
     }
   }
 
   return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: DRAWER_WIDTH,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: DRAWER_WIDTH,
-          boxSizing: 'border-box',
-          bgcolor: 'background.paper',
-          borderRight: (theme) => `1px solid ${theme.palette.divider}`,
-        },
-      }}
-    >
-      <Toolbar sx={{ px: 2, gap: 1 }}>
-        <Box
-          sx={{
-            width: 32, height: 32, borderRadius: '8px',
-            bgcolor: 'primary.main', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-          }}
+    <nav className={styles.drawer} aria-label="Main navigation">
+      <div className={styles.header}>
+        <div
+          className={styles.brandSquare}
           onClick={() => navigate('/')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/'); }}
         >
-          <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>{config.appShortName}</Typography>
-        </Box>
-        <Box>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+          {config.appShortName}
+        </div>
+        <div className={styles.headerText}>
+          <Text className={styles.tenantName} size={300}>
             {tenantName || config.appName}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>
+          </Text>
+          <span className={styles.tenantSlug}>
             {tenantSlug || 'Select tenant'}
-          </Typography>
-        </Box>
-      </Toolbar>
-      <Divider />
-      <List sx={{ px: 1, pt: 0.5, overflow: 'auto' }}>
-        {visibleItems.map((item, idx) => {
+          </span>
+        </div>
+      </div>
+      <div className={styles.list}>
+        {visibleItems.map((item) => {
           if (item.section) {
-            const neutral = item.section === 'Admin';
             return (
-              <Box key={`sec-${item.section}`} sx={{ mt: idx === 0 ? 0 : 0.5 }}>
-                <span className={`sidebar-section${neutral ? ' sidebar-section--neutral' : ''}`}>
-                  {item.section}
-                </span>
-              </Box>
+              <div key={`sec-${item.section}`} className={styles.section}>
+                {item.section}
+              </div>
             );
           }
-
+          const active = isActive(item.path);
           return (
-            <ListItemButton
+            <button
               key={item.text}
+              type="button"
+              className={mergeClasses(styles.item, active && styles.itemActive)}
               onClick={() => {
-                // If we're on a deeper sub-path of this item (e.g. on
-                // /cases/new and clicking "Cases"), replace the history
-                // entry. This drops abandoned create/edit drafts from
-                // the back-history so browser-back can't resurrect them.
                 const loc = location.pathname;
                 const onSubPath = loc !== item.path && loc.startsWith(item.path + '/');
                 navigate(item.path, onSubPath ? { replace: true } : undefined);
               }}
-              selected={isActive(item.path)}
-              sx={{
-                borderRadius: '6px', mb: 0.3, py: 0.4,
-                '&.Mui-selected': {
-                  bgcolor: brand.sidebar.activeBg,
-                  color: 'primary.main',
-                  '& .MuiListItemIcon-root': { color: 'primary.main' },
-                },
-                '&:hover': { bgcolor: brand.sidebar.hoverBg },
-              }}
             >
-              <ListItemIcon sx={{
-                minWidth: 32,
-                color: isActive(item.path)
-                  ? 'primary.main'
-                  : (item.iconColor || 'var(--color-text-muted)'),
-              }}>
+              <span
+                className={mergeClasses(styles.itemIcon, active && styles.itemIconActive)}
+                style={!active && item.iconColor ? { color: item.iconColor } : undefined}
+              >
                 {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{ fontSize: 'var(--font-size-sidebar-item)', fontWeight: isActive(item.path) ? 'var(--font-weight-sidebar-item-active)' : 'var(--font-weight-sidebar-item)', color: isActive(item.path) ? 'primary.main' : 'var(--color-sidebar-item-text)' }}
-              />
-            </ListItemButton>
+              </span>
+              <span className={styles.itemText}>{item.text}</span>
+            </button>
           );
         })}
-      </List>
-    </Drawer>
+      </div>
+    </nav>
   );
 }
 

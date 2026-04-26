@@ -8,8 +8,9 @@ odoo:
   password: admin
 
 erp:
-  # Experimental iDempiere connection — read-only Postgres access used by
-  # the /api/erp/* endpoints. Not the primary catalog source.
+  # iDempiere connection — Postgres access used only by the grandfathered
+  # Product service (/api/erp/products). New screens (BPartner, …) go through
+  # the BFF proxy below.
   idempiere:
     jdbcUrl: jdbc:postgresql://127.0.0.1:5433/idempiere
     username: adempiere
@@ -17,6 +18,8 @@ erp:
     schema: adempiere
     clientId: 0       # GardenWorld is client 11; 0 = system. Filter applied at query.
     clientIds: 0,11   # comma-separated allowed clients (system + GardenWorld for dev)
+    # iDempiere-embedded BFF (erp-api WAB at :7079/erp-api).
+    bffUrl: http://127.0.0.1:7079/erp-api
 
 killbill:
   url: http://127.0.0.1:18080
