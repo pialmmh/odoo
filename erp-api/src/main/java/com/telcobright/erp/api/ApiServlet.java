@@ -772,9 +772,21 @@ public class ApiServlet extends HttpServlet {
                 while (rs.next() && count < 200) {
                     ObjectNode r = items.addObject();
                     int cc = rs.getMetaData().getColumnCount();
-                    if (cc >= 1) r.put("id", rs.getInt(1));
-                    if (cc >= 2) r.put("value", rs.getString(2));
-                    if (cc >= 3) r.put("name", rs.getString(3));
+                    // MLookupFactory's SELECT shape is well-defined:
+                    //   Table/Table Direct/Search: col1 = numeric id, col2 = NULL, col3 = display
+                    //   List                    : col1 = NULL,        col2 = value code, col3 = display
+                    // The lookup key is whichever of col1/col2 is non-null.
+                    Object col1 = cc >= 1 ? rs.getObject(1) : null;
+                    String col2 = cc >= 2 ? rs.getString(2) : null;
+                    String col3 = cc >= 3 ? rs.getString(3) : null;
+                    if (col1 != null) {
+                        if (col1 instanceof Number n) r.put("id", n.intValue());
+                        else r.put("id", col1.toString());
+                    } else if (col2 != null) {
+                        r.put("id", col2);
+                    }
+                    if (col2 != null) r.put("value", col2);
+                    if (col3 != null) r.put("name", col3);
                     count++;
                 }
             }

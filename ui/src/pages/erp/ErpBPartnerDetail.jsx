@@ -774,10 +774,23 @@ function FieldRenderer({ field, value, lookup, onChange }) {
     );
   }
 
-  const isFk = ref === 'Table' || ref === 'Table Direct' || ref === 'Search'
-            || ref === 'Locator (WH)' || ref === 'Product Attribute';
+  // iDempiere ZK convention: List / Table Direct / Table render as a combo
+  // (load options once, no dialog). Only the explicit Search reference type
+  // (and Locator / Product Attribute) open a search dialog — those back tables
+  // can be very large.
+  const isCombo = ref === 'List' || ref === 'Table Direct' || ref === 'Table';
+  const isSearchDialog = ref === 'Search' || ref === 'Locator (WH)' || ref === 'Product Attribute';
 
-  if (isFk) {
+  if (isCombo) {
+    return (
+      <div style={{ gridColumn: 'span 4' }}>
+        <ComboField field={field} value={value} lookupDisplay={lookup} editable={editable}
+                    labelText={labelText} onChange={onChange} />
+      </div>
+    );
+  }
+
+  if (isSearchDialog) {
     return (
       <div style={{ gridColumn: 'span 4' }}>
         <FkField field={field} value={value} lookupDisplay={lookup} editable={editable}
@@ -1202,10 +1215,70 @@ function shallowEqual(a, b) {
   return String(a) === String(b);
 }
 
-// FK input + picker modal. Read-only Input shows the resolved display value;
-// click opens a dialog that hits /erp-api/window/{wid}/tab/{n}/field/{col}/lookup
-// (which honours AD_Val_Rule + IsParent in MLookup). Selecting a row sets the
-// raw ID via onChange, then the next save cycle gets the new id.
+// Combo for AD List / Table Direct / Table fields. Loads its options once
+// from /erp-api/.../field/{col}/lookup (which calls MLookupFactory under
+// the hood, so AD_Val_Rule and role-based filtering are honoured). Renders
+// as a Fluent UI Dropdown — what iDempiere ZK shows for these reference
+// types when the option set is small enough to fit in a combo (Table
+// Direct, List). The Search reference type continues to use FkField below.
+function ComboField({ field, value, lookupDisplay, editable, labelText, onChange }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    getFieldLookup(BPARTNER_WINDOW_ID, HEADER_TAB_INDEX, field.columnName, '')
+      .then((rows) => { if (alive) { setItems(rows); setLoaded(true); } })
+      .catch(() => { if (alive) { setItems([]); setLoaded(true); } })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [field.columnName]);
+
+  const selectedKey = value == null ? '' : String(value);
+  // Fall back to the server-resolved display name (lookupDisplay) before the
+  // option list arrives — keeps the field from briefly showing #123.
+  const fallbackLabel = lookupDisplay || (value != null ? `#${value}` : '');
+  const selectedItem = items.find((it) => String(it.id) === selectedKey);
+  const visibleText = selectedItem
+    ? (selectedItem.name || selectedItem.value || fallbackLabel)
+    : fallbackLabel;
+
+  return (
+    <Field label={labelText} hint={editable ? null : 'Read-only'} size="small">
+      <Dropdown
+        size="small"
+        disabled={!editable || (!loaded && loading)}
+        value={visibleText}
+        selectedOptions={selectedKey ? [selectedKey] : []}
+        onOptionSelect={(_e, data) => {
+          if (data.optionValue === '') { onChange(null); return; }
+          // List references emit string codes ("O"/"X"); Table/Table Direct
+          // emit numeric ids. Try numeric first, fall back to the raw string.
+          const asNum = Number(data.optionValue);
+          onChange(Number.isFinite(asNum) && /^-?\d+$/.test(data.optionValue) ? asNum : data.optionValue);
+        }}
+        placeholder={loading ? 'Loading…' : '—'}
+      >
+        {/* Allow clearing for non-mandatory fields */}
+        {field.isMandatory !== 'Y' && (
+          <Option key="__clear" value="" text="">—</Option>
+        )}
+        {items.map((it) => (
+          <Option key={it.id} value={String(it.id)} text={it.name || it.value || `#${it.id}`}>
+            {it.name || it.value || `#${it.id}`}
+          </Option>
+        ))}
+      </Dropdown>
+    </Field>
+  );
+}
+
+// FK input + picker modal for "Search" reference type fields (large back
+// tables — BPartner, Product, etc.). Read-only Input shows the resolved
+// display value; click opens a dialog that hits the same lookup endpoint
+// with a typeahead filter.
 function FkField({ field, value, lookupDisplay, editable, labelText, onChange }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
