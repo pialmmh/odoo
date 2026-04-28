@@ -102,13 +102,16 @@ export default function TopBar() {
 
           <Divider orientation="vertical" flexItem />
 
-          <Chip
-            label={isSuper ? 'Super Admin' : 'Tenant Admin'}
-            size="small"
-            color={isSuper ? 'secondary' : 'success'}
-            variant="outlined"
-            sx={{ fontWeight: 500, fontSize: 11, height: 22 }}
-          />
+          {(() => {
+            const roles = auth?.roles || [];
+            const isTenantAdmin = roles.includes('tenant_admin');
+            const label = isSuper ? 'Super Admin' : isTenantAdmin ? 'Tenant Admin' : 'Agent';
+            const color = isSuper ? 'secondary' : isTenantAdmin ? 'success' : 'primary';
+            return (
+              <Chip label={label} size="small" color={color} variant="outlined"
+                sx={{ fontWeight: 500, fontSize: 11, height: 22 }} />
+            );
+          })()}
           <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 13 }}>
             {auth?.username}
           </Typography>

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Box, Divider } from '@mui/material';
+import { makeStyles, mergeClasses, tokens, Divider } from '@fluentui/react-components';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { WorkspaceProvider, useWorkspace, ActiveTabProvider } from './workspaceStore';
 import { TabContent, WINDOWS } from './WindowRegistry';
@@ -18,6 +18,65 @@ import TabStrip from './TabStrip';
  * URL is a thin reflection of the active tab. Visiting an ERP route
  * opens that window if not already open and focuses it.
  */
+
+const useStyles = makeStyles({
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: 'calc(100vh - 64px - 24px)',
+    minWidth: 0,
+  },
+  topbar: {
+    display: 'flex',
+    alignItems: 'stretch',
+    gap: tokens.spacingHorizontalM,
+    paddingBottom: 0,
+  },
+  searchSlot: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  divider: {
+    marginLeft: tokens.spacingHorizontalXS,
+    marginRight: tokens.spacingHorizontalXS,
+  },
+  content: {
+    flex: 1,
+    minHeight: 0,
+    marginTop: '-1px',
+    borderTopWidth: '1px',
+    borderRightWidth: '1px',
+    borderBottomWidth: '1px',
+    borderLeftWidth: '1px',
+    borderTopStyle: 'solid',
+    borderRightStyle: 'solid',
+    borderBottomStyle: 'solid',
+    borderLeftStyle: 'solid',
+    borderTopColor: tokens.colorNeutralStroke2,
+    borderRightColor: tokens.colorNeutralStroke2,
+    borderBottomColor: tokens.colorNeutralStroke2,
+    borderLeftColor: tokens.colorNeutralStroke2,
+    borderTopRightRadius: tokens.borderRadiusMedium,
+    borderBottomRightRadius: tokens.borderRadiusMedium,
+    borderBottomLeftRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground1,
+    paddingTop: tokens.spacingVerticalL,
+    paddingBottom: tokens.spacingVerticalL,
+    paddingLeft: tokens.spacingHorizontalL,
+    paddingRight: tokens.spacingHorizontalL,
+    overflow: 'auto',
+  },
+  empty: {
+    color: tokens.colorNeutralForeground3,
+    paddingTop: tokens.spacingVerticalL,
+    paddingBottom: tokens.spacingVerticalL,
+    paddingLeft: tokens.spacingHorizontalL,
+    paddingRight: tokens.spacingHorizontalL,
+  },
+  tabHidden: { display: 'none' },
+  tabVisible: { display: 'block' },
+});
+
 export default function ErpWorkspace() {
   return (
     <WorkspaceProvider>
@@ -27,12 +86,13 @@ export default function ErpWorkspace() {
 }
 
 function WorkspaceShell() {
+  const styles = useStyles();
   const { tenant } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { tabs, activeKey, openTab, closeTab, activateTab } = useWorkspace();
 
-  // URL → tab sync. The shell owns this so deep links and sidebar clicks just work.
+  // URL → tab sync.
   useEffect(() => {
     const path = location.pathname;
     const base = `/${tenant}/erp`;
@@ -51,9 +111,9 @@ function WorkspaceShell() {
       openTab({ kind: 'product-new', key: 'product-new', title: 'New Product', params: {} });
       return;
     }
-    const m = rest.match(/^product\/([^/]+)$/);
-    if (m) {
-      const id = m[1];
+    const productMatch = rest.match(/^product\/([^/]+)$/);
+    if (productMatch) {
+      const id = productMatch[1];
       openTab({
         kind: 'product-detail',
         key: `product:${id}`,
@@ -62,12 +122,59 @@ function WorkspaceShell() {
       });
       return;
     }
-    // Fallback: open the list.
+    if (rest === 'product-simple') {
+      openTab({ kind: 'product-simple-list', key: 'product-simple-list', title: 'Products (Simple)', params: {} });
+      return;
+    }
+    const productSimpleMatch = rest.match(/^product-simple\/([^/]+)$/);
+    if (productSimpleMatch) {
+      const id = productSimpleMatch[1];
+      openTab({
+        kind: 'product-simple-detail',
+        key: `product-simple:${id}`,
+        title: `Product #${id}`,
+        params: { id },
+      });
+      return;
+    }
+    if (rest === 'warehouse') {
+      openTab({ kind: 'warehouse-list', key: 'warehouse-list', title: 'Warehouses', params: {} });
+      return;
+    }
+    const warehouseMatch = rest.match(/^warehouse\/([^/]+)$/);
+    if (warehouseMatch) {
+      const id = warehouseMatch[1];
+      openTab({
+        kind: 'warehouse-detail',
+        key: `warehouse:${id}`,
+        title: `Warehouse #${id}`,
+        params: { id },
+      });
+      return;
+    }
+    if (rest === 'bpartner') {
+      openTab({ kind: 'bpartner-list', key: 'bpartner-list', title: 'Business Partners', params: {} });
+      return;
+    }
+    if (rest === 'bpartner/new') {
+      openTab({ kind: 'bpartner-new', key: 'bpartner-new', title: 'New Business Partner', params: {} });
+      return;
+    }
+    const bpartnerMatch = rest.match(/^bpartner\/([^/]+)$/);
+    if (bpartnerMatch) {
+      const id = bpartnerMatch[1];
+      openTab({
+        kind: 'bpartner-detail',
+        key: `bpartner:${id}`,
+        title: `Partner #${id}`,
+        params: { id },
+      });
+      return;
+    }
     openTab({ kind: 'product-list', key: 'product-list', title: 'Products', params: {} });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, tenant]);
 
-  // Active tab → URL sync. When the user clicks a tab, push its URL.
   const handleActivate = (key) => {
     activateTab(key);
     const tab = tabs.find((t) => t.key === key);
@@ -78,8 +185,6 @@ function WorkspaceShell() {
 
   const handleClose = (key) => closeTab(key);
 
-  // After activeKey changes (tab click or close picking a neighbor), reflect into URL.
-  // Skip the very first run so the URL→tab effect can claim its own activeKey first.
   const lastActiveKey = useRef(activeKey);
   useEffect(() => {
     if (lastActiveKey.current === activeKey) return;
@@ -100,52 +205,33 @@ function WorkspaceShell() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px - var(--space-6))' }}>
-      {/* Top bar: search (left) + tab strip (right) */}
-      <Box
-        sx={{
-          display: 'flex', alignItems: 'stretch', gap: 'var(--space-3)',
-          pb: 0,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+    <div className={styles.root}>
+      <div className={styles.topbar}>
+        <div className={styles.searchSlot}>
           <AppSearch onSelect={handleSearchSelect} />
-        </Box>
-        <Divider orientation="vertical" flexItem sx={{ mx: 'var(--space-1)' }} />
+        </div>
+        <Divider vertical className={styles.divider} />
         <TabStrip onActivate={handleActivate} onClose={handleClose} />
-      </Box>
+      </div>
 
-      {/* Content area: keep-alive — render all tabs, hide non-active. */}
-      <Box
-        sx={{
-          flex: 1, minHeight: 0,
-          mt: '-1px', // align with the active tab's bottom border
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-md)',
-          borderTopLeftRadius: 0,
-          bgcolor: 'background.paper',
-          p: 'var(--space-4)',
-          overflow: 'auto',
-        }}
-      >
+      <div className={styles.content}>
         {tabs.length === 0 ? (
-          <Box sx={{ color: 'text.secondary', p: 'var(--space-4)' }}>
+          <div className={styles.empty}>
             No windows open. Use the search box on the left or the sidebar.
-          </Box>
+          </div>
         ) : (
           tabs.map((tab) => (
-            <Box
+            <div
               key={tab.key}
-              sx={{ display: tab.key === activeKey ? 'block' : 'none' }}
+              className={mergeClasses(tab.key === activeKey ? styles.tabVisible : styles.tabHidden)}
             >
               <ActiveTabProvider tab={tab}>
                 <TabContent tab={tab} />
               </ActiveTabProvider>
-            </Box>
+            </div>
           ))
         )}
-      </Box>
-
-    </Box>
+      </div>
+    </div>
   );
 }

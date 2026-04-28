@@ -55,6 +55,30 @@ const TYPE_COLOR = {
   regular: 'primary', portal: 'info', api: 'warning', system: 'default',
 };
 
+// Convert EspoCRM validation error into a readable sentence.
+// Espo returns bodies like
+//   { messageTranslation: { label: "validationFailure", data: { field, type } } }
+// and we want something users can act on instead of raw codes.
+function friendlyEspoError(e) {
+  const data = e?.response?.data;
+  const mt = data?.messageTranslation;
+  if (mt?.label === 'validationFailure') {
+    const field = mt.data?.field || 'field';
+    const type  = mt.data?.type  || 'invalid';
+    if (field === 'userName' && type === 'valid') {
+      return 'Username has invalid characters. Use lowercase letters, digits, "." "-" "_" "@" (no uppercase, no spaces).';
+    }
+    if (field === 'userName' && type === 'pattern') {
+      return 'Username must start with a letter or digit and contain only letters, digits, "." "-" "_".';
+    }
+    if (type === 'required') return `"${field}" is required.`;
+    if (type === 'valid' || type === 'pattern') return `"${field}" has an invalid value.`;
+    if (type === 'maxLength') return `"${field}" is too long.`;
+    return `"${field}" failed validation (${type}).`;
+  }
+  return data?.message || e?.message || 'Save failed';
+}
+
 // Tiny uppercase label — same as the one used in LeadEdit/CaseEdit.
 function Lbl({ children, required }) {
   return (
@@ -221,9 +245,28 @@ export default function UserEdit() {
   };
 
   const submit = useCallback(async () => {
-    setTouched({ userName: true, password: true });
-    if (!form.userName.trim()) return;
-    if (!isEdit && !form.password) return;
+    setTouched({
+      userName: true, password: true,
+      firstName: true, lastName: true, emailAddress: true,
+    });
+
+    // Required for both create and edit — we sync these to Keycloak.
+    const missing = [];
+    if (!form.userName.trim())     missing.push('User Name');
+    if (!form.firstName.trim())    missing.push('First Name');
+    if (!form.lastName.trim())     missing.push('Last Name');
+    if (!form.emailAddress.trim()) missing.push('Email');
+    if (!isEdit && !form.password) missing.push('Password');
+    if (missing.length) {
+      setErr(`Please fill required fields: ${missing.join(', ')}.`);
+      return;
+    }
+
+    // Cheap email sanity check — the real validation is Keycloak's on sync.
+    if (form.emailAddress.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.emailAddress.trim())) {
+      setErr('Email is not valid.');
+      return;
+    }
     if (form.password && form.password !== form.passwordConfirm) {
       setErr('Passwords do not match'); return;
     }
@@ -261,7 +304,7 @@ export default function UserEdit() {
       }
       navigate(`${base}/crm/admin/users`);
     } catch (e) {
-      setErr(e?.response?.data?.message || e.message || 'Save failed');
+      setErr(friendlyEspoError(e));
     }
     setSaving(false);
   }, [form, id, isEdit, navigate, base]);
@@ -350,23 +393,35 @@ export default function UserEdit() {
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, sm: 5 }}>
-                <Lbl>First Name</Lbl>
+                <Lbl required>First Name</Lbl>
                 <TextField fullWidth size="small" placeholder="First Name"
                   value={form.firstName}
-                  onChange={(e) => set({ firstName: e.target.value })} />
+                  error={touched.firstName && !form.firstName.trim()}
+                  helperText={touched.firstName && !form.firstName.trim() ? 'First Name is required' : ''}
+                  onChange={(e) => { set({ firstName: e.target.value }); setTouched((t) => ({ ...t, firstName: true })); }} />
               </Grid>
               <Grid size={{ xs: 12, sm: 5 }}>
-                <Lbl>Last Name</Lbl>
+                <Lbl required>Last Name</Lbl>
                 <TextField fullWidth size="small" placeholder="Last Name"
                   value={form.lastName}
-                  onChange={(e) => set({ lastName: e.target.value })} />
+                  error={touched.lastName && !form.lastName.trim()}
+                  helperText={touched.lastName && !form.lastName.trim() ? 'Last Name is required' : ''}
+                  onChange={(e) => { set({ lastName: e.target.value }); setTouched((t) => ({ ...t, lastName: true })); }} />
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Lbl>Email</Lbl>
+                <Lbl required>Email</Lbl>
                 <TextField fullWidth size="small" type="email"
                   value={form.emailAddress}
-                  onChange={(e) => set({ emailAddress: e.target.value })} />
+                  error={touched.emailAddress && (!form.emailAddress.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.emailAddress.trim()))}
+                  helperText={
+                    touched.emailAddress && !form.emailAddress.trim()
+                      ? 'Email is required'
+                      : touched.emailAddress && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.emailAddress.trim())
+                        ? 'Email is not valid'
+                        : ''
+                  }
+                  onChange={(e) => { set({ emailAddress: e.target.value }); setTouched((t) => ({ ...t, emailAddress: true })); }} />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Lbl>Phone</Lbl>

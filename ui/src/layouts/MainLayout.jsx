@@ -22,7 +22,14 @@ export default function MainLayout() {
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <Sidebar />
       <TopBar />
-      <Box component="main" sx={{ flexGrow: 1, p: 3, ml: 0 }}>
+      {/*
+        minWidth: 0 lets the flex item shrink below the intrinsic width of
+        its widest descendant (default is `min-width: auto`). Without it a
+        wide child — e.g. a tab content with a long table — blows the main
+        column past the viewport, which gives the page a horizontal scroll
+        bar; the sticky Sidebar then slides left with the scrolled content.
+      */}
+      <Box component="main" sx={{ flexGrow: 1, minWidth: 0, p: 3, ml: 0 }}>
         <Toolbar />
         <Outlet />
       </Box>

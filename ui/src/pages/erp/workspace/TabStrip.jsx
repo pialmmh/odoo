@@ -1,6 +1,8 @@
 import { useRef, useEffect } from 'react';
-import { Box, IconButton, Tooltip } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import {
+  makeStyles, mergeClasses, tokens, Tooltip, Button,
+} from '@fluentui/react-components';
+import { Dismiss12Regular } from '@fluentui/react-icons';
 import { useWorkspace } from './workspaceStore';
 import { WINDOWS } from './WindowRegistry';
 
@@ -11,7 +13,124 @@ import { WINDOWS } from './WindowRegistry';
  * - Active tab autoscrolls into view.
  * - Each tab: icon, ellipsized title, close button on hover.
  */
+
+const useStyles = makeStyles({
+  empty: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    color: tokens.colorNeutralForegroundDisabled,
+    fontSize: tokens.fontSizeBase200,
+    paddingLeft: tokens.spacingHorizontalM,
+  },
+  strip: {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'flex-end',
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    scrollbarWidth: 'none',
+    gap: '2px',
+    paddingTop: tokens.spacingVerticalXS,
+    '&::-webkit-scrollbar': { display: 'none' },
+  },
+  tab: {
+    flex: '0 0 auto',
+    maxWidth: '220px',
+    minWidth: '120px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    paddingLeft: tokens.spacingHorizontalM,
+    paddingRight: tokens.spacingHorizontalS,
+    paddingTop: tokens.spacingVerticalXS,
+    paddingBottom: tokens.spacingVerticalXS,
+    cursor: 'pointer',
+    borderTopLeftRadius: tokens.borderRadiusMedium,
+    borderTopRightRadius: tokens.borderRadiusMedium,
+    borderTopWidth: '1px',
+    borderRightWidth: '1px',
+    borderBottomWidth: '1px',
+    borderLeftWidth: '1px',
+    borderTopStyle: 'solid',
+    borderRightStyle: 'solid',
+    borderBottomStyle: 'solid',
+    borderLeftStyle: 'solid',
+    borderTopColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderBottomColor: tokens.colorNeutralStroke2,
+    backgroundColor: 'transparent',
+    color: tokens.colorNeutralForeground2,
+    fontSize: tokens.fontSizeBase200,
+    fontWeight: tokens.fontWeightRegular,
+    position: 'relative',
+    transitionProperty: 'background-color, color',
+    transitionDuration: tokens.durationFaster,
+    transitionTimingFunction: tokens.curveEasyEase,
+    '&:hover': {
+      backgroundColor: tokens.colorNeutralBackground2,
+      color: tokens.colorNeutralForeground1,
+    },
+    '&:hover .tab-close': { opacity: 1 },
+  },
+  tabActive: {
+    cursor: 'default',
+    borderTopColor: tokens.colorNeutralStroke2,
+    borderRightColor: tokens.colorNeutralStroke2,
+    borderLeftColor: tokens.colorNeutralStroke2,
+    borderBottomColor: 'transparent',
+    backgroundColor: tokens.colorNeutralBackground1,
+    color: tokens.colorNeutralForeground1,
+    fontWeight: tokens.fontWeightSemibold,
+    '&:hover': {
+      backgroundColor: tokens.colorNeutralBackground1,
+      color: tokens.colorNeutralForeground1,
+    },
+  },
+  icon: {
+    flexShrink: 0,
+    color: tokens.colorNeutralForeground3,
+    width: '16px',
+    height: '16px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconActive: {
+    color: tokens.colorBrandForeground1,
+  },
+  title: {
+    flex: 1,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  dirty: {
+    color: tokens.colorPaletteYellowForeground1,
+    marginRight: '2px',
+  },
+  closeBtn: {
+    minWidth: 'unset',
+    width: '20px',
+    height: '20px',
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    paddingRight: 0,
+    opacity: 0,
+    transitionProperty: 'opacity',
+    transitionDuration: tokens.durationFaster,
+    transitionTimingFunction: tokens.curveEasyEase,
+    '&:hover': { opacity: 1 },
+  },
+  closeBtnDirty: { opacity: 1 },
+  closeBtnActive: { opacity: 0.7 },
+});
+
 export default function TabStrip({ onActivate, onClose }) {
+  const styles = useStyles();
   const { tabs, activeKey } = useWorkspace();
   const scrollRef = useRef(null);
   const activeRef = useRef(null);
@@ -35,102 +154,52 @@ export default function TabStrip({ onActivate, onClose }) {
   }, [activeKey]);
 
   if (tabs.length === 0) {
-    return (
-      <Box sx={{
-        flex: 1, display: 'flex', alignItems: 'center',
-        color: 'text.disabled', fontSize: 'var(--font-size-sm)', pl: 'var(--space-3)',
-      }}>
-        No windows open
-      </Box>
-    );
+    return <div className={styles.empty}>No windows open</div>;
   }
 
   return (
-    <Box
-      ref={scrollRef}
-      sx={{
-        flex: 1, minWidth: 0,
-        display: 'flex', alignItems: 'flex-end',
-        overflowX: 'auto', overflowY: 'hidden',
-        scrollbarWidth: 'none',
-        '&::-webkit-scrollbar': { display: 'none' },
-        gap: '2px',
-        pt: 'var(--space-1)',
-      }}
-    >
+    <div ref={scrollRef} className={styles.strip}>
       {tabs.map((tab) => {
         const isActive = tab.key === activeKey;
         const Icon = WINDOWS[tab.kind]?.icon;
         return (
-          <Box
+          <div
             key={tab.key}
             ref={isActive ? activeRef : null}
+            className={mergeClasses(styles.tab, isActive && styles.tabActive)}
             onClick={() => !isActive && onActivate?.(tab.key)}
             onMouseDown={(e) => {
-              // Middle-click closes (Chrome convention).
               if (e.button === 1) { e.preventDefault(); onClose?.(tab.key); }
             }}
-            sx={{
-              flex: '0 0 auto',
-              maxWidth: 220, minWidth: 120,
-              display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-              pl: 'var(--space-3)', pr: 'var(--space-2)',
-              py: 'var(--space-1)',
-              cursor: isActive ? 'default' : 'pointer',
-              borderTopLeftRadius: 'var(--radius-md)',
-              borderTopRightRadius: 'var(--radius-md)',
-              borderBottom: 'none',
-              border: '1px solid',
-              borderColor: isActive ? 'var(--color-border)' : 'transparent',
-              borderBottomColor: isActive ? 'transparent' : 'var(--color-border)',
-              bgcolor: isActive ? 'background.paper' : 'transparent',
-              color: isActive ? 'text.primary' : 'text.secondary',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: isActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
-              position: 'relative',
-              transition: 'background-color var(--transition-fast), color var(--transition-fast)',
-              '&:hover': {
-                bgcolor: isActive ? 'background.paper' : 'var(--color-bg-muted)',
-                color: 'text.primary',
-                '& .tab-close': { opacity: 1 },
-              },
-            }}
           >
-            {Icon && <Icon sx={{ fontSize: 16, color: isActive ? 'var(--color-primary)' : 'inherit' }} />}
-            <Box
-              sx={{
-                flex: 1,
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}
-              title={tab.dirty ? `${tab.title} — unsaved changes` : tab.title}
-            >
-              {tab.dirty && (
-                <Box component="span" sx={{ color: 'var(--color-warning, var(--color-primary))', mr: 0.5 }}>
-                  *
-                </Box>
-              )}
+            {Icon && (
+              <span className={mergeClasses(styles.icon, isActive && styles.iconActive)}>
+                <Icon />
+              </span>
+            )}
+            <span className={styles.title} title={tab.dirty ? `${tab.title} — unsaved changes` : tab.title}>
+              {tab.dirty && <span className={styles.dirty}>*</span>}
               {tab.title}
-            </Box>
+            </span>
             {!tab.pinned && (
-              <Tooltip title={tab.dirty ? 'Close (unsaved changes)' : 'Close'} disableInteractive>
-                <IconButton
-                  className="tab-close"
+              <Tooltip content={tab.dirty ? 'Close (unsaved changes)' : 'Close'} relationship="label" withArrow={false}>
+                <Button
+                  appearance="subtle"
                   size="small"
+                  icon={<Dismiss12Regular />}
+                  className={mergeClasses(
+                    styles.closeBtn,
+                    'tab-close',
+                    tab.dirty && styles.closeBtnDirty,
+                    isActive && !tab.dirty && styles.closeBtnActive,
+                  )}
                   onClick={(e) => { e.stopPropagation(); onClose?.(tab.key); }}
-                  sx={{
-                    p: '2px',
-                    // Dirty tabs always show the close button so the * isn't hidden behind hover.
-                    opacity: tab.dirty ? 1 : (isActive ? 0.7 : 0),
-                    '&:hover': { opacity: 1, bgcolor: 'var(--color-bg-subtle)' },
-                  }}
-                >
-                  <CloseIcon sx={{ fontSize: 14 }} />
-                </IconButton>
+                />
               </Tooltip>
             )}
-          </Box>
+          </div>
         );
       })}
-    </Box>
+    </div>
   );
 }

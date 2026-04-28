@@ -52,6 +52,8 @@ import Conversations          from './admin/chat-settings/Conversations';
 import Customers              from './admin/chat-settings/Customers';
 import Handoffs               from './admin/chat-settings/Handoffs';
 import DeletionRequests       from './admin/chat-settings/DeletionRequests';
+import PbxExtensions           from './admin/pbx/Extensions';
+import PbxExtensionEdit        from './admin/pbx/ExtensionEdit';
 
 export default function CrmIndex() {
   return (
@@ -132,6 +134,9 @@ export default function CrmIndex() {
       <Route path="admin/imCustomers"                 element={<Customers />} />
       <Route path="admin/imHandoffs"                  element={<Handoffs />} />
       <Route path="admin/imDeletionRequests"          element={<DeletionRequests />} />
+
+      <Route path="admin/pbxExtensions"                  element={<PbxExtensions />} />
+      <Route path="admin/pbxExtensions/:agentUuid/edit"  element={<PbxExtensionEdit />} />
 
       <Route path="admin/:key"           element={<AdminStub />} />
 

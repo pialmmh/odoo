@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams, Outlet } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
+import { FluentProvider } from '@fluentui/react-components';
+import { compactLightTheme, compactDarkTheme } from './theme/fluentTheme';
 import { ThemeRegistryProvider, useAppTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { TenantProvider } from './context/TenantContext';
@@ -30,6 +32,20 @@ import NmsTemporalClusterEdit from './pages/nms/NmsTemporalClusterEdit';
 import RBACManagement from './pages/RBACManagement';
 import Purchase from './pages/Purchase';
 import CrmIndex from './pages/crm/CrmIndex';
+import Operators from './pages/party/Operators';
+import OperatorDetail from './pages/party/OperatorDetail';
+import PartyTenantsPage from './pages/party/PartyTenants';
+import OperatorUsers from './pages/party/OperatorUsers';
+import Partners from './pages/party/Partners';
+import PartnerDetail from './pages/party/PartnerDetail';
+import PartyUsers from './pages/party/PartyUsers';
+import PartyUserDetail from './pages/party/PartyUserDetail';
+import Roles from './pages/party/Roles';
+import RoleDetail from './pages/party/RoleDetail';
+import Permissions from './pages/party/Permissions';
+import SyncJobs from './pages/party/SyncJobs';
+import CallHost from './call/CallHost';
+import LivekitCallExp from './pages/experiments/LivekitCallExp';
 import ErpWorkspace from './pages/erp/workspace/ErpWorkspace';
 import { FEATURES } from './config/platform';
 
@@ -78,7 +94,25 @@ function TenantRoutes() {
       <Route path="erp/*" element={<ErpWorkspace />} />
       <Route path="rbac" element={<RBACManagement />} />
       {FEATURES.crm && <Route path="crm/*" element={<CrmIndex />} />}
+      <Route path="experiments/livekit-call" element={<LivekitCallExp />} />
       {isSuper && <Route path="tenants" element={<Tenants />} />}
+
+      {/* Party — tenant-scoped */}
+      <Route path="party/partners" element={<Partners />} />
+      <Route path="party/partners/:partnerId" element={<PartnerDetail />} />
+      <Route path="party/users" element={<PartyUsers />} />
+      <Route path="party/users/:userId" element={<PartyUserDetail />} />
+      <Route path="party/roles" element={<Roles />} />
+      <Route path="party/roles/:roleId" element={<RoleDetail />} />
+      <Route path="party/permissions" element={<Permissions />} />
+      <Route path="party/sync-jobs" element={<SyncJobs />} />
+
+      {/* Party — super-admin (cross-tenant registry) */}
+      {isSuper && <Route path="party/admin/operators" element={<Operators />} />}
+      {isSuper && <Route path="party/admin/operators/:operatorId" element={<OperatorDetail />} />}
+      {isSuper && <Route path="party/admin/tenants" element={<PartyTenantsPage />} />}
+      {isSuper && <Route path="party/admin/operator-users" element={<OperatorUsers />} />}
+
       <Route path="*" element={<Navigate to="" replace />} />
     </Route>
   );
@@ -101,20 +135,25 @@ function AppRoutes() {
 }
 
 function ThemedApp() {
-  const { muiTheme } = useAppTheme();
+  const { muiTheme, mode } = useAppTheme();
+  const fluentTheme = mode === 'dark' ? compactDarkTheme : compactLightTheme;
   return (
-    <ThemeProvider theme={muiTheme}>
-      <CssBaseline />
-      <NotificationProvider>
-        <AuthProvider>
-          <TenantProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </TenantProvider>
-        </AuthProvider>
-      </NotificationProvider>
-    </ThemeProvider>
+    <FluentProvider theme={fluentTheme} style={{ background: 'transparent' }}>
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        <NotificationProvider>
+          <AuthProvider>
+            <TenantProvider>
+              <BrowserRouter>
+                <CallHost>
+                  <AppRoutes />
+                </CallHost>
+              </BrowserRouter>
+            </TenantProvider>
+          </AuthProvider>
+        </NotificationProvider>
+      </ThemeProvider>
+    </FluentProvider>
   );
 }
 

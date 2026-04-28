@@ -39,6 +39,11 @@ public class EspoClient {
 
     public ResponseEntity<byte[]> forward(String method, String path, String queryString,
                                           String body, String accept) {
+        return forward(method, path, queryString, body, accept, null);
+    }
+
+    public ResponseEntity<byte[]> forward(String method, String path, String queryString,
+                                          String body, String accept, String forwardedUser) {
         String url = props.getBaseUrl() + "/api/v1" + (path.startsWith("/") ? path : "/" + path);
         if (queryString != null && !queryString.isEmpty()) {
             url += "?" + queryString;
@@ -47,6 +52,14 @@ public class EspoClient {
         HttpRequest.Builder rb = HttpRequest.newBuilder(URI.create(url))
                 .header(HttpHeaders.ACCEPT, accept != null ? accept : MediaType.APPLICATION_JSON_VALUE)
                 .timeout(Duration.ofSeconds(30));
+
+        // The proxy's upstream Basic auth identifies it as "admin", but the
+        // actual end user comes from the Keycloak JWT. We forward the
+        // authenticated username so EspoCRM endpoints that need per-user
+        // context (e.g. PbxExtension/myCredentials) can resolve it.
+        if (forwardedUser != null && !forwardedUser.isEmpty()) {
+            rb.header("X-Forwarded-User", forwardedUser);
+        }
 
         // Auth: prefer admin Basic (works for admin endpoints too); fall back
         // to X-Api-Key if configured. See EspoProperties for why.

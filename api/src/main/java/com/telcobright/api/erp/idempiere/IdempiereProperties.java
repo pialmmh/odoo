@@ -16,6 +16,7 @@ public class IdempiereProperties {
     private String schema = "adempiere";
     private int clientId = 0;
     private String clientIds = "0,11";
+    private String bffUrl = "http://127.0.0.1:7079/erp-api";
 
     public String getJdbcUrl() { return jdbcUrl; }
     public void setJdbcUrl(String jdbcUrl) { this.jdbcUrl = jdbcUrl; }
@@ -29,6 +30,8 @@ public class IdempiereProperties {
     public void setClientId(int clientId) { this.clientId = clientId; }
     public String getClientIds() { return clientIds; }
     public void setClientIds(String clientIds) { this.clientIds = clientIds; }
+    public String getBffUrl() { return bffUrl; }
+    public void setBffUrl(String bffUrl) { this.bffUrl = bffUrl; }
 
     public List<Integer> clientIdList() {
         return Arrays.stream(clientIds.split(","))

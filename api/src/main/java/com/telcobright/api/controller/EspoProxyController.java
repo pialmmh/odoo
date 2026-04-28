@@ -4,6 +4,10 @@ import com.telcobright.api.espo.EspoClient;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -45,6 +49,19 @@ public class EspoProxyController {
         String qs = req.getQueryString();
         String body = req.getReader().lines().reduce("", (a, b) -> a + b);
         String accept = req.getHeader("Accept");
-        return espo.forward(req.getMethod(), path, qs, body, accept);
+
+        // Pass the JWT's preferred_username through so EspoCRM can resolve
+        // the end user (the upstream Basic auth is always "admin").
+        // Note: Spring's default authn.getName() returns the `sub` claim
+        // (Keycloak user id), so we pull preferred_username explicitly.
+        Authentication authn = SecurityContextHolder.getContext().getAuthentication();
+        String forwardedUser = null;
+        if (authn instanceof JwtAuthenticationToken jwtAuth) {
+            Jwt jwt = jwtAuth.getToken();
+            Object pu = jwt.getClaim("preferred_username");
+            if (pu != null) forwardedUser = pu.toString();
+        }
+
+        return espo.forward(req.getMethod(), path, qs, body, accept, forwardedUser);
     }
 }
