@@ -273,6 +273,9 @@ export default function Sidebar() {
     { text: 'ERP Product Simple (exp)', icon: <Box20Regular />, path: `${base}/erp/product-simple` },
     { text: 'ERP Business Partner (exp)', icon: <People20Regular />, path: `${base}/erp/bpartner` },
     { text: 'ERP Warehouses (exp)', icon: <Building20Regular />, path: `${base}/erp/warehouse` },
+
+    { section: 'ERP v2' },
+    { text: 'Products', icon: <Box20Regular />, path: `${base}/erp-v2/products` },
   ];
 
   const isActive = (path) => {
