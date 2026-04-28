@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties(prefix = "odoo")
+@ConfigurationProperties(prefix = "erp.odoo")
 public class OdooProperties {
     private String url = "http://127.0.0.1:7169";
     private String db = "odoo_billing";

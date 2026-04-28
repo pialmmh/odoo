@@ -12,7 +12,9 @@ import {
   Settings as SettingsIcon, AttachFile as AttachIcon,
 } from '@mui/icons-material';
 import {
-  getTaxRates, createTaxRate, updateTaxRate, getOdooTaxes,
+  getTaxRates, createTaxRate, updateTaxRate, getBaseTaxes,
+} from '../services/taxRates';
+import {
   getJournals, getAccounts, getProductTemplates, getProductCategories,
   createDocument, createDocMapping, getDocMappings, deleteDocMapping,
 } from '../services/odoo';
@@ -22,7 +24,7 @@ function TabPanel({ children, value, index }) {
 }
 
 // ─── Tax Rate Modal ───
-function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, onSave }) {
+function TaxRateModal({ open, onClose, rate, categories, products, baseTaxes, onSave }) {
   const [tab, setTab] = useState(0);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -32,24 +34,24 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
   useEffect(() => {
     if (rate) {
       setForm({
-        tax_type: rate.tax_type || 'vat',
+        taxType: rate.taxType || 'vat',
         rate: rate.rate || 0,
-        is_deduction: rate.is_deduction || false,
-        categ_id: rate.categ_id?.[0] || '',
-        product_tmpl_id: rate.product_tmpl_id?.[0] || '',
-        effective_date: rate.effective_date || new Date().toISOString().split('T')[0],
-        end_date: rate.end_date || '',
-        gazette_ref: rate.gazette_ref || '',
+        deduction: rate.deduction || false,
+        categoryId: rate.categoryId || '',
+        productId: rate.productId || '',
+        effectiveFrom: rate.effectiveFrom || new Date().toISOString().split('T')[0],
+        effectiveTo: rate.effectiveTo || '',
+        gazetteRef: rate.gazetteRef || '',
         reason: rate.reason || '',
-        odoo_tax_id: rate.odoo_tax_id?.[0] || '',
+        underlyingTaxId: rate.underlyingTaxId || '',
         notes: rate.notes || '',
       });
     } else {
       setForm({
-        tax_type: 'vat', rate: 15, is_deduction: false,
-        categ_id: '', product_tmpl_id: '',
-        effective_date: new Date().toISOString().split('T')[0],
-        end_date: '', gazette_ref: '', reason: '', odoo_tax_id: '', notes: '',
+        taxType: 'vat', rate: 15, deduction: false,
+        categoryId: '', productId: '',
+        effectiveFrom: new Date().toISOString().split('T')[0],
+        effectiveTo: '', gazetteRef: '', reason: '', underlyingTaxId: '', notes: '',
       });
     }
     setTab(0);
@@ -108,23 +110,23 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
   const handleSave = async () => {
     setSaving(true);
     try {
-      const vals = {
-        tax_type: form.tax_type,
+      const payload = {
+        taxType: form.taxType,
         rate: parseFloat(form.rate),
-        is_deduction: form.is_deduction,
-        categ_id: form.categ_id || false,
-        product_tmpl_id: form.product_tmpl_id || false,
-        effective_date: form.effective_date,
-        end_date: form.end_date || false,
-        gazette_ref: form.gazette_ref,
+        deduction: !!form.deduction,
+        categoryId: form.categoryId || null,
+        productId: form.productId || null,
+        effectiveFrom: form.effectiveFrom,
+        effectiveTo: form.effectiveTo || null,
+        gazetteRef: form.gazetteRef,
         reason: form.reason,
-        odoo_tax_id: form.odoo_tax_id || false,
+        underlyingTaxId: form.underlyingTaxId || null,
         notes: form.notes,
       };
       if (rate?.id) {
-        await updateTaxRate(rate.id, vals);
+        await updateTaxRate(rate.id, payload);
       } else {
-        await createTaxRate(vals);
+        await createTaxRate(payload);
       }
       onSave?.();
       onClose();
@@ -155,8 +157,8 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
             <Grid item xs={6}>
               <FormControl fullWidth size="small">
                 <InputLabel>Tax Type</InputLabel>
-                <Select value={form.tax_type} label="Tax Type"
-                  onChange={e => setForm(f => ({ ...f, tax_type: e.target.value }))}>
+                <Select value={form.taxType} label="Tax Type"
+                  onChange={e => setForm(f => ({ ...f, taxType: e.target.value }))}>
                   <MenuItem value="vat">VAT</MenuItem>
                   <MenuItem value="ait">AIT (Advanced Income Tax)</MenuItem>
                   <MenuItem value="sd">Supplementary Duty</MenuItem>
@@ -171,15 +173,15 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
             </Grid>
             <Grid item xs={3}>
               <FormControlLabel
-                control={<Checkbox checked={form.is_deduction}
-                  onChange={e => setForm(f => ({ ...f, is_deduction: e.target.checked }))} />}
+                control={<Checkbox checked={form.deduction}
+                  onChange={e => setForm(f => ({ ...f, deduction: e.target.checked }))} />}
                 label="Deduction" />
             </Grid>
             <Grid item xs={6}>
               <FormControl fullWidth size="small">
                 <InputLabel>Product Category</InputLabel>
-                <Select value={form.categ_id} label="Product Category"
-                  onChange={e => setForm(f => ({ ...f, categ_id: e.target.value }))}>
+                <Select value={form.categoryId} label="Product Category"
+                  onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}>
                   <MenuItem value="">All (Default)</MenuItem>
                   {categories.map(c => (
                     <MenuItem key={c.id} value={c.id}>{c.complete_name || c.name}</MenuItem>
@@ -190,8 +192,8 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
             <Grid item xs={6}>
               <FormControl fullWidth size="small">
                 <InputLabel>Product Override</InputLabel>
-                <Select value={form.product_tmpl_id} label="Product Override"
-                  onChange={e => setForm(f => ({ ...f, product_tmpl_id: e.target.value }))}>
+                <Select value={form.productId} label="Product Override"
+                  onChange={e => setForm(f => ({ ...f, productId: e.target.value }))}>
                   <MenuItem value="">None</MenuItem>
                   {products.map(p => (
                     <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
@@ -201,24 +203,24 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
             </Grid>
             <Grid item xs={6}>
               <TextField fullWidth size="small" label="Effective Date" type="date"
-                value={form.effective_date}
-                onChange={e => setForm(f => ({ ...f, effective_date: e.target.value }))}
+                value={form.effectiveFrom}
+                onChange={e => setForm(f => ({ ...f, effectiveFrom: e.target.value }))}
                 InputLabelProps={{ shrink: true }} />
             </Grid>
             <Grid item xs={6}>
               <TextField fullWidth size="small" label="End Date" type="date"
-                value={form.end_date}
-                onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))}
+                value={form.effectiveTo}
+                onChange={e => setForm(f => ({ ...f, effectiveTo: e.target.value }))}
                 InputLabelProps={{ shrink: true }}
                 helperText="Leave blank for open-ended" />
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth size="small">
-                <InputLabel>Linked Odoo Tax</InputLabel>
-                <Select value={form.odoo_tax_id} label="Linked Odoo Tax"
-                  onChange={e => setForm(f => ({ ...f, odoo_tax_id: e.target.value }))}>
+                <InputLabel>Linked Base Tax</InputLabel>
+                <Select value={form.underlyingTaxId} label="Linked Base Tax"
+                  onChange={e => setForm(f => ({ ...f, underlyingTaxId: e.target.value }))}>
                   <MenuItem value="">None</MenuItem>
-                  {odooTaxes.map(t => (
+                  {baseTaxes.map(t => (
                     <MenuItem key={t.id} value={t.id}>{t.name} ({t.amount}%)</MenuItem>
                   ))}
                 </Select>
@@ -297,8 +299,8 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
             <Grid item xs={12}>
               <TextField fullWidth size="small" label="Gazette / SRO Reference"
                 placeholder="e.g. SRO-2025/VAT-001"
-                value={form.gazette_ref}
-                onChange={e => setForm(f => ({ ...f, gazette_ref: e.target.value }))} />
+                value={form.gazetteRef}
+                onChange={e => setForm(f => ({ ...f, gazetteRef: e.target.value }))} />
             </Grid>
             <Grid item xs={12}>
               <TextField fullWidth size="small" label="Notes" multiline rows={4}
@@ -319,7 +321,7 @@ function TaxRateModal({ open, onClose, rate, categories, products, odooTaxes, on
 }
 
 // ─── Tax Rates Tab ───
-function TaxRatesTab({ taxRates, categories, products, odooTaxes, onRefresh }) {
+function TaxRatesTab({ taxRates, categories, products, baseTaxes, onRefresh }) {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -337,12 +339,12 @@ function TaxRatesTab({ taxRates, categories, products, odooTaxes, onRefresh }) {
 
   const filtered = taxRates.filter(r => {
     const matchSearch = !search ||
-      (r.name || '').toLowerCase().includes(search.toLowerCase()) ||
-      (r.gazette_ref || '').toLowerCase().includes(search.toLowerCase());
-    const matchType = typeFilter === 'all' || r.tax_type === typeFilter;
+      (r.gazetteRef || '').toLowerCase().includes(search.toLowerCase()) ||
+      (r.reason || '').toLowerCase().includes(search.toLowerCase());
+    const matchType = typeFilter === 'all' || r.taxType === typeFilter;
     const matchStatus = statusFilter === 'all' ||
-      (statusFilter === 'active' && r.is_active) ||
-      (statusFilter === 'expired' && !r.is_active);
+      (statusFilter === 'active' && r.active) ||
+      (statusFilter === 'expired' && !r.active);
     return matchSearch && matchType && matchStatus;
   });
 
@@ -398,45 +400,45 @@ function TaxRatesTab({ taxRates, categories, products, odooTaxes, onRefresh }) {
             </TableHead>
             <TableBody>
               {paged.map(rate => {
-                const tc = typeColors[rate.tax_type] || typeColors.other;
+                const tc = typeColors[rate.taxType] || typeColors.other;
                 return (
                   <TableRow key={rate.id} hover>
                     <TableCell>
                       <Chip label={tc.label} size="small" sx={{ bgcolor: tc.bg, color: tc.color, fontWeight: 600, fontSize: 11 }} />
-                      {rate.is_deduction && <Chip label="TDS" size="small" variant="outlined" sx={{ ml: 0.5, fontSize: 10 }} />}
+                      {rate.deduction && <Chip label="TDS" size="small" variant="outlined" sx={{ ml: 0.5, fontSize: 10 }} />}
                     </TableCell>
                     <TableCell align="right">
                       <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                        {rate.is_deduction ? '-' : ''}{rate.rate}%
+                        {rate.deduction ? '-' : ''}{rate.rate}%
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {rate.product_tmpl_id?.[1] || rate.categ_id?.[1] || 'Default (all)'}
+                        {rate.productName || rate.categoryName || 'Default (all)'}
                       </Typography>
-                      {rate.product_tmpl_id && (
+                      {rate.productId && (
                         <Typography variant="caption" color="text.secondary">Product override</Typography>
                       )}
                     </TableCell>
-                    <TableCell><Typography variant="body2">{rate.effective_date}</Typography></TableCell>
+                    <TableCell><Typography variant="body2">{rate.effectiveFrom}</Typography></TableCell>
                     <TableCell>
-                      <Typography variant="body2" color={rate.end_date ? 'text.secondary' : 'success.main'}>
-                        {rate.end_date || 'Open'}
+                      <Typography variant="body2" color={rate.effectiveTo ? 'text.secondary' : 'success.main'}>
+                        {rate.effectiveTo || 'Open'}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      <Chip label={rate.is_active ? 'Active' : 'Expired'} size="small"
-                        sx={{ bgcolor: rate.is_active ? '#e8f5e9' : '#f5f5f5', color: rate.is_active ? '#2e7d32' : '#9e9e9e', fontSize: 11 }} />
+                      <Chip label={rate.active ? 'Active' : 'Expired'} size="small"
+                        sx={{ bgcolor: rate.active ? '#e8f5e9' : '#f5f5f5', color: rate.active ? '#2e7d32' : '#9e9e9e', fontSize: 11 }} />
                     </TableCell>
                     <TableCell>
                       <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                        {rate.gazette_ref || '-'}
+                        {rate.gazetteRef || '-'}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      {rate.document_count > 0 ? (
+                      {rate.documentCount > 0 ? (
                         <Chip icon={<AttachIcon sx={{ fontSize: 14 }} />}
-                          label={rate.document_count}
+                          label={rate.documentCount}
                           size="small" variant="outlined" sx={{ fontSize: 11 }} />
                       ) : (
                         <Typography variant="caption" color="text.disabled">-</Typography>
@@ -473,7 +475,7 @@ function TaxRatesTab({ taxRates, categories, products, odooTaxes, onRefresh }) {
 
       <TaxRateModal open={showModal} onClose={() => { setShowModal(false); setEditRate(null); }}
         rate={editRate} categories={categories} products={products}
-        odooTaxes={odooTaxes} onSave={onRefresh} />
+        baseTaxes={baseTaxes} onSave={onRefresh} />
     </Box>
   );
 }
@@ -553,8 +555,8 @@ function AccountsTab({ accounts }) {
   );
 }
 
-// ─── Odoo Taxes Tab ───
-function OdooTaxesTab({ odooTaxes }) {
+// ─── Base Taxes Tab ───
+function BaseTaxesTab({ baseTaxes }) {
   return (
     <Card>
       <TableContainer>
@@ -568,7 +570,7 @@ function OdooTaxesTab({ odooTaxes }) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {odooTaxes.map(t => (
+            {baseTaxes.map(t => (
               <TableRow key={t.id} hover>
                 <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{t.name}</Typography></TableCell>
                 <TableCell align="right">
@@ -576,7 +578,7 @@ function OdooTaxesTab({ odooTaxes }) {
                     {t.amount}%
                   </Typography>
                 </TableCell>
-                <TableCell><Typography variant="caption">{t.amount_type}</Typography></TableCell>
+                <TableCell><Typography variant="caption">{t.amountType}</Typography></TableCell>
                 <TableCell><Typography variant="caption" color="text.secondary">{t.description || '-'}</Typography></TableCell>
               </TableRow>
             ))}
@@ -593,7 +595,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [taxRates, setTaxRates] = useState([]);
-  const [odooTaxes, setOdooTaxes] = useState([]);
+  const [baseTaxes, setBaseTaxes] = useState([]);
   const [journals, setJournals] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -602,16 +604,16 @@ export default function Settings() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [tr, ot, jn, ac, cat, prod] = await Promise.all([
+      const [tr, bt, jn, ac, cat, prod] = await Promise.all([
         getTaxRates(),
-        getOdooTaxes(),
+        getBaseTaxes(),
         getJournals(),
         getAccounts([['account_type', 'in', ['income', 'income_other']]]),
         getProductCategories(),
         getProductTemplates([['sale_ok', '=', true]]),
       ]);
       setTaxRates(tr);
-      setOdooTaxes(ot);
+      setBaseTaxes(bt);
       setJournals(jn);
       setAccounts(ac);
       setCategories(cat);
@@ -650,7 +652,7 @@ export default function Settings() {
         <Tabs value={mainTab} onChange={(_, v) => setMainTab(v)}
           sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
           <Tab label={`Tax Rates (${taxRates.length})`} />
-          <Tab label={`Odoo Taxes (${odooTaxes.length})`} />
+          <Tab label={`Base Taxes (${baseTaxes.length})`} />
           <Tab label={`Journals (${journals.length})`} />
           <Tab label={`Revenue Accounts (${accounts.length})`} />
         </Tabs>
@@ -658,10 +660,10 @@ export default function Settings() {
 
       <TabPanel value={mainTab} index={0}>
         <TaxRatesTab taxRates={taxRates} categories={categories} products={products}
-          odooTaxes={odooTaxes} onRefresh={loadData} />
+          baseTaxes={baseTaxes} onRefresh={loadData} />
       </TabPanel>
       <TabPanel value={mainTab} index={1}>
-        <OdooTaxesTab odooTaxes={odooTaxes} />
+        <BaseTaxesTab baseTaxes={baseTaxes} />
       </TabPanel>
       <TabPanel value={mainTab} index={2}>
         <JournalsTab journals={journals} />

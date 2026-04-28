@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>ERP Business Process Flows — Tutorial</title>
+<link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.11.1/dist/assets/diagram-js.css" />
+<link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.11.1/dist/assets/bpmn-js.css" />
+<link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.11.1/dist/assets/bpmn-font/css/bpmn.css" />
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --sidebar-bg: #1f2937;
+    --sidebar-fg: #e5e7eb;
+    --sidebar-accent: #60a5fa;
+    --sidebar-active: #2563eb;
+    --content-bg: #ffffff;
+    --border: #e5e7eb;
+    --muted: #6b7280;
+    --code: #f3f4f6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #111827; }
+  #app { display: flex; height: 100vh; }
+  #sidebar {
+    width: 320px; min-width: 320px;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-fg);
+    overflow-y: auto;
+    padding: 16px 0;
+    border-right: 1px solid #111827;
+  }
+  #sidebar h2 {
+    margin: 0 16px 12px 16px;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--sidebar-accent);
+    border-bottom: 1px solid #374151;
+    padding-bottom: 8px;
+  }
+  .cat { margin: 0; padding: 0; }
+  .cat-header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    user-select: none;
+  }
+  .cat-header:hover { background: #374151; }
+  .cat-header .chev {
+    display: inline-block;
+    width: 12px; transition: transform .15s;
+    color: var(--sidebar-accent);
+  }
+  .cat.open > .cat-header .chev { transform: rotate(90deg); }
+  .cat-children { display: none; padding: 0; margin: 0; list-style: none; }
+  .cat.open > .cat-children { display: block; }
+  .leaf {
+    padding: 6px 16px 6px 38px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #d1d5db;
+    border-left: 3px solid transparent;
+  }
+  .leaf:hover { background: #374151; color: #fff; }
+  .leaf.active {
+    background: var(--sidebar-active);
+    color: #fff;
+    border-left-color: var(--sidebar-accent);
+  }
+
+  #content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px;
+    background: var(--content-bg);
+    max-width: 1100px;
+  }
+  #content .breadcrumb {
+    color: var(--muted); font-size: 13px; margin-bottom: 8px;
+  }
+  #content h1 { margin: 0 0 12px 0; font-size: 26px; }
+  #content .desc { font-size: 15px; line-height: 1.6; color: #374151; }
+  #content ul.bullets { margin: 12px 0 24px 0; padding-left: 22px; }
+  #content ul.bullets li { margin: 4px 0; line-height: 1.55; }
+  #content h3 { margin-top: 28px; font-size: 16px; color: #374151; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  #bpmn-canvas {
+    width: 100%; height: 460px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fafafa;
+    margin-top: 12px;
+  }
+
+  /* ===== PRINT STYLES ===== */
+  @page { size: A4 portrait; margin: 12mm; }
+  @media print {
+    html, body { background: #fff; }
+    #app { display: block; height: auto; }
+    #sidebar { display: none !important; }
+    #content {
+      max-width: none; width: 100%;
+      padding: 0; margin: 0;
+      overflow: visible;
+    }
+    #empty-state { display: none !important; }
+    .footnote { color: #555 !important; }
+    /* keep canvas a single A4 column */
+    #bpmn-canvas {
+      height: 130mm;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      border: 1px solid #999;
+      background: #fff;
+    }
+    h1 { font-size: 18pt; }
+    h3 { font-size: 12pt; }
+    .desc, ul.bullets li { font-size: 10pt; }
+    /* hide bpmn.io watermark for print */
+    .bjs-powered-by { display: none !important; }
+  }
+  .placeholder {
+    text-align: center; color: var(--muted); padding: 80px 0;
+  }
+  .footnote {
+    margin-top: 16px; font-size: 12px; color: var(--muted);
+  }
+  .actors {
+    display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0 0;
+  }
+  .actor-chip {
+    background: var(--code); color: #1f2937;
+    padding: 3px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 500;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <h2>ERP Process Flows</h2>
+    <div id="tree"></div>
+  </aside>
+  <main id="content">
+    <div id="empty-state" class="placeholder">
+      <p style="font-size:18px;">Select a process from the left to view its description and BPMN swimlane diagram.</p>
+      <p style="font-size:13px;">~19 end-to-end flows organized into 8 categories.</p>
+    </div>
+    <section id="flow-detail" style="display:none;">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <h1 id="flow-title"></h1>
+      <p class="desc" id="flow-desc"></p>
+      <div class="actors" id="flow-actors"></div>
+      <h3>Key points</h3>
+      <ul class="bullets" id="flow-bullets"></ul>
+      <h3>BPMN swimlane diagram</h3>
+      <div id="bpmn-canvas"></div>
+      <p class="footnote">All actors shown as lanes inside a single pool for compact rendering. In strict BPMN, external participants (Customer, Supplier, Bank, Tax Authority) belong in separate pools connected by message flows.</p>
+    </section>
+  </main>
+</div>
+
+<script src="https://unpkg.com/bpmn-js@17.11.1/dist/bpmn-viewer.production.min.js"></script>
+<script>
+/* =========================================================================
+   FLOW CATALOG — 8 categories, 19 end-to-end ERP processes
+   ========================================================================= */
+const CATALOG = [
+  { name: "Finance", flows: ["r2r", "b2p", "treasury", "tax"] },
+  { name: "Order Management", flows: ["o2c", "q2c", "subscription"] },
+  { name: "Procurement", flows: ["p2p", "s2c"] },
+  { name: "Supply Chain & Operations", flows: ["plan2produce", "mto_mts", "f2s", "wh_in_out", "ship2deliver"] },
+  { name: "Asset & Maintenance", flows: ["a2r_asset", "p2m"] },
+  { name: "Human Resources", flows: ["h2r", "t2p"] },
+  { name: "Customer Service", flows: ["i2r", "rma"] },
+  { name: "Project Management", flows: ["proj2profit"] }
+];
+
+const FLOWS = {
+  /* ============== FINANCE ============== */
+  r2r: {
+    category: "Finance",
+    name: "Record-to-Report (R2R)",
+    description: "End-to-end period close: transactions captured in subledgers are posted, adjusted, reconciled, reviewed and rolled up into the trial balance and statutory financial statements.",
+    bullets: [
+      "Triggered by period-end (typically monthly, quarterly, annually).",
+      "Subledgers (AR, AP, Inventory, Fixed Assets, Payroll) feed the General Ledger.",
+      "Closing entries: accruals, prepayments, depreciation, FX revaluation.",
+      "Reconciliation and review precede the close lock.",
+      "Output: signed-off P&L, balance sheet, cash-flow statement."
+    ],
+    lanes: [
+      { id: "sub", name: "Subledger Owners" },
+      { id: "gl", name: "GL Accountant" },
+      { id: "ctrl", name: "Controller" }
+    ],
+    nodes: [
+      { id: "s1", lane: "sub", step: 0, type: "startEvent", name: "Period end" },
+      { id: "t1", lane: "sub", step: 1, type: "task", name: "Close subledgers" },
+      { id: "t2", lane: "gl", step: 2, type: "task", name: "Post accruals & adjustments" },
+      { id: "t3", lane: "gl", step: 3, type: "task", name: "Reconcile accounts" },
+      { id: "t4", lane: "ctrl", step: 4, type: "task", name: "Review trial balance" },
+      { id: "g1", lane: "ctrl", step: 5, type: "gateway", name: "OK?" },
+      { id: "t5", lane: "gl", step: 6, type: "task", name: "Adjust" },
+      { id: "t6", lane: "ctrl", step: 7, type: "task", name: "Approve & lock" },
+      { id: "e1", lane: "ctrl", step: 8, type: "endEvent", name: "Statements published" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "g1" },
+      { from: "g1", to: "t5", label: "no" }, { from: "t5", to: "t6" },
+      { from: "g1", to: "t6", label: "yes" },
+      { from: "t6", to: "e1" }
+    ]
+  },
+
+  b2p: {
+    category: "Finance",
+    name: "Budget-to-Plan (B2P)",
+    description: "Annual or rolling planning cycle: departments submit budget requests, FP&A consolidates and analyses, leadership approves, and the locked budget becomes the baseline for variance reporting.",
+    bullets: [
+      "Driver-based or zero-based depending on org maturity.",
+      "Bottom-up requests reconciled with top-down targets.",
+      "FP&A runs scenarios and variance vs. prior actuals.",
+      "Once locked, replanning happens via formal reforecast cycles.",
+      "Approved budget feeds back into R2R variance reporting."
+    ],
+    lanes: [
+      { id: "dept", name: "Department Manager" },
+      { id: "fpa", name: "FP&A Analyst" },
+      { id: "cfo", name: "CFO / Leadership" }
+    ],
+    nodes: [
+      { id: "s1", lane: "dept", step: 0, type: "startEvent", name: "Cycle opens" },
+      { id: "t1", lane: "dept", step: 1, type: "task", name: "Submit budget" },
+      { id: "t2", lane: "fpa", step: 2, type: "task", name: "Consolidate & model" },
+      { id: "t3", lane: "fpa", step: 3, type: "task", name: "Variance analysis" },
+      { id: "t4", lane: "cfo", step: 4, type: "task", name: "Review" },
+      { id: "g1", lane: "cfo", step: 5, type: "gateway", name: "Approve?" },
+      { id: "t5", lane: "dept", step: 6, type: "task", name: "Revise" },
+      { id: "t6", lane: "cfo", step: 7, type: "task", name: "Lock budget" },
+      { id: "e1", lane: "cfo", step: 8, type: "endEvent", name: "Baseline set" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "g1" },
+      { from: "g1", to: "t5", label: "no" }, { from: "t5", to: "t6" },
+      { from: "g1", to: "t6", label: "yes" },
+      { from: "t6", to: "e1" }
+    ]
+  },
+
+  treasury: {
+    category: "Finance",
+    name: "Treasury & Cash Management",
+    description: "Daily cash positioning and short-term liquidity management: bank balances are aggregated, forecasts produced, and surplus/deficit decisions executed via investments, borrowings or transfers.",
+    bullets: [
+      "Bank statement import and automated reconciliation.",
+      "Cash forecast typically rolls 13 weeks.",
+      "Decisions: invest surplus, draw on credit line, FX hedging.",
+      "Tight integration with AR collections and AP disbursement timing.",
+      "Output reconciles back to GL Cash accounts."
+    ],
+    lanes: [
+      { id: "clerk", name: "AR/AP Clerk" },
+      { id: "treas", name: "Treasurer" },
+      { id: "bank", name: "Bank" }
+    ],
+    nodes: [
+      { id: "s1", lane: "clerk", step: 0, type: "startEvent", name: "Daily start" },
+      { id: "t1", lane: "clerk", step: 1, type: "task", name: "Import bank balances" },
+      { id: "t2", lane: "treas", step: 2, type: "task", name: "Build cash forecast" },
+      { id: "g1", lane: "treas", step: 3, type: "gateway", name: "Position?" },
+      { id: "t3", lane: "treas", step: 4, type: "task", name: "Invest surplus" },
+      { id: "t4", lane: "treas", step: 4, type: "task", name: "Draw credit line" },
+      { id: "t5", lane: "bank", step: 5, type: "task", name: "Execute transfer" },
+      { id: "t6", lane: "treas", step: 6, type: "task", name: "Reconcile" },
+      { id: "e1", lane: "treas", step: 7, type: "endEvent", name: "Day closed" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "g1" },
+      { from: "g1", to: "t3", label: "surplus" }, { from: "t3", to: "t5" },
+      { from: "g1", to: "t4", label: "deficit" }, { from: "t4", to: "t5" },
+      { from: "t5", to: "t6" }, { from: "t6", to: "e1" }
+    ]
+  },
+
+  tax: {
+    category: "Finance",
+    name: "Tax & Compliance",
+    description: "Periodic indirect tax (VAT/GST) and direct tax filings: extract taxable transactions, compute liability, prepare returns, file with the authority and reconcile payments.",
+    bullets: [
+      "Frequency varies: monthly VAT, quarterly GST, annual income tax.",
+      "Tax determination usually configured at master-data level (tax codes).",
+      "Returns increasingly e-filed (real-time invoice reporting in many jurisdictions).",
+      "Audit trail retention is statutory (5–10 years typical).",
+      "Output: filed return + payment + audit-ready transaction listing."
+    ],
+    lanes: [
+      { id: "tax", name: "Tax Accountant" },
+      { id: "ctrl", name: "Controller" },
+      { id: "auth", name: "Tax Authority" }
+    ],
+    nodes: [
+      { id: "s1", lane: "tax", step: 0, type: "startEvent", name: "Period due" },
+      { id: "t1", lane: "tax", step: 1, type: "task", name: "Extract taxable txns" },
+      { id: "t2", lane: "tax", step: 2, type: "task", name: "Compute liability" },
+      { id: "t3", lane: "ctrl", step: 3, type: "task", name: "Review return" },
+      { id: "t4", lane: "tax", step: 4, type: "task", name: "File return" },
+      { id: "t5", lane: "auth", step: 5, type: "task", name: "Acknowledge" },
+      { id: "t6", lane: "tax", step: 6, type: "task", name: "Pay & reconcile" },
+      { id: "e1", lane: "tax", step: 7, type: "endEvent", name: "Filed" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "t6" },
+      { from: "t6", to: "e1" }
+    ]
+  },
+
+  /* ============== ORDER MANAGEMENT ============== */
+  o2c: {
+    category: "Order Management",
+    name: "Order-to-Cash (O2C)",
+    description: "From sales order capture to cash collection: the customer-facing revenue cycle that links sales, fulfilment, billing and collections.",
+    bullets: [
+      "Credit check before commitment (especially B2B).",
+      "Inventory reservation upon order confirmation.",
+      "Pick / pack / ship physically depletes inventory and triggers COGS.",
+      "Invoice posts AR; payment closes the cycle.",
+      "DSO (Days Sales Outstanding) is the KPI for end-to-end efficiency."
+    ],
+    lanes: [
+      { id: "cust", name: "Customer" },
+      { id: "sales", name: "Sales / CSR" },
+      { id: "wh", name: "Warehouse" },
+      { id: "fin", name: "Finance / AR" }
+    ],
+    nodes: [
+      { id: "s1", lane: "cust", step: 0, type: "startEvent", name: "Place order" },
+      { id: "t1", lane: "sales", step: 1, type: "task", name: "Validate credit" },
+      { id: "t2", lane: "sales", step: 2, type: "task", name: "Confirm order" },
+      { id: "t3", lane: "wh", step: 3, type: "task", name: "Pick / pack / ship" },
+      { id: "t4", lane: "fin", step: 4, type: "task", name: "Invoice" },
+      { id: "t5", lane: "cust", step: 5, type: "task", name: "Pay" },
+      { id: "t6", lane: "fin", step: 6, type: "task", name: "Apply payment" },
+      { id: "e1", lane: "fin", step: 7, type: "endEvent", name: "Cash received" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "t6" },
+      { from: "t6", to: "e1" }
+    ]
+  },
+
+  q2c: {
+    category: "Order Management",
+    name: "Quote-to-Cash (Q2C)",
+    description: "Superset of O2C: starts upstream with configure-price-quote (CPQ) and discount approval before the order is even booked.",
+    bullets: [
+      "CPQ adds product configuration and dynamic pricing.",
+      "Discount thresholds trigger approval workflow.",
+      "Quote → Order conversion preserves negotiated terms.",
+      "Common in B2B with complex products or services.",
+      "Tightly coupled to opportunity lifecycle in CRM."
+    ],
+    lanes: [
+      { id: "cust", name: "Customer" },
+      { id: "rep", name: "Sales Rep" },
+      { id: "mgr", name: "Sales Manager" },
+      { id: "fin", name: "Finance" }
+    ],
+    nodes: [
+      { id: "s1", lane: "cust", step: 0, type: "startEvent", name: "Request quote" },
+      { id: "t1", lane: "rep", step: 1, type: "task", name: "Configure & price" },
+      { id: "g1", lane: "rep", step: 2, type: "gateway", name: "Discount?" },
+      { id: "t2", lane: "mgr", step: 3, type: "task", name: "Approve discount" },
+      { id: "t3", lane: "rep", step: 4, type: "task", name: "Send quote" },
+      { id: "t4", lane: "cust", step: 5, type: "task", name: "Accept" },
+      { id: "t5", lane: "rep", step: 6, type: "task", name: "Convert to order" },
+      { id: "t6", lane: "fin", step: 7, type: "task", name: "Invoice & collect" },
+      { id: "e1", lane: "fin", step: 8, type: "endEvent", name: "Cash received" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "g1" },
+      { from: "g1", to: "t2", label: "yes" }, { from: "t2", to: "t3" },
+      { from: "g1", to: "t3", label: "no" },
+      { from: "t3", to: "t4" }, { from: "t4", to: "t5" },
+      { from: "t5", to: "t6" }, { from: "t6", to: "e1" }
+    ]
+  },
+
+  subscription: {
+    category: "Order Management",
+    name: "Contract / Subscription-to-Renewal",
+    description: "Recurring-revenue lifecycle: contract creation, provisioning, billing on a schedule, usage monitoring, and renewal or churn at term end.",
+    bullets: [
+      "Billing engine drives invoices on schedule (monthly/annual).",
+      "Usage-based components meter consumption between cycles.",
+      "Customer Success owns retention; renewal is a sales event.",
+      "Churn analysis feeds back into product and pricing.",
+      "Revenue recognized over service period (ASC 606 / IFRS 15)."
+    ],
+    lanes: [
+      { id: "sales", name: "Sales Ops" },
+      { id: "bill", name: "Billing" },
+      { id: "csm", name: "Customer Success" },
+      { id: "cust", name: "Customer" }
+    ],
+    nodes: [
+      { id: "s1", lane: "sales", step: 0, type: "startEvent", name: "Sign contract" },
+      { id: "t1", lane: "bill", step: 1, type: "task", name: "Provision subscription" },
+      { id: "t2", lane: "bill", step: 2, type: "task", name: "Recurring invoice" },
+      { id: "t3", lane: "csm", step: 3, type: "task", name: "Monitor usage" },
+      { id: "t4", lane: "csm", step: 4, type: "task", name: "Renewal outreach" },
+      { id: "g1", lane: "cust", step: 5, type: "gateway", name: "Renew?" },
+      { id: "t5", lane: "sales", step: 6, type: "task", name: "Book renewal" },
+      { id: "e1", lane: "sales", step: 7, type: "endEvent", name: "Renewed" },
+      { id: "e2", lane: "csm", step: 7, type: "endEvent", name: "Churned" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "g1" },
+      { from: "g1", to: "t5", label: "yes" }, { from: "t5", to: "e1" },
+      { from: "g1", to: "e2", label: "no" }
+    ]
+  },
+
+  /* ============== PROCUREMENT ============== */
+  p2p: {
+    category: "Procurement",
+    name: "Procure-to-Pay (P2P)",
+    description: "Mirror image of O2C on the buy side: requisition through purchase order, goods receipt, three-way invoice match and supplier payment.",
+    bullets: [
+      "Requisition approval often follows org spending limits.",
+      "PO is the legal commitment to the supplier.",
+      "Goods receipt increments inventory & accrues GR/IR.",
+      "Three-way match: PO ↔ Receipt ↔ Invoice quantities & prices.",
+      "Payment terms (Net 30 etc.) drive disbursement timing."
+    ],
+    lanes: [
+      { id: "req", name: "Requester" },
+      { id: "buyer", name: "Buyer" },
+      { id: "supp", name: "Supplier" },
+      { id: "wh", name: "Warehouse" },
+      { id: "ap", name: "AP" }
+    ],
+    nodes: [
+      { id: "s1", lane: "req", step: 0, type: "startEvent", name: "Need raised" },
+      { id: "t1", lane: "req", step: 1, type: "task", name: "Create requisition" },
+      { id: "t2", lane: "buyer", step: 2, type: "task", name: "Approve & issue PO" },
+      { id: "t3", lane: "supp", step: 3, type: "task", name: "Ship goods" },
+      { id: "t4", lane: "wh", step: 4, type: "task", name: "Receive & inspect" },
+      { id: "t5", lane: "supp", step: 5, type: "task", name: "Send invoice" },
+      { id: "t6", lane: "ap", step: 6, type: "task", name: "3-way match" },
+      { id: "t7", lane: "ap", step: 7, type: "task", name: "Pay supplier" },
+      { id: "e1", lane: "ap", step: 8, type: "endEvent", name: "Settled" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "t6" },
+      { from: "t6", to: "t7" }, { from: "t7", to: "e1" }
+    ]
+  },
+
+  s2c: {
+    category: "Procurement",
+    name: "Source-to-Contract (S2C)",
+    description: "Strategic sourcing upstream of P2P: identify a need, run RFx, evaluate bids, negotiate terms and award a master contract that subsequent POs draw against.",
+    bullets: [
+      "Owned by Strategic Sourcing / Category Management.",
+      "RFI / RFP / RFQ depending on maturity of requirement.",
+      "Multi-criteria scoring (price, quality, lead time, ESG).",
+      "Output is a framework / master agreement, not a single PO.",
+      "Contract Lifecycle Management (CLM) tracks renewals & obligations."
+    ],
+    lanes: [
+      { id: "src", name: "Sourcing Manager" },
+      { id: "supp", name: "Suppliers" },
+      { id: "legal", name: "Legal" }
+    ],
+    nodes: [
+      { id: "s1", lane: "src", step: 0, type: "startEvent", name: "Need identified" },
+      { id: "t1", lane: "src", step: 1, type: "task", name: "Issue RFP" },
+      { id: "t2", lane: "supp", step: 2, type: "task", name: "Submit bid" },
+      { id: "t3", lane: "src", step: 3, type: "task", name: "Evaluate & shortlist" },
+      { id: "t4", lane: "legal", step: 4, type: "task", name: "Negotiate terms" },
+      { id: "t5", lane: "src", step: 5, type: "task", name: "Award contract" },
+      { id: "e1", lane: "src", step: 6, type: "endEvent", name: "Contract live" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "e1" }
+    ]
+  },
+
+  /* ============== SUPPLY CHAIN & OPERATIONS ============== */
+  plan2produce: {
+    category: "Supply Chain & Operations",
+    name: "Plan-to-Produce (S&OP / MRP)",
+    description: "Integrated demand-supply balancing: forecast generates demand, MRP nets it against on-hand and PO supply, capacity is checked, and work/purchase orders are released.",
+    bullets: [
+      "Sales & Operations Planning (S&OP) reconciles demand and supply at executive level.",
+      "MRP explodes BOMs and nets across time buckets.",
+      "Capacity check ensures plan is feasible (CRP / RCCP).",
+      "Output: planned orders → released as work orders or POs.",
+      "Re-runs typically nightly or weekly."
+    ],
+    lanes: [
+      { id: "dmd", name: "Demand Planner" },
+      { id: "sup", name: "Supply Planner" },
+      { id: "prod", name: "Production" }
+    ],
+    nodes: [
+      { id: "s1", lane: "dmd", step: 0, type: "startEvent", name: "Cycle start" },
+      { id: "t1", lane: "dmd", step: 1, type: "task", name: "Forecast demand" },
+      { id: "t2", lane: "sup", step: 2, type: "task", name: "Run MRP" },
+      { id: "t3", lane: "sup", step: 3, type: "task", name: "Capacity check" },
+      { id: "t4", lane: "sup", step: 4, type: "task", name: "Release planned orders" },
+      { id: "t5", lane: "prod", step: 5, type: "task", name: "Execute production" },
+      { id: "e1", lane: "prod", step: 6, type: "endEvent", name: "Plan executed" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "e1" }
+    ]
+  },
+
+  mto_mts: {
+    category: "Supply Chain & Operations",
+    name: "Make-to-Order vs Make-to-Stock",
+    description: "Decision branching at order time: ship from finished-goods inventory if available (MTS), otherwise schedule production (MTO).",
+    bullets: [
+      "Decoupling point determines MTS vs MTO vs ATO.",
+      "MTS: short lead time, inventory cost, demand-driven.",
+      "MTO: longer lead time, no inventory risk, configurable.",
+      "Hybrid (Assemble-to-Order) is common.",
+      "Drives warehouse layout and customer promise dates."
+    ],
+    lanes: [
+      { id: "sales", name: "Sales" },
+      { id: "plan", name: "Production Planner" },
+      { id: "floor", name: "Shop Floor" }
+    ],
+    nodes: [
+      { id: "s1", lane: "sales", step: 0, type: "startEvent", name: "Order received" },
+      { id: "g1", lane: "sales", step: 1, type: "gateway", name: "In stock?" },
+      { id: "t1", lane: "sales", step: 2, type: "task", name: "Ship from stock" },
+      { id: "t2", lane: "plan", step: 2, type: "task", name: "Schedule production" },
+      { id: "t3", lane: "floor", step: 3, type: "task", name: "Produce" },
+      { id: "t4", lane: "floor", step: 4, type: "task", name: "Stock & ship" },
+      { id: "e1", lane: "sales", step: 5, type: "endEvent", name: "Delivered" }
+    ],
+    flows: [
+      { from: "s1", to: "g1" },
+      { from: "g1", to: "t1", label: "yes" }, { from: "t1", to: "e1" },
+      { from: "g1", to: "t2", label: "no" }, { from: "t2", to: "t3" },
+      { from: "t3", to: "t4" }, { from: "t4", to: "e1" }
+    ]
+  },
+
+  f2s: {
+    category: "Supply Chain & Operations",
+    name: "Forecast-to-Stock (Replenishment)",
+    description: "Statistical forecast drives reorder calculations: when projected on-hand falls below reorder point, replenishment POs (or transfer orders) are generated automatically.",
+    bullets: [
+      "Algorithms: min/max, ROP, EOQ, Kanban pull.",
+      "Safety stock buffers demand variability.",
+      "Lead-time accuracy is the biggest lever.",
+      "ABC/XYZ segmentation drives policy per SKU.",
+      "Output: PO / Transfer Order / Production Order."
+    ],
+    lanes: [
+      { id: "dmd", name: "Demand Planner" },
+      { id: "rep", name: "Replenishment" },
+      { id: "wh", name: "Warehouse" }
+    ],
+    nodes: [
+      { id: "s1", lane: "dmd", step: 0, type: "startEvent", name: "Daily run" },
+      { id: "t1", lane: "dmd", step: 1, type: "task", name: "Generate forecast" },
+      { id: "t2", lane: "rep", step: 2, type: "task", name: "Compute reorder" },
+      { id: "t3", lane: "rep", step: 3, type: "task", name: "Create PO / TO" },
+      { id: "t4", lane: "wh", step: 4, type: "task", name: "Receive & store" },
+      { id: "e1", lane: "wh", step: 5, type: "endEvent", name: "Stock replenished" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "e1" }
+    ]
+  },
+
+  wh_in_out: {
+    category: "Supply Chain & Operations",
+    name: "Warehouse Inbound-to-Outbound",
+    description: "Physical lifecycle of goods inside the warehouse: receive, putaway, store, pick on demand, pack and ship.",
+    bullets: [
+      "ASN / receipt confirmation is the entry point.",
+      "Putaway strategies: directed, fixed-bin, chaotic (random).",
+      "Picking strategies: discrete, batch, zone, wave.",
+      "Pack station verifies and labels.",
+      "WMS integrates tightly with O2C and P2P."
+    ],
+    lanes: [
+      { id: "recv", name: "Receiving" },
+      { id: "put", name: "Putaway" },
+      { id: "pick", name: "Picking" },
+      { id: "ship", name: "Shipping" }
+    ],
+    nodes: [
+      { id: "s1", lane: "recv", step: 0, type: "startEvent", name: "Truck arrives" },
+      { id: "t1", lane: "recv", step: 1, type: "task", name: "Receive & inspect" },
+      { id: "t2", lane: "put", step: 2, type: "task", name: "Putaway to locator" },
+      { id: "t3", lane: "pick", step: 3, type: "task", name: "Release pick wave" },
+      { id: "t4", lane: "pick", step: 4, type: "task", name: "Pick items" },
+      { id: "t5", lane: "ship", step: 5, type: "task", name: "Pack & label" },
+      { id: "t6", lane: "ship", step: 6, type: "task", name: "Dispatch" },
+      { id: "e1", lane: "ship", step: 7, type: "endEvent", name: "Shipped" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "t6" },
+      { from: "t6", to: "e1" }
+    ]
+  },
+
+  ship2deliver: {
+    category: "Supply Chain & Operations",
+    name: "Transportation / Ship-to-Deliver",
+    description: "Outbound transportation lifecycle: shipment is tendered to a carrier, carrier accepts, executes the move, and proof-of-delivery closes the load.",
+    bullets: [
+      "Load planning consolidates orders into trucks/containers.",
+      "Tender to preferred carrier(s) per lane / contract.",
+      "Track-and-trace events feed visibility platforms.",
+      "POD captures customer signature; closes the leg.",
+      "Freight invoice audit ties back to AP."
+    ],
+    lanes: [
+      { id: "ship", name: "Shipper" },
+      { id: "carrier", name: "Carrier" },
+      { id: "cust", name: "Customer" }
+    ],
+    nodes: [
+      { id: "s1", lane: "ship", step: 0, type: "startEvent", name: "Load ready" },
+      { id: "t1", lane: "ship", step: 1, type: "task", name: "Tender to carrier" },
+      { id: "t2", lane: "carrier", step: 2, type: "task", name: "Accept & schedule" },
+      { id: "t3", lane: "carrier", step: 3, type: "task", name: "Pick up" },
+      { id: "t4", lane: "carrier", step: 4, type: "task", name: "In transit" },
+      { id: "t5", lane: "carrier", step: 5, type: "task", name: "Deliver" },
+      { id: "t6", lane: "cust", step: 6, type: "task", name: "Confirm POD" },
+      { id: "e1", lane: "ship", step: 7, type: "endEvent", name: "Load closed" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "t6" },
+      { from: "t6", to: "e1" }
+    ]
+  },
+
+  /* ============== ASSET & MAINTENANCE ============== */
+  a2r_asset: {
+    category: "Asset & Maintenance",
+    name: "Acquire-to-Retire (Fixed Assets)",
+    description: "Capital lifecycle: capex request, acquisition, capitalization, periodic depreciation, and eventual disposal or write-off.",
+    bullets: [
+      "Capex approval gate distinguishes expense vs capitalize.",
+      "Asset master created at receipt or invoice capitalization.",
+      "Depreciation methods: straight-line, declining, units-of-production.",
+      "Periodic depreciation run posts to GL automatically.",
+      "Disposal computes gain/loss vs net book value."
+    ],
+    lanes: [
+      { id: "req", name: "Requester" },
+      { id: "fin", name: "Finance" },
+      { id: "ops", name: "Operations" }
+    ],
+    nodes: [
+      { id: "s1", lane: "req", step: 0, type: "startEvent", name: "Capex request" },
+      { id: "t1", lane: "fin", step: 1, type: "task", name: "Approve" },
+      { id: "t2", lane: "ops", step: 2, type: "task", name: "Acquire & install" },
+      { id: "t3", lane: "fin", step: 3, type: "task", name: "Capitalize" },
+      { id: "t4", lane: "fin", step: 4, type: "task", name: "Run depreciation" },
+      { id: "t5", lane: "ops", step: 5, type: "task", name: "Dispose" },
+      { id: "t6", lane: "fin", step: 6, type: "task", name: "Write-off" },
+      { id: "e1", lane: "fin", step: 7, type: "endEvent", name: "Retired" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "t6" },
+      { from: "t6", to: "e1" }
+    ]
+  },
+
+  p2m: {
+    category: "Asset & Maintenance",
+    name: "Plan-to-Maintain (EAM)",
+    description: "Reactive or preventive maintenance lifecycle: trigger, work order creation, scheduling, execution, and close-out with parts/labour costs captured.",
+    bullets: [
+      "Preventive (time/usage-based) vs corrective (breakdown).",
+      "Work order is the unit of cost & labour capture.",
+      "Spare parts pulled from MRO inventory (links to P2P).",
+      "Mean Time To Repair / Mean Time Between Failures are KPIs.",
+      "Asset history feeds reliability engineering."
+    ],
+    lanes: [
+      { id: "op", name: "Operator" },
+      { id: "plan", name: "Maintenance Planner" },
+      { id: "tech", name: "Technician" }
+    ],
+    nodes: [
+      { id: "s1", lane: "op", step: 0, type: "startEvent", name: "Fault / schedule" },
+      { id: "t1", lane: "plan", step: 1, type: "task", name: "Create work order" },
+      { id: "t2", lane: "plan", step: 2, type: "task", name: "Schedule & assign" },
+      { id: "t3", lane: "tech", step: 3, type: "task", name: "Execute maintenance" },
+      { id: "t4", lane: "tech", step: 4, type: "task", name: "Record parts & time" },
+      { id: "t5", lane: "plan", step: 5, type: "task", name: "Close work order" },
+      { id: "e1", lane: "plan", step: 6, type: "endEvent", name: "Asset back in service" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "e1" }
+    ]
+  },
+
+  /* ============== HUMAN RESOURCES ============== */
+  h2r: {
+    category: "Human Resources",
+    name: "Hire-to-Retire (H2R)",
+    description: "Full employee lifecycle: requisition, recruitment, hiring, onboarding, performance & development, separation and archive.",
+    bullets: [
+      "Requisition tied to headcount budget.",
+      "ATS handles candidate funnel; HRIS owns employee master.",
+      "Onboarding spans IT, payroll, benefits, training.",
+      "Performance/learning happen on a continuous loop.",
+      "Offboarding includes asset return, access revocation, final pay."
+    ],
+    lanes: [
+      { id: "hm", name: "Hiring Manager" },
+      { id: "rec", name: "Recruiter" },
+      { id: "hr", name: "HR" },
+      { id: "emp", name: "Employee" }
+    ],
+    nodes: [
+      { id: "s1", lane: "hm", step: 0, type: "startEvent", name: "Open requisition" },
+      { id: "t1", lane: "rec", step: 1, type: "task", name: "Source & screen" },
+      { id: "t2", lane: "hm", step: 2, type: "task", name: "Interview & decide" },
+      { id: "t3", lane: "hr", step: 3, type: "task", name: "Onboard" },
+      { id: "t4", lane: "emp", step: 4, type: "task", name: "Work, learn, perform" },
+      { id: "t5", lane: "hr", step: 5, type: "task", name: "Offboard" },
+      { id: "e1", lane: "hr", step: 6, type: "endEvent", name: "Archived" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "e1" }
+    ]
+  },
+
+  t2p: {
+    category: "Human Resources",
+    name: "Time-to-Payroll",
+    description: "Periodic payroll cycle: time capture, approval, gross-to-net calculation, disbursement and GL posting.",
+    bullets: [
+      "Time sources: timesheets, badge readers, salaried defaults.",
+      "Approval routing per cost centre or project.",
+      "Gross-to-net handles taxes, deductions, benefits, garnishments.",
+      "Bank file (ACH/SEPA) disburses to employee accounts.",
+      "Payroll journal posts to GL; reconciles to bank."
+    ],
+    lanes: [
+      { id: "emp", name: "Employee" },
+      { id: "mgr", name: "Manager" },
+      { id: "pay", name: "Payroll" },
+      { id: "bank", name: "Bank" }
+    ],
+    nodes: [
+      { id: "s1", lane: "emp", step: 0, type: "startEvent", name: "Period start" },
+      { id: "t1", lane: "emp", step: 1, type: "task", name: "Log time" },
+      { id: "t2", lane: "mgr", step: 2, type: "task", name: "Approve" },
+      { id: "t3", lane: "pay", step: 3, type: "task", name: "Compute gross-to-net" },
+      { id: "t4", lane: "bank", step: 4, type: "task", name: "Disburse" },
+      { id: "t5", lane: "pay", step: 5, type: "task", name: "Post to GL" },
+      { id: "e1", lane: "pay", step: 6, type: "endEvent", name: "Period closed" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "e1" }
+    ]
+  },
+
+  /* ============== CUSTOMER SERVICE ============== */
+  i2r: {
+    category: "Customer Service",
+    name: "Issue-to-Resolution",
+    description: "Customer-reported issue handling: triage, tiered support escalation, root-cause fix and customer notification.",
+    bullets: [
+      "Channels: phone, email, chat, self-service portal.",
+      "L1 → L2 → Engineering escalation tiers.",
+      "SLA tracks response and resolution time.",
+      "Knowledge base shortens future similar tickets.",
+      "Closed-loop notification to customer is mandatory."
+    ],
+    lanes: [
+      { id: "cust", name: "Customer" },
+      { id: "l1", name: "Support L1" },
+      { id: "l2", name: "Support L2" },
+      { id: "eng", name: "Engineering" }
+    ],
+    nodes: [
+      { id: "s1", lane: "cust", step: 0, type: "startEvent", name: "Report issue" },
+      { id: "t1", lane: "l1", step: 1, type: "task", name: "Triage" },
+      { id: "g1", lane: "l1", step: 2, type: "gateway", name: "Resolvable?" },
+      { id: "t2", lane: "l1", step: 3, type: "task", name: "Resolve & close" },
+      { id: "t3", lane: "l2", step: 3, type: "task", name: "Investigate" },
+      { id: "t4", lane: "eng", step: 4, type: "task", name: "Fix root cause" },
+      { id: "t5", lane: "l2", step: 5, type: "task", name: "Notify customer" },
+      { id: "e1", lane: "cust", step: 6, type: "endEvent", name: "Resolved" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "g1" },
+      { from: "g1", to: "t2", label: "yes" }, { from: "t2", to: "e1" },
+      { from: "g1", to: "t3", label: "no" },
+      { from: "t3", to: "t4" }, { from: "t4", to: "t5" }, { from: "t5", to: "e1" }
+    ]
+  },
+
+  rma: {
+    category: "Customer Service",
+    name: "Return-to-Refund (RMA)",
+    description: "Reverse logistics: customer requests return, RMA is authorized, goods come back, are inspected, and customer is refunded or credited.",
+    bullets: [
+      "RMA number controls and audits the return.",
+      "Inspection determines refurbish, restock, or scrap.",
+      "Refund vs credit memo vs replacement — three outcomes.",
+      "Inventory adjustment posts to a returns warehouse first.",
+      "Quality data feeds back into supplier / product engineering."
+    ],
+    lanes: [
+      { id: "cust", name: "Customer" },
+      { id: "cs", name: "Customer Service" },
+      { id: "wh", name: "Warehouse" },
+      { id: "fin", name: "Finance" }
+    ],
+    nodes: [
+      { id: "s1", lane: "cust", step: 0, type: "startEvent", name: "Return request" },
+      { id: "t1", lane: "cs", step: 1, type: "task", name: "Authorize RMA" },
+      { id: "t2", lane: "cust", step: 2, type: "task", name: "Ship back" },
+      { id: "t3", lane: "wh", step: 3, type: "task", name: "Receive & inspect" },
+      { id: "g1", lane: "wh", step: 4, type: "gateway", name: "Outcome" },
+      { id: "t4", lane: "fin", step: 5, type: "task", name: "Refund" },
+      { id: "t5", lane: "fin", step: 5, type: "task", name: "Credit memo" },
+      { id: "e1", lane: "fin", step: 6, type: "endEvent", name: "Closed" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "g1" },
+      { from: "g1", to: "t4", label: "refund" }, { from: "t4", to: "e1" },
+      { from: "g1", to: "t5", label: "credit" }, { from: "t5", to: "e1" }
+    ]
+  },
+
+  /* ============== PROJECT MANAGEMENT ============== */
+  proj2profit: {
+    category: "Project Management",
+    name: "Project-to-Profit",
+    description: "Lifecycle of a billable or internal project: chartering, planning, execution with milestone billing, revenue recognition and close-out.",
+    bullets: [
+      "Project Charter authorises scope and budget.",
+      "WBS decomposes work and assigns cost/labour categories.",
+      "Time & expense capture posts to project, then to GL via project costing.",
+      "Milestone or % complete drives invoicing & revenue recognition.",
+      "Lessons learned at close feed PMO maturity."
+    ],
+    lanes: [
+      { id: "pmo", name: "PMO" },
+      { id: "pm", name: "Project Manager" },
+      { id: "team", name: "Project Team" },
+      { id: "fin", name: "Finance" }
+    ],
+    nodes: [
+      { id: "s1", lane: "pmo", step: 0, type: "startEvent", name: "Charter project" },
+      { id: "t1", lane: "pm", step: 1, type: "task", name: "Plan WBS & budget" },
+      { id: "t2", lane: "team", step: 2, type: "task", name: "Execute deliverables" },
+      { id: "t3", lane: "pm", step: 3, type: "task", name: "Track & invoice milestones" },
+      { id: "t4", lane: "fin", step: 4, type: "task", name: "Recognize revenue" },
+      { id: "t5", lane: "pmo", step: 5, type: "task", name: "Close & lessons" },
+      { id: "e1", lane: "pmo", step: 6, type: "endEvent", name: "Project closed" }
+    ],
+    flows: [
+      { from: "s1", to: "t1" }, { from: "t1", to: "t2" },
+      { from: "t2", to: "t3" }, { from: "t3", to: "t4" },
+      { from: "t4", to: "t5" }, { from: "t5", to: "e1" }
+    ]
+  }
+};
+
+/* =========================================================================
+   BPMN XML BUILDER with simple grid auto-layout
+   ========================================================================= */
+const POOL_X = 160, POOL_Y = 80;
+const LANE_LABEL_W = 28;
+const LANE_HEIGHT = 90;
+const STEP_WIDTH  = 120;
+const FIRST_STEP_X = POOL_X + LANE_LABEL_W + 18;
+const TASK_W = 100, TASK_H = 56;
+const EVT = 32, GW = 44;
+
+function nodeBox(node, lanes, allNodes) {
+  const laneIdx = lanes.findIndex(l => l.id === node.lane);
+  // collision-offset: if multiple nodes share lane+step, fan them out vertically
+  const peers = allNodes.filter(n => n.lane === node.lane && n.step === node.step);
+  const peerIdx = peers.findIndex(p => p.id === node.id);
+  const offset = peers.length > 1 ? (peerIdx - (peers.length - 1) / 2) * 32 : 0;
+  const cy = POOL_Y + laneIdx * LANE_HEIGHT + LANE_HEIGHT / 2 + offset;
+  const cx = FIRST_STEP_X + node.step * STEP_WIDTH + STEP_WIDTH / 2;
+  let w, h;
+  if (node.type === 'task')        { w = TASK_W; h = TASK_H; }
+  else if (node.type === 'gateway'){ w = GW;     h = GW; }
+  else                              { w = EVT;    h = EVT; }
+  return { x: cx - w/2, y: cy - h/2, width: w, height: h, cx, cy };
+}
+
+function edgeWaypoints(srcBox, tgtBox) {
+  const sxR = srcBox.x + srcBox.width;
+  const sxL = srcBox.x;
+  const sy  = srcBox.cy;
+  const txL = tgtBox.x;
+  const txR = tgtBox.x + tgtBox.width;
+  const ty  = tgtBox.cy;
+
+  // Forward (target right of source)
+  if (txL >= sxR) {
+    if (Math.abs(sy - ty) < 5) {
+      return [{x: sxR, y: sy}, {x: txL, y: ty}];
+    }
+    const midX = (sxR + txL) / 2;
+    return [
+      {x: sxR, y: sy},
+      {x: midX, y: sy},
+      {x: midX, y: ty},
+      {x: txL, y: ty}
+    ];
+  }
+  // Same column (vertical)
+  if (Math.abs(srcBox.cx - tgtBox.cx) < 5) {
+    if (sy < ty) return [{x: srcBox.cx, y: srcBox.y + srcBox.height}, {x: tgtBox.cx, y: tgtBox.y}];
+    return [{x: srcBox.cx, y: srcBox.y}, {x: tgtBox.cx, y: tgtBox.y + tgtBox.height}];
+  }
+  // Backward — route under via bottom of pool
+  const bottomY = POOL_Y + 99999; // we'll fix after computing pool height in caller? simpler: use srcBox.y + srcBox.height + 30
+  const downY = Math.max(srcBox.y + srcBox.height, tgtBox.y + tgtBox.height) + 30;
+  return [
+    {x: srcBox.cx, y: srcBox.y + srcBox.height},
+    {x: srcBox.cx, y: downY},
+    {x: tgtBox.cx, y: downY},
+    {x: tgtBox.cx, y: tgtBox.y + tgtBox.height}
+  ];
+}
+
+function buildBpmnXml(flow) {
+  const lanes = flow.lanes;
+  const maxStep = Math.max(...flow.nodes.map(n => n.step));
+  const poolWidth = LANE_LABEL_W + (maxStep + 1) * STEP_WIDTH + 60;
+  const poolHeight = lanes.length * LANE_HEIGHT;
+
+  // build node->box index
+  const boxes = {};
+  flow.nodes.forEach(n => boxes[n.id] = nodeBox(n, lanes, flow.nodes));
+
+  // bpmn:process: laneSet + flowNodes
+  let laneXml = "";
+  lanes.forEach((lane, idx) => {
+    const refs = flow.nodes.filter(n => n.lane === lane.id)
+      .map(n => `        <bpmn:flowNodeRef>${n.id}</bpmn:flowNodeRef>`).join("\n");
+    laneXml += `      <bpmn:lane id="${lane.id}" name="${escapeXml(lane.name)}">\n${refs}\n      </bpmn:lane>\n`;
+  });
+
+  let nodeXml = "";
+  flow.nodes.forEach(n => {
+    if (n.type === 'startEvent')       nodeXml += `    <bpmn:startEvent id="${n.id}" name="${escapeXml(n.name)}"/>\n`;
+    else if (n.type === 'endEvent')    nodeXml += `    <bpmn:endEvent id="${n.id}" name="${escapeXml(n.name)}"/>\n`;
+    else if (n.type === 'gateway')     nodeXml += `    <bpmn:exclusiveGateway id="${n.id}" name="${escapeXml(n.name)}"/>\n`;
+    else                                nodeXml += `    <bpmn:task id="${n.id}" name="${escapeXml(n.name)}"/>\n`;
+  });
+
+  let seqXml = "";
+  flow.flows.forEach((f, i) => {
+    const id = "flow_" + i;
+    const lbl = f.label ? ` name="${escapeXml(f.label)}"` : "";
+    seqXml += `    <bpmn:sequenceFlow id="${id}"${lbl} sourceRef="${f.from}" targetRef="${f.to}"/>\n`;
+  });
+
+  // DI: pool + lanes
+  let diXml = "";
+  diXml += `      <bpmndi:BPMNShape id="Pool_di" bpmnElement="Pool_1" isHorizontal="true">\n`;
+  diXml += `        <dc:Bounds x="${POOL_X}" y="${POOL_Y}" width="${poolWidth}" height="${poolHeight}"/>\n`;
+  diXml += `      </bpmndi:BPMNShape>\n`;
+  lanes.forEach((lane, idx) => {
+    const lx = POOL_X + LANE_LABEL_W;
+    const ly = POOL_Y + idx * LANE_HEIGHT;
+    const lw = poolWidth - LANE_LABEL_W;
+    diXml += `      <bpmndi:BPMNShape id="${lane.id}_di" bpmnElement="${lane.id}" isHorizontal="true">\n`;
+    diXml += `        <dc:Bounds x="${lx}" y="${ly}" width="${lw}" height="${LANE_HEIGHT}"/>\n`;
+    diXml += `      </bpmndi:BPMNShape>\n`;
+  });
+
+  // DI: nodes
+  flow.nodes.forEach(n => {
+    const b = boxes[n.id];
+    diXml += `      <bpmndi:BPMNShape id="${n.id}_di" bpmnElement="${n.id}">\n`;
+    diXml += `        <dc:Bounds x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>\n`;
+    if (n.type !== 'task' && n.name) {
+      // label below event/gateway
+      diXml += `        <bpmndi:BPMNLabel><dc:Bounds x="${b.cx - 50}" y="${b.y + b.height + 4}" width="100" height="14"/></bpmndi:BPMNLabel>\n`;
+    }
+    diXml += `      </bpmndi:BPMNShape>\n`;
+  });
+
+  // DI: edges
+  flow.flows.forEach((f, i) => {
+    const wp = edgeWaypoints(boxes[f.from], boxes[f.to]);
+    diXml += `      <bpmndi:BPMNEdge id="flow_${i}_di" bpmnElement="flow_${i}">\n`;
+    wp.forEach(p => diXml += `        <di:waypoint x="${p.x}" y="${p.y}"/>\n`);
+    if (f.label) {
+      const mid = wp[Math.floor(wp.length / 2)];
+      diXml += `        <bpmndi:BPMNLabel><dc:Bounds x="${mid.x - 30}" y="${mid.y - 18}" width="60" height="14"/></bpmndi:BPMNLabel>\n`;
+    }
+    diXml += `      </bpmndi:BPMNEdge>\n`;
+  });
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Defs_1" targetNamespace="http://example.com/bpmn">
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Pool_1" name="${escapeXml(flow.name)}" processRef="Process_1"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Process_1" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+${laneXml}    </bpmn:laneSet>
+${nodeXml}${seqXml}  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1">
+${diXml}    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+}
+
+function escapeXml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+/* =========================================================================
+   UI: tree + content
+   ========================================================================= */
+let viewer = null;
+
+function renderTree() {
+  const root = document.getElementById("tree");
+  CATALOG.forEach(cat => {
+    const div = document.createElement("div");
+    div.className = "cat";
+    const header = document.createElement("div");
+    header.className = "cat-header";
+    header.innerHTML = `<span class="chev">▶</span><span>${cat.name}</span>`;
+    header.onclick = () => div.classList.toggle("open");
+    div.appendChild(header);
+
+    const ul = document.createElement("ul");
+    ul.className = "cat-children";
+    cat.flows.forEach(fid => {
+      const flow = FLOWS[fid];
+      if (!flow) return;
+      const li = document.createElement("li");
+      li.className = "leaf";
+      li.textContent = flow.name;
+      li.dataset.flowId = fid;
+      li.onclick = () => selectFlow(fid);
+      ul.appendChild(li);
+    });
+    div.appendChild(ul);
+    root.appendChild(div);
+  });
+  // open first category by default
+  root.querySelector(".cat")?.classList.add("open");
+}
+
+function selectFlow(fid) {
+  const flow = FLOWS[fid];
+  if (!flow) return;
+  document.querySelectorAll(".leaf").forEach(el => el.classList.toggle("active", el.dataset.flowId === fid));
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("flow-detail").style.display = "block";
+  document.getElementById("breadcrumb").textContent = flow.category + "  ›";
+  document.getElementById("flow-title").textContent = flow.name;
+  document.getElementById("flow-desc").textContent = flow.description;
+  const bullets = document.getElementById("flow-bullets");
+  bullets.innerHTML = flow.bullets.map(b => `<li>${b}</li>`).join("");
+  const actors = document.getElementById("flow-actors");
+  actors.innerHTML = flow.lanes.map(l => `<span class="actor-chip">${l.name}</span>`).join("");
+
+  renderBpmn(flow);
+}
+
+async function renderBpmn(flow) {
+  const xml = buildBpmnXml(flow);
+  if (viewer) {
+    try { viewer.destroy(); } catch(e) {}
+    viewer = null;
+  }
+  const canvas = document.getElementById("bpmn-canvas");
+  canvas.innerHTML = "";
+  viewer = new BpmnJS({ container: canvas });
+  try {
+    await viewer.importXML(xml);
+    viewer.get("canvas").zoom("fit-viewport", "auto");
+  } catch (err) {
+    console.error("BPMN import error:", err);
+    canvas.innerHTML = `<div class="placeholder"><pre style="text-align:left;font-size:11px;">${escapeXml(err.message || String(err))}</pre></div>`;
+  }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  renderTree();
+});
+
+// Re-fit BPMN to new canvas size on print and on window resize.
+function refit() {
+  if (viewer) {
+    try { viewer.get("canvas").zoom("fit-viewport", "auto"); } catch(e) {}
+  }
+}
+window.addEventListener("beforeprint", refit);
+window.addEventListener("afterprint", refit);
+window.addEventListener("resize", refit);
+</script>
+</body>
+</html>
