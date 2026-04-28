@@ -11,8 +11,11 @@ import {
 } from '@fluentui/react-icons';
 import ErpProductList from '../ErpProductList';
 import ErpProductDetail from '../ErpProductDetail';
+import ErpProductSimpleDetail from '../ErpProductSimpleDetail';
 import ErpBPartnerList from '../ErpBPartnerList';
 import ErpBPartnerDetail from '../ErpBPartnerDetail';
+import ErpWarehouseList from '../ErpWarehouseList';
+import ErpWarehouseDetail from '../ErpWarehouseDetail';
 
 /**
  * Window registry — single source of truth for what kinds of tabs exist.
@@ -123,6 +126,36 @@ export const WINDOWS = {
     render: () => <ErpProductDetail idOverride="new" />,
     status: 'ready',
   },
+  // Simplified product list: same component, but row clicks land on the
+  // simplified detail. "New" always uses the full editor.
+  'product-simple-list': {
+    icon: Box20Regular,
+    titleOf: () => 'Products (Simple)',
+    urlOf: (_tab, tenant) => `/${tenant}/erp/product-simple`,
+    render: () => <ErpProductList detailRoute="product-simple" />,
+    status: 'ready',
+  },
+  'product-simple-detail': {
+    icon: Box20Regular,
+    titleOf: (tab) => tab.params?.title || `Product #${tab.params?.id}`,
+    urlOf: (tab, tenant) => `/${tenant}/erp/product-simple/${tab.params?.id}`,
+    render: (tab) => <ErpProductSimpleDetail idOverride={tab.params?.id} />,
+    status: 'ready',
+  },
+  'warehouse-list': {
+    icon: Building20Regular,
+    titleOf: () => 'Warehouses',
+    urlOf: (_tab, tenant) => `/${tenant}/erp/warehouse`,
+    render: () => <ErpWarehouseList />,
+    status: 'ready',
+  },
+  'warehouse-detail': {
+    icon: Building20Regular,
+    titleOf: (tab) => tab.params?.title || `Warehouse #${tab.params?.id}`,
+    urlOf: (tab, tenant) => `/${tenant}/erp/warehouse/${tab.params?.id}`,
+    render: (tab) => <ErpWarehouseDetail idOverride={tab.params?.id} />,
+    status: 'ready',
+  },
   'bpartner-list': {
     icon: People20Regular,
     titleOf: () => 'Business Partners',
@@ -183,7 +216,7 @@ export const APP_MENU = [
   entry('product-list',        'Products',              Box20Regular,                 CATEGORIES.MATERIAL,     'ready'),
   entry('product-category',    'Product Categories',    Tag20Regular,                 CATEGORIES.MATERIAL,     'soon'),
   entry('price-list',          'Price Lists',           Tag20Regular,                 CATEGORIES.MATERIAL,     'soon'),
-  entry('warehouse',           'Warehouses',            Building20Regular,            CATEGORIES.MATERIAL,     'soon'),
+  entry('warehouse-list',      'Warehouses',            Building20Regular,            CATEGORIES.MATERIAL,     'ready'),
   entry('inventory-move',      'Inventory Moves',       ArrowSwap20Regular,           CATEGORIES.MATERIAL,     'soon'),
   entry('uom',                 'Units of Measure',      Ruler20Regular,               CATEGORIES.MATERIAL,     'soon'),
   entry('attribute-set',       'Attributes',            Color20Regular,               CATEGORIES.MATERIAL,     'soon'),

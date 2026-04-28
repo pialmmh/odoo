@@ -64,7 +64,7 @@ const useStyles = makeStyles({
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
 
-export default function ErpProductList() {
+export default function ErpProductList({ detailRoute = 'product' }) {
   const styles = useStyles();
   const tableStyles = useErpTableStyles();
   const navigate = useNavigate();
@@ -179,7 +179,7 @@ export default function ErpProductList() {
                 <TableRow
                   key={p.id}
                   className={styles.rowClickable}
-                  onClick={() => navigate(`/${tenant}/erp/product/${p.id}`)}
+                  onClick={() => navigate(`/${tenant}/erp/${detailRoute}/${p.id}`)}
                 >
                   <TableCell>{p.value}</TableCell>
                   <TableCell>{p.name}</TableCell>

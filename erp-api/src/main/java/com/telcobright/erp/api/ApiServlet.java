@@ -5,14 +5,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.adempiere.util.ServerContext;
+import org.compiere.acct.Doc;
 import org.compiere.model.GridField;
 import org.compiere.model.GridFieldVO;
 import org.compiere.model.GridTab;
 import org.compiere.model.GridTabVO;
 import org.compiere.model.GridWindow;
 import org.compiere.model.GridWindowVO;
+import org.compiere.model.MAcctSchema;
 import org.compiere.model.MColumn;
+import org.compiere.model.MDocType;
+import org.compiere.model.MInOut;
+import org.compiere.model.MInOutLine;
+import org.compiere.model.MInventory;
+import org.compiere.model.MLocator;
 import org.compiere.model.MLookup;
+import org.compiere.model.MMovement;
+import org.compiere.model.MMovementLine;
+import org.compiere.model.MStorageOnHand;
 import org.compiere.model.MLookupFactory;
 import org.compiere.model.MLookupInfo;
 import org.compiere.model.MQuery;
@@ -86,6 +96,45 @@ public class ApiServlet extends HttpServlet {
      *  AD column metadata (Table Direct, Table, Search, List, AD_Val_Rule). */
     private static final Pattern P_FIELD_LOOKUP =
             Pattern.compile("^/window/(\\d+)/tab/(\\d+)/field/([A-Za-z0-9_]+)/lookup$");
+    /** Stock adjustment shortcut — posts a one-line Physical Inventory doc
+     *  through the same Window 168 / GridTab path the ZK UI uses, then
+     *  completes it via {@code MInventory.processIt("CO")} so M_Storage,
+     *  M_Transaction, and Fact_Acct rows are written by the standard
+     *  posting engine (we never write those tables directly). */
+    private static final Pattern P_INVENTORY_ADJUST =
+            Pattern.compile("^/inventory/adjust$");
+    /** Material Receipt — Vendor IN (M_InOut, IsSOTrx=N). Adds stock at a
+     *  locator with optional vendor + bill-of-lading info; the standard
+     *  Doc_InOut posting engine writes M_Storage / M_Transaction / Fact_Acct. */
+    private static final Pattern P_INVENTORY_RECEIVE =
+            Pattern.compile("^/inventory/receive$");
+    /** Internal Movement — moves stock between two locators, optionally
+     *  across warehouses (M_Movement / M_MovementLine). */
+    private static final Pattern P_INVENTORY_MOVE =
+            Pattern.compile("^/inventory/move$");
+    /** Internal Use Inventory — consume / scrap / write-off (M_Inventory,
+     *  DocSubTypeInv=IU). Reduces on-hand without a customer shipment. */
+    private static final Pattern P_INVENTORY_ISSUE =
+            Pattern.compile("^/inventory/issue$");
+    /** GET — list warehouses for the calling client (no SQL; uses the
+     *  iDempiere {@link Query} model API). */
+    private static final Pattern P_WAREHOUSE_LIST =
+            Pattern.compile("^/warehouse/list$");
+    /** GET — locators in a warehouse with on-hand rollup. */
+    private static final Pattern P_WAREHOUSE_LOCATORS =
+            Pattern.compile("^/warehouse/(\\d+)/locators$");
+    /** GET — product-level stock breakdown for one warehouse. */
+    private static final Pattern P_WAREHOUSE_STOCK =
+            Pattern.compile("^/warehouse/(\\d+)/stock$");
+    /** GET — list business partners for a picker. ?role=vendor|customer */
+    private static final Pattern P_BPARTNER_LIST =
+            Pattern.compile("^/bpartner/list$");
+    /** GET — list active charges (cost categories) for the Issue picker. */
+    private static final Pattern P_CHARGE_LIST =
+            Pattern.compile("^/charge/list$");
+    private static final int W_PHYS_INVENTORY = 168;
+    private static final int W_MATERIAL_RECEIPT = 184;
+    private static final int W_MATERIAL_MOVEMENT = 170;
 
     private final ObjectMapper mapper = new ObjectMapper();
     /** Per-request unique WindowNo so context entries written by GridTab
@@ -213,6 +262,30 @@ public class ApiServlet extends HttpServlet {
                 writeJson(resp, fieldLookup(windowId, tabIndex, columnName, q));
                 return;
             }
+            if (P_WAREHOUSE_LIST.matcher(path).matches()) {
+                writeJson(resp, warehouseList());
+                return;
+            }
+            if ((m = P_WAREHOUSE_LOCATORS.matcher(path)).matches()) {
+                int warehouseId = Integer.parseInt(m.group(1));
+                writeJson(resp, warehouseLocators(warehouseId));
+                return;
+            }
+            if ((m = P_WAREHOUSE_STOCK.matcher(path)).matches()) {
+                int warehouseId = Integer.parseInt(m.group(1));
+                writeJson(resp, warehouseStock(warehouseId));
+                return;
+            }
+            if (P_BPARTNER_LIST.matcher(path).matches()) {
+                String role = req.getParameter("role");  // "vendor" | "customer" | null
+                String q = req.getParameter("q");
+                writeJson(resp, bpartnerList(role, q));
+                return;
+            }
+            if (P_CHARGE_LIST.matcher(path).matches()) {
+                writeJson(resp, chargeList());
+                return;
+            }
             error(resp, 404, "not_found", "Unknown path: " + path);
         } catch (IllegalArgumentException e) {
             error(resp, 400, "bad_request", e.getMessage());
@@ -237,6 +310,72 @@ public class ApiServlet extends HttpServlet {
         String path = req.getPathInfo();
         if (path == null) path = "";
         try {
+            if (P_INVENTORY_ADJUST.matcher(path).matches()) {
+                JsonNode body = mapper.readTree(req.getReader());
+                int productId = body.path("productId").asInt();
+                int locatorId = body.path("locatorId").asInt();
+                String qtyText = body.path("newQty").asText("");
+                if (productId <= 0 || locatorId <= 0 || qtyText.isEmpty()) {
+                    error(resp, 400, "bad_request", "productId, locatorId, newQty required"); return;
+                }
+                java.math.BigDecimal newQty;
+                try { newQty = new java.math.BigDecimal(qtyText); }
+                catch (NumberFormatException e) { error(resp, 400, "bad_request", "newQty must be numeric"); return; }
+                String description = body.hasNonNull("description") ? body.get("description").asText() : null;
+                writeJson(resp, inventoryAdjust(productId, locatorId, newQty, description));
+                return;
+            }
+            if (P_INVENTORY_RECEIVE.matcher(path).matches()) {
+                JsonNode body = mapper.readTree(req.getReader());
+                int productId = body.path("productId").asInt();
+                int locatorId = body.path("locatorId").asInt();
+                int bpartnerId = body.path("bpartnerId").asInt();
+                String qtyText = body.path("qty").asText("");
+                if (productId <= 0 || locatorId <= 0 || bpartnerId <= 0 || qtyText.isEmpty()) {
+                    error(resp, 400, "bad_request", "productId, locatorId, bpartnerId, qty required"); return;
+                }
+                java.math.BigDecimal qty;
+                try { qty = new java.math.BigDecimal(qtyText); }
+                catch (NumberFormatException e) { error(resp, 400, "bad_request", "qty must be numeric"); return; }
+                String description = body.hasNonNull("description") ? body.get("description").asText() : null;
+                writeJson(resp, inventoryReceive(productId, locatorId, bpartnerId, qty, description));
+                return;
+            }
+            if (P_INVENTORY_MOVE.matcher(path).matches()) {
+                JsonNode body = mapper.readTree(req.getReader());
+                int productId = body.path("productId").asInt();
+                int fromLocatorId = body.path("fromLocatorId").asInt();
+                int toLocatorId = body.path("toLocatorId").asInt();
+                String qtyText = body.path("qty").asText("");
+                if (productId <= 0 || fromLocatorId <= 0 || toLocatorId <= 0 || qtyText.isEmpty()) {
+                    error(resp, 400, "bad_request", "productId, fromLocatorId, toLocatorId, qty required"); return;
+                }
+                if (fromLocatorId == toLocatorId) {
+                    error(resp, 400, "bad_request", "fromLocatorId and toLocatorId must differ"); return;
+                }
+                java.math.BigDecimal qty;
+                try { qty = new java.math.BigDecimal(qtyText); }
+                catch (NumberFormatException e) { error(resp, 400, "bad_request", "qty must be numeric"); return; }
+                String description = body.hasNonNull("description") ? body.get("description").asText() : null;
+                writeJson(resp, inventoryMove(productId, fromLocatorId, toLocatorId, qty, description));
+                return;
+            }
+            if (P_INVENTORY_ISSUE.matcher(path).matches()) {
+                JsonNode body = mapper.readTree(req.getReader());
+                int productId = body.path("productId").asInt();
+                int locatorId = body.path("locatorId").asInt();
+                int chargeId = body.path("chargeId").asInt();
+                String qtyText = body.path("qty").asText("");
+                if (productId <= 0 || locatorId <= 0 || qtyText.isEmpty()) {
+                    error(resp, 400, "bad_request", "productId, locatorId, qty required"); return;
+                }
+                java.math.BigDecimal qty;
+                try { qty = new java.math.BigDecimal(qtyText); }
+                catch (NumberFormatException e) { error(resp, 400, "bad_request", "qty must be numeric"); return; }
+                String description = body.hasNonNull("description") ? body.get("description").asText() : null;
+                writeJson(resp, inventoryIssue(productId, locatorId, chargeId, qty, description));
+                return;
+            }
             Matcher m = P_NEW_ROW.matcher(path);
             if (!m.matches()) { error(resp, 404, "not_found", "Unknown path: " + path); return; }
             int windowId = Integer.parseInt(m.group(1));
@@ -945,6 +1084,686 @@ public class ApiServlet extends HttpServlet {
             try { trx.close(); } catch (Exception ignore) { }
             try { Env.clearWinContext(ctx, windowNo); } catch (Exception ignore) { }
             restoreCtx(prevCtx);
+        }
+    }
+
+    /** Stock adjustment via Window 168 (Physical Inventory).
+     *
+     *  Posts a single-line Physical Inventory document (InventoryType=D,
+     *  "Difference") through the same GridTab path ZK uses, then calls
+     *  {@code MInventory.processIt("CO")} to complete it. Completion is
+     *  what triggers {@code Doc_Inventory} → {@code M_Storage} update,
+     *  {@code M_Transaction} write, and {@code Fact_Acct} posting against
+     *  the Inventory-Adjustment / Inventory-Asset accounts wired on the
+     *  product's category. We never touch those tables directly.
+     *
+     *  Header tab and line tab share one {@link GridWindow} + WindowNo so
+     *  the line tab can resolve {@code M_Inventory_ID} from context after
+     *  the header save. {@link MLocator#get} resolves the warehouse from
+     *  the user-picked locator (no SQL).
+     *
+     *  QtyBook auto-fills via the {@code M_InventoryLine} callout when we
+     *  setValue M_Locator_ID + M_Product_ID; we only have to set QtyCount
+     *  to the user's new on-hand. */
+    private ObjectNode inventoryAdjust(int productId, int locatorId,
+                                       java.math.BigDecimal newQty,
+                                       String description) throws Exception {
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        int windowNo = nextWindowNo();
+        String trxName = Trx.createTrxName("erp-api-invadj");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            MLocator loc = MLocator.get(ctx, locatorId);
+            if (loc == null || loc.getM_Locator_ID() == 0) {
+                throw new PoSaveException("Locator " + locatorId + " not found");
+            }
+            int warehouseId = loc.getM_Warehouse_ID();
+            // Warehouse owns the Org for inventory docs — propagate it explicitly,
+            // since headless GridTab dataNew leaves AD_Org_ID at the context
+            // default (0 = '*' / all orgs) and M_Inventory requires a real org.
+            int orgId = loc.getAD_Org_ID();
+
+            // Resolve the doc type for "Physical Inventory" (DocBaseType=MMI,
+            // DocSubTypeInv=PI). MMI is shared with Internal Use and Cost
+            // Adjustment subtypes, so we filter explicitly — picking the
+            // wrong subtype causes processIt to fail with "Document
+            // inventory subtype not configured".
+            int docTypeId = 0;
+            for (MDocType dt : MDocType.getOfDocBaseType(ctx, MDocType.DOCBASETYPE_MaterialPhysicalInventory)) {
+                if (MDocType.DOCSUBTYPEINV_PhysicalInventory.equals(dt.getDocSubTypeInv())) {
+                    docTypeId = dt.getC_DocType_ID();
+                    break;
+                }
+            }
+            if (docTypeId == 0) {
+                throw new PoSaveException("No Physical Inventory doc type (DocSubTypeInv=PI) configured for this client");
+            }
+
+            // ── Header (M_Inventory) — created via PO, autocommitted ────────
+            // The header has no callouts that matter for our flow; using
+            // MInventory directly bypasses headless GridTab.dataNew quirks
+            // (saveCheck rejects on the PK column for reasons that don't
+            // surface in the BPartner path). PO.save still fires Model
+            // Validators, sequence allocation (DocumentNo), and column
+            // defaults — all the header actually needs.
+            //
+            // We pass {@code null} as the trxName so the header is
+            // autocommitted: the line tab's beforeSave does
+            // {@code new MInventory(ctx, M_Inventory_ID, null)} via
+            // {@link MInventoryLine#getParent} and won't see uncommitted
+            // rows otherwise.
+            MInventory inv = new MInventory(ctx, 0, null);
+            inv.setAD_Org_ID(orgId);
+            inv.setM_Warehouse_ID(warehouseId);
+            inv.setC_DocType_ID(docTypeId);
+            inv.setMovementDate(new Timestamp(System.currentTimeMillis()));
+            if (description != null && !description.isEmpty()) {
+                inv.setDescription(description);
+            }
+            inv.saveEx();
+            int headerId = inv.get_ID();
+            if (headerId <= 0) {
+                throw new PoSaveException("Header save returned no ID");
+            }
+
+            // Set up the GridWindow and seed line-tab context with the new
+            // header ID so the line tab's parent-driven defaults work.
+            GridWindowVO winVO = GridWindowVO.create(ctx, windowNo, W_PHYS_INVENTORY);
+            GridWindow win = new GridWindow(winVO, true);
+            Env.setContext(ctx, windowNo, "M_Inventory_ID", headerId);
+            Env.setContext(ctx, windowNo, "AD_Org_ID", orgId);
+            Env.setContext(ctx, windowNo, "M_Warehouse_ID", warehouseId);
+
+            // ── Line tab (M_InventoryLine) ──────────────────────────────────
+            GridTab line = win.getTab(1);
+            if (line == null) throw new PoSaveException("Window 168 tab 1 missing");
+            line.initTab(false);
+            line.query(false);  // no existing lines yet
+            if (!line.dataNew(false)) {
+                throw new PoSaveException(retrieveLastError("dataNew (line) rejected"));
+            }
+            // Setting Locator first lets the locator/product callout chain
+            // populate AD_Org_ID and (after Product) QtyBook from M_Storage.
+            // QtyBook = current on-hand for (locator, product, ASI=0). The
+            // M_InventoryLine callout that auto-fills this in the ZK UI does
+            // not fire reliably in headless GridTab, so we read it directly
+            // via the model layer (no SQL). Variance posted = QtyCount-QtyBook.
+            java.math.BigDecimal qtyBook = MStorageOnHand.getQtyOnHandForLocator(
+                    productId, locatorId, 0, null);
+            if (qtyBook == null) qtyBook = java.math.BigDecimal.ZERO;
+
+            Map<String, Object> lineChanges = new LinkedHashMap<>();
+            lineChanges.put("AD_Org_ID", orgId);
+            // Parent FK — set explicitly because the line tab's default
+            // (@M_Inventory_ID@ from windowNo context) doesn't always
+            // resolve in headless / freshly-instantiated GridWindow flows.
+            lineChanges.put("M_Inventory_ID", headerId);
+            lineChanges.put("M_Locator_ID", locatorId);
+            lineChanges.put("M_Product_ID", productId);
+            lineChanges.put("M_AttributeSetInstance_ID", 0);
+            lineChanges.put("InventoryType", "D");  // "D" = Difference (variance posting)
+            lineChanges.put("QtyBook", qtyBook);
+            lineChanges.put("QtyCount", newQty);
+            applyChangesAndSave(line, lineChanges, true);
+
+            // ── Complete the document ───────────────────────────────────────
+            inv.setDocAction(MInventory.DOCACTION_Complete);
+            if (!inv.processIt(MInventory.DOCACTION_Complete)) {
+                String pmsg = inv.getProcessMsg();
+                throw new PoSaveException("processIt(CO): " + (pmsg != null ? pmsg : "unknown"));
+            }
+            inv.saveEx();
+            trx.commit(true);
+
+            // Post to Fact_Acct synchronously (the iDempiere default is
+            // deferred posting → Posted=False until a background scheduler
+            // runs; that's confusing for SMB users. postImmediate runs the
+            // standard Doc.posting engine with a fresh trx.)
+            String postErr = postSync(MInventory.Table_ID, headerId, ctx);
+
+            ObjectNode out = mapper.createObjectNode();
+            out.put("ok", true);
+            out.put("inventoryId", headerId);
+            out.put("documentNo", inv.getDocumentNo());
+            out.put("docStatus", inv.getDocStatus());
+            if (postErr != null) out.put("postWarning", postErr);
+            return out;
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            try { Env.clearWinContext(ctx, windowNo); } catch (Exception ignore) { }
+            restoreCtx(prevCtx);
+        }
+    }
+
+    /** Material Receipt — Vendor IN (M_InOut, IsSOTrx=N, DocBaseType=MMR).
+     *  Header via {@link MInOut} PO (autocommit so the line tab's
+     *  {@code MInOutLine.getParent()} can see it). Line via GridTab so
+     *  callouts on M_Locator_ID / M_Product_ID populate UOM, ASI, etc.
+     *  After processIt(CO) the standard Doc_InOut posting engine writes
+     *  M_Storage / M_Transaction / Fact_Acct.
+     *  No raw SQL: MLocator.get / MDocType.getOfDocBaseType / GridTab. */
+    private ObjectNode inventoryReceive(int productId, int locatorId, int bpartnerId,
+                                        java.math.BigDecimal qty, String description) throws Exception {
+        if (qty == null || qty.signum() <= 0) {
+            throw new PoSaveException("qty must be > 0 for a receipt");
+        }
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        int windowNo = nextWindowNo();
+        String trxName = Trx.createTrxName("erp-api-recv");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            MLocator loc = MLocator.get(ctx, locatorId);
+            if (loc == null || loc.getM_Locator_ID() == 0) {
+                throw new PoSaveException("Locator " + locatorId + " not found");
+            }
+            int warehouseId = loc.getM_Warehouse_ID();
+            int orgId = loc.getAD_Org_ID();
+
+            int docTypeId = 0;
+            for (MDocType dt : MDocType.getOfDocBaseType(ctx, MDocType.DOCBASETYPE_MaterialReceipt)) {
+                // The first MMR doc type for the client is fine — receipt
+                // doc types don't have meaningful subtypes for vendor IN.
+                docTypeId = dt.getC_DocType_ID();
+                break;
+            }
+            if (docTypeId == 0) {
+                throw new PoSaveException("No Material Receipt doc type (MMR) configured for this client");
+            }
+
+            // ── Header (M_InOut) — autocommitted PO ────────────────────────
+            // Resolve the BP's primary ship-to location — required (NOT NULL)
+            // on M_InOut. iDempiere's MBPartner exposes this directly.
+            org.compiere.model.MBPartner bp = new org.compiere.model.MBPartner(ctx, bpartnerId, null);
+            int bpLocationId = bp.getPrimaryC_BPartner_Location_ID();
+            if (bpLocationId <= 0) {
+                throw new PoSaveException("Vendor #" + bpartnerId + " has no active location configured");
+            }
+            MInOut io = new MInOut(ctx, 0, null);
+            io.setAD_Org_ID(orgId);
+            io.setIsSOTrx(false);                      // vendor IN
+            io.setC_DocType_ID(docTypeId);
+            io.setC_BPartner_ID(bpartnerId);
+            io.setC_BPartner_Location_ID(bpLocationId);
+            io.setM_Warehouse_ID(warehouseId);
+            io.setMovementType(MInOut.MOVEMENTTYPE_VendorReceipts);
+            io.setMovementDate(new Timestamp(System.currentTimeMillis()));
+            io.setDateAcct(new Timestamp(System.currentTimeMillis()));
+            if (description != null && !description.isEmpty()) io.setDescription(description);
+            io.saveEx();
+            int headerId = io.get_ID();
+            if (headerId <= 0) throw new PoSaveException("Receipt header save returned no ID");
+
+            // ── Line (M_InOutLine) via GridTab so the locator/product
+            //    callouts fill UOM, ASI, default movement qty, etc. ────────
+            GridWindowVO winVO = GridWindowVO.create(ctx, windowNo, W_MATERIAL_RECEIPT);
+            GridWindow win = new GridWindow(winVO, true);
+            Env.setContext(ctx, windowNo, "M_InOut_ID", headerId);
+            Env.setContext(ctx, windowNo, "AD_Org_ID", orgId);
+            Env.setContext(ctx, windowNo, "M_Warehouse_ID", warehouseId);
+            Env.setContext(ctx, windowNo, "C_BPartner_ID", bpartnerId);
+            Env.setContext(ctx, windowNo, "IsSOTrx", "N");
+
+            GridTab line = win.getTab(1);
+            if (line == null) throw new PoSaveException("Window 184 tab 1 missing");
+            line.initTab(false);
+            line.query(false);
+            if (!line.dataNew(false)) {
+                throw new PoSaveException(retrieveLastError("dataNew (line) rejected"));
+            }
+            // Resolve the product's UOM up front — the line callout that
+            // would default it from M_Product_ID doesn't always fire reliably
+            // in the headless GridTab path, and FillMandatory(C_UOM_ID)
+            // rejects the save when missing. MProduct.get is from the model
+            // layer (no SQL).
+            org.compiere.model.MProduct prod = org.compiere.model.MProduct.get(ctx, productId);
+            int uomId = prod != null ? prod.getC_UOM_ID() : 0;
+            Map<String, Object> lineChanges = new LinkedHashMap<>();
+            lineChanges.put("AD_Org_ID", orgId);
+            lineChanges.put("M_InOut_ID", headerId);
+            lineChanges.put("M_Locator_ID", locatorId);
+            lineChanges.put("M_Product_ID", productId);
+            lineChanges.put("M_AttributeSetInstance_ID", 0);
+            if (uomId > 0) lineChanges.put("C_UOM_ID", uomId);
+            lineChanges.put("QtyEntered", qty);
+            lineChanges.put("MovementQty", qty);
+            applyChangesAndSave(line, lineChanges, true);
+
+            // ── Complete + post ────────────────────────────────────────────
+            io.setDocAction(MInOut.DOCACTION_Complete);
+            if (!io.processIt(MInOut.DOCACTION_Complete)) {
+                String pmsg = io.getProcessMsg();
+                throw new PoSaveException("processIt(CO): " + (pmsg != null ? pmsg : "unknown"));
+            }
+            io.saveEx();
+            trx.commit(true);
+            String postErr = postSync(MInOut.Table_ID, headerId, ctx);
+
+            ObjectNode out = mapper.createObjectNode();
+            out.put("ok", true);
+            out.put("inoutId", headerId);
+            out.put("documentNo", io.getDocumentNo());
+            out.put("docStatus", io.getDocStatus());
+            if (postErr != null) out.put("postWarning", postErr);
+            return out;
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            try { Env.clearWinContext(ctx, windowNo); } catch (Exception ignore) { }
+            restoreCtx(prevCtx);
+        }
+    }
+
+    /** Internal Movement — moves stock between locators (M_Movement /
+     *  M_MovementLine). Header via PO autocommit, line via GridTab so the
+     *  product / from-locator callouts default UOM and movement qty. */
+    private ObjectNode inventoryMove(int productId, int fromLocatorId, int toLocatorId,
+                                     java.math.BigDecimal qty, String description) throws Exception {
+        if (qty == null || qty.signum() <= 0) {
+            throw new PoSaveException("qty must be > 0 for a movement");
+        }
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        int windowNo = nextWindowNo();
+        String trxName = Trx.createTrxName("erp-api-move");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            MLocator from = MLocator.get(ctx, fromLocatorId);
+            MLocator to = MLocator.get(ctx, toLocatorId);
+            if (from == null || from.getM_Locator_ID() == 0)
+                throw new PoSaveException("From-locator " + fromLocatorId + " not found");
+            if (to == null || to.getM_Locator_ID() == 0)
+                throw new PoSaveException("To-locator " + toLocatorId + " not found");
+            int orgId = from.getAD_Org_ID();
+
+            int docTypeId = 0;
+            for (MDocType dt : MDocType.getOfDocBaseType(ctx, MDocType.DOCBASETYPE_MaterialMovement)) {
+                docTypeId = dt.getC_DocType_ID();
+                break;
+            }
+            if (docTypeId == 0) {
+                throw new PoSaveException("No Material Movement doc type (MMM) configured for this client");
+            }
+
+            MMovement mv = new MMovement(ctx, 0, null);
+            mv.setAD_Org_ID(orgId);
+            mv.setC_DocType_ID(docTypeId);
+            mv.setMovementDate(new Timestamp(System.currentTimeMillis()));
+            if (description != null && !description.isEmpty()) mv.setDescription(description);
+            mv.saveEx();
+            int headerId = mv.get_ID();
+            if (headerId <= 0) throw new PoSaveException("Movement header save returned no ID");
+
+            GridWindowVO winVO = GridWindowVO.create(ctx, windowNo, W_MATERIAL_MOVEMENT);
+            GridWindow win = new GridWindow(winVO, true);
+            Env.setContext(ctx, windowNo, "M_Movement_ID", headerId);
+            Env.setContext(ctx, windowNo, "AD_Org_ID", orgId);
+
+            GridTab line = win.getTab(1);
+            if (line == null) throw new PoSaveException("Window 170 tab 1 missing");
+            line.initTab(false);
+            line.query(false);
+            if (!line.dataNew(false)) {
+                throw new PoSaveException(retrieveLastError("dataNew (line) rejected"));
+            }
+            org.compiere.model.MProduct prod = org.compiere.model.MProduct.get(ctx, productId);
+            int uomId = prod != null ? prod.getC_UOM_ID() : 0;
+            Map<String, Object> lineChanges = new LinkedHashMap<>();
+            lineChanges.put("AD_Org_ID", orgId);
+            lineChanges.put("M_Movement_ID", headerId);
+            lineChanges.put("M_Locator_ID", fromLocatorId);
+            lineChanges.put("M_LocatorTo_ID", toLocatorId);
+            lineChanges.put("M_Product_ID", productId);
+            lineChanges.put("M_AttributeSetInstance_ID", 0);
+            if (uomId > 0) lineChanges.put("C_UOM_ID", uomId);
+            lineChanges.put("MovementQty", qty);
+            applyChangesAndSave(line, lineChanges, true);
+
+            mv.setDocAction(MMovement.DOCACTION_Complete);
+            if (!mv.processIt(MMovement.DOCACTION_Complete)) {
+                String pmsg = mv.getProcessMsg();
+                throw new PoSaveException("processIt(CO): " + (pmsg != null ? pmsg : "unknown"));
+            }
+            mv.saveEx();
+            trx.commit(true);
+            String postErr = postSync(MMovement.Table_ID, headerId, ctx);
+
+            ObjectNode out = mapper.createObjectNode();
+            out.put("ok", true);
+            out.put("movementId", headerId);
+            out.put("documentNo", mv.getDocumentNo());
+            out.put("docStatus", mv.getDocStatus());
+            if (postErr != null) out.put("postWarning", postErr);
+            return out;
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            try { Env.clearWinContext(ctx, windowNo); } catch (Exception ignore) { }
+            restoreCtx(prevCtx);
+        }
+    }
+
+    /** Internal Use Inventory — consume / scrap / write-off (M_Inventory
+     *  with DocSubTypeInv=IU). Reduces on-hand by {@code qty} at the
+     *  selected locator without a customer shipment. The line's QtyInternalUse
+     *  drives the Doc_Inventory posting engine. */
+    private ObjectNode inventoryIssue(int productId, int locatorId, int chargeId,
+                                      java.math.BigDecimal qty, String description) throws Exception {
+        if (qty == null || qty.signum() <= 0) {
+            throw new PoSaveException("qty must be > 0 for an issue / scrap");
+        }
+        Properties ctx = newRequestContext();
+        Properties prevCtx = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        int windowNo = nextWindowNo();
+        String trxName = Trx.createTrxName("erp-api-issue");
+        Trx trx = Trx.get(trxName, true);
+        try {
+            MLocator loc = MLocator.get(ctx, locatorId);
+            if (loc == null || loc.getM_Locator_ID() == 0) {
+                throw new PoSaveException("Locator " + locatorId + " not found");
+            }
+            int warehouseId = loc.getM_Warehouse_ID();
+            int orgId = loc.getAD_Org_ID();
+
+            int docTypeId = 0;
+            for (MDocType dt : MDocType.getOfDocBaseType(ctx, MDocType.DOCBASETYPE_MaterialPhysicalInventory)) {
+                if (MDocType.DOCSUBTYPEINV_InternalUseInventory.equals(dt.getDocSubTypeInv())) {
+                    docTypeId = dt.getC_DocType_ID();
+                    break;
+                }
+            }
+            if (docTypeId == 0) {
+                throw new PoSaveException("No Internal Use Inventory doc type (DocSubTypeInv=IU) configured for this client");
+            }
+
+            MInventory inv = new MInventory(ctx, 0, null);
+            inv.setAD_Org_ID(orgId);
+            inv.setM_Warehouse_ID(warehouseId);
+            inv.setC_DocType_ID(docTypeId);
+            inv.setMovementDate(new Timestamp(System.currentTimeMillis()));
+            if (description != null && !description.isEmpty()) inv.setDescription(description);
+            inv.saveEx();
+            int headerId = inv.get_ID();
+            if (headerId <= 0) throw new PoSaveException("Issue header save returned no ID");
+
+            GridWindowVO winVO = GridWindowVO.create(ctx, windowNo, W_PHYS_INVENTORY);
+            GridWindow win = new GridWindow(winVO, true);
+            Env.setContext(ctx, windowNo, "M_Inventory_ID", headerId);
+            Env.setContext(ctx, windowNo, "AD_Org_ID", orgId);
+            Env.setContext(ctx, windowNo, "M_Warehouse_ID", warehouseId);
+
+            GridTab line = win.getTab(1);
+            if (line == null) throw new PoSaveException("Window 168 tab 1 missing");
+            line.initTab(false);
+            line.query(false);
+            if (!line.dataNew(false)) {
+                throw new PoSaveException(retrieveLastError("dataNew (line) rejected"));
+            }
+            Map<String, Object> lineChanges = new LinkedHashMap<>();
+            lineChanges.put("AD_Org_ID", orgId);
+            lineChanges.put("M_Inventory_ID", headerId);
+            lineChanges.put("M_Locator_ID", locatorId);
+            lineChanges.put("M_Product_ID", productId);
+            lineChanges.put("M_AttributeSetInstance_ID", 0);
+            // InventoryType "C" = Charge / Internal Use ("I" is rejected by
+            // the InventoryType ref list — only C and D are valid). When
+            // InventoryType=C, MInventoryLine.beforeSave requires a
+            // C_Charge_ID (the account the consumed stock gets posted to).
+            // If the caller didn't pick one, fall back to the first active
+            // charge for the client — convenient for SMB defaults.
+            lineChanges.put("InventoryType", "C");
+            lineChanges.put("QtyInternalUse", qty);
+            int resolvedChargeId = chargeId;
+            if (resolvedChargeId <= 0) {
+                List<PO> charges = new Query(ctx,
+                        org.compiere.model.MCharge.Table_Name,
+                        "AD_Client_ID=? AND IsActive='Y'", null)
+                        .setParameters(Env.getAD_Client_ID(ctx))
+                        .setOrderBy("Name")
+                        .setPageSize(1)
+                        .list();
+                if (!charges.isEmpty()) {
+                    resolvedChargeId = ((org.compiere.model.MCharge) charges.get(0)).getC_Charge_ID();
+                }
+            }
+            if (resolvedChargeId <= 0) {
+                throw new PoSaveException("Internal Use Inventory requires a Charge — none configured for this client; pass chargeId or create one in iDempiere first");
+            }
+            lineChanges.put("C_Charge_ID", resolvedChargeId);
+            applyChangesAndSave(line, lineChanges, true);
+
+            inv.setDocAction(MInventory.DOCACTION_Complete);
+            if (!inv.processIt(MInventory.DOCACTION_Complete)) {
+                String pmsg = inv.getProcessMsg();
+                throw new PoSaveException("processIt(CO): " + (pmsg != null ? pmsg : "unknown"));
+            }
+            inv.saveEx();
+            trx.commit(true);
+            String postErr = postSync(MInventory.Table_ID, headerId, ctx);
+
+            ObjectNode out = mapper.createObjectNode();
+            out.put("ok", true);
+            out.put("inventoryId", headerId);
+            out.put("documentNo", inv.getDocumentNo());
+            out.put("docStatus", inv.getDocStatus());
+            if (postErr != null) out.put("postWarning", postErr);
+            return out;
+        } finally {
+            try { trx.close(); } catch (Exception ignore) { }
+            try { Env.clearWinContext(ctx, windowNo); } catch (Exception ignore) { }
+            restoreCtx(prevCtx);
+        }
+    }
+
+    /** GET /warehouse/list — list active M_Warehouse rows for the client.
+     *  Uses the iDempiere {@link Query} model API (not raw SQL); the WHERE
+     *  is a parameterised iDempiere idiom that {@code Query} translates
+     *  to a JDBC PreparedStatement under the hood. */
+    private ObjectNode warehouseList() {
+        Properties ctx = newRequestContext();
+        Properties prev = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        try {
+            List<PO> rows = new Query(ctx,
+                    org.compiere.model.MWarehouse.Table_Name,
+                    "AD_Client_ID=? AND IsActive='Y'", null)
+                    .setParameters(Env.getAD_Client_ID(ctx))
+                    .setOrderBy("Value")
+                    .list();
+            ObjectNode out = mapper.createObjectNode();
+            ArrayNode items = out.putArray("items");
+            for (PO po : rows) {
+                org.compiere.model.MWarehouse wh = (org.compiere.model.MWarehouse) po;
+                ObjectNode r = items.addObject();
+                r.put("id", wh.getM_Warehouse_ID());
+                r.put("value", wh.getValue());
+                r.put("name", wh.getName());
+                r.put("description", wh.getDescription());
+                r.put("isInTransit", wh.isInTransit());
+                r.put("orgId", wh.getAD_Org_ID());
+            }
+            return out;
+        } finally { restoreCtx(prev); }
+    }
+
+    /** GET /warehouse/{id}/locators — locators in a warehouse with on-hand
+     *  rollup (sum of {@code M_StorageOnHand.QtyOnHand} across all products
+     *  at that locator). Two iDempiere {@link Query} calls — one for
+     *  locators, one for storage rows — joined client-side. */
+    private ObjectNode warehouseLocators(int warehouseId) {
+        Properties ctx = newRequestContext();
+        Properties prev = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        try {
+            List<PO> locs = new Query(ctx, org.compiere.model.MLocator.Table_Name,
+                    "M_Warehouse_ID=? AND IsActive='Y'", null)
+                    .setParameters(warehouseId)
+                    .setOrderBy("Value")
+                    .list();
+            // Pull all storage rows for this warehouse's locators in one go.
+            List<PO> storage = new Query(ctx, MStorageOnHand.Table_Name,
+                    "M_Locator_ID IN (SELECT M_Locator_ID FROM M_Locator WHERE M_Warehouse_ID=?)",
+                    null)
+                    .setParameters(warehouseId)
+                    .list();
+            Map<Integer, java.math.BigDecimal> rollup = new HashMap<>();
+            Map<Integer, Integer> productCount = new HashMap<>();
+            for (PO po : storage) {
+                MStorageOnHand soh = (MStorageOnHand) po;
+                int lid = soh.getM_Locator_ID();
+                java.math.BigDecimal q = soh.getQtyOnHand();
+                if (q == null) q = java.math.BigDecimal.ZERO;
+                rollup.merge(lid, q, java.math.BigDecimal::add);
+                productCount.merge(lid, q.signum() != 0 ? 1 : 0, Integer::sum);
+            }
+            ObjectNode out = mapper.createObjectNode();
+            ArrayNode items = out.putArray("items");
+            for (PO po : locs) {
+                org.compiere.model.MLocator l = (org.compiere.model.MLocator) po;
+                ObjectNode r = items.addObject();
+                r.put("id", l.getM_Locator_ID());
+                r.put("value", l.getValue());
+                r.put("x", l.getX());
+                r.put("y", l.getY());
+                r.put("z", l.getZ());
+                r.put("isDefault", l.isDefault());
+                java.math.BigDecimal q = rollup.getOrDefault(l.getM_Locator_ID(), java.math.BigDecimal.ZERO);
+                r.put("qtyOnHand", q.doubleValue());
+                r.put("productCount", productCount.getOrDefault(l.getM_Locator_ID(), 0));
+            }
+            return out;
+        } finally { restoreCtx(prev); }
+    }
+
+    /** GET /warehouse/{id}/stock — product-level stock breakdown. Returns
+     *  one row per (product, locator) with on-hand / reserved / ordered. */
+    private ObjectNode warehouseStock(int warehouseId) {
+        Properties ctx = newRequestContext();
+        Properties prev = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        try {
+            List<PO> storage = new Query(ctx, MStorageOnHand.Table_Name,
+                    "M_Locator_ID IN (SELECT M_Locator_ID FROM M_Locator WHERE M_Warehouse_ID=?)",
+                    null)
+                    .setParameters(warehouseId)
+                    .setOrderBy("M_Product_ID, M_Locator_ID")
+                    .list();
+            // Map of locatorId → display ("X-Y-Z") via MLocator.get
+            Map<Integer, String> locName = new HashMap<>();
+            // Map of productId → (name, value) via MProduct
+            Map<Integer, String[]> prodInfo = new HashMap<>();
+            ObjectNode out = mapper.createObjectNode();
+            ArrayNode items = out.putArray("items");
+            for (PO po : storage) {
+                MStorageOnHand soh = (MStorageOnHand) po;
+                java.math.BigDecimal q = soh.getQtyOnHand();
+                if (q == null || q.signum() == 0) continue;
+                ObjectNode r = items.addObject();
+                int locId = soh.getM_Locator_ID();
+                String ln = locName.computeIfAbsent(locId, k -> {
+                    org.compiere.model.MLocator l = org.compiere.model.MLocator.get(ctx, k);
+                    return l == null ? ("#" + k)
+                            : (l.getValue() != null && !l.getValue().isEmpty() ? l.getValue()
+                                    : (l.getX() + "-" + l.getY() + "-" + l.getZ()));
+                });
+                int productId = soh.getM_Product_ID();
+                String[] pi = prodInfo.computeIfAbsent(productId, k -> {
+                    org.compiere.model.MProduct p = org.compiere.model.MProduct.get(ctx, k);
+                    return p == null ? new String[] { "#" + k, "" }
+                            : new String[] { p.getName(), p.getValue() == null ? "" : p.getValue() };
+                });
+                r.put("productId", productId);
+                r.put("productName", pi[0]);
+                r.put("productValue", pi[1]);
+                r.put("locatorId", locId);
+                r.put("locatorValue", ln);
+                r.put("qtyOnHand", q.doubleValue());
+            }
+            return out;
+        } finally { restoreCtx(prev); }
+    }
+
+    /** GET /bpartner/list?role=vendor|customer&q=... — picker-shaped list
+     *  of business partners. Filters on {@code IsVendor='Y'} or
+     *  {@code IsCustomer='Y'} when role is given; q matches Name or Value. */
+    private ObjectNode bpartnerList(String role, String q) {
+        Properties ctx = newRequestContext();
+        Properties prev = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        try {
+            StringBuilder where = new StringBuilder("AD_Client_ID=? AND IsActive='Y'");
+            List<Object> params = new ArrayList<>();
+            params.add(Env.getAD_Client_ID(ctx));
+            if ("vendor".equalsIgnoreCase(role)) where.append(" AND IsVendor='Y'");
+            else if ("customer".equalsIgnoreCase(role)) where.append(" AND IsCustomer='Y'");
+            if (q != null && !q.isBlank()) {
+                where.append(" AND (UPPER(Name) LIKE ? OR UPPER(Value) LIKE ?)");
+                String like = "%" + q.trim().toUpperCase() + "%";
+                params.add(like);
+                params.add(like);
+            }
+            List<PO> rows = new Query(ctx,
+                    org.compiere.model.MBPartner.Table_Name, where.toString(), null)
+                    .setParameters(params.toArray())
+                    .setOrderBy("Name")
+                    .setPageSize(100)
+                    .list();
+            ObjectNode out = mapper.createObjectNode();
+            ArrayNode items = out.putArray("items");
+            for (PO po : rows) {
+                org.compiere.model.MBPartner bp = (org.compiere.model.MBPartner) po;
+                ObjectNode r = items.addObject();
+                r.put("id", bp.getC_BPartner_ID());
+                r.put("value", bp.getValue());
+                r.put("name", bp.getName());
+                r.put("isVendor", bp.isVendor());
+                r.put("isCustomer", bp.isCustomer());
+            }
+            return out;
+        } finally { restoreCtx(prev); }
+    }
+
+    /** GET /charge/list — picker-shaped active charges for the client. */
+    private ObjectNode chargeList() {
+        Properties ctx = newRequestContext();
+        Properties prev = ServerContext.getCurrentInstance();
+        ServerContext.setCurrentInstance(ctx);
+        try {
+            List<PO> rows = new Query(ctx, org.compiere.model.MCharge.Table_Name,
+                    "AD_Client_ID=? AND IsActive='Y'", null)
+                    .setParameters(Env.getAD_Client_ID(ctx))
+                    .setOrderBy("Name")
+                    .list();
+            ObjectNode out = mapper.createObjectNode();
+            ArrayNode items = out.putArray("items");
+            for (PO po : rows) {
+                org.compiere.model.MCharge c = (org.compiere.model.MCharge) po;
+                ObjectNode r = items.addObject();
+                r.put("id", c.getC_Charge_ID());
+                r.put("name", c.getName());
+                r.put("description", c.getDescription());
+            }
+            return out;
+        } finally { restoreCtx(prev); }
+    }
+
+    /** Run {@link Doc#postImmediate} so {@code Fact_Acct} is written
+     *  synchronously (iDempiere defaults to deferred posting via the
+     *  background AcctScheduler — confusing for SMB users who expect
+     *  Posted=Y immediately on completion). Returns null on success or
+     *  the iDempiere error message — never throws, since a posting
+     *  failure shouldn't roll back an already-committed completed doc. */
+    private String postSync(int adTableId, int recordId, Properties ctx) {
+        try {
+            int clientId = Env.getAD_Client_ID(ctx);
+            MAcctSchema[] ass = MAcctSchema.getClientAcctSchema(ctx, clientId);
+            if (ass == null || ass.length == 0) return "no accounting schema for client";
+            return Doc.postImmediate(ass, adTableId, recordId, true, null);
+        } catch (Exception e) {
+            return e.getMessage();
         }
     }
 

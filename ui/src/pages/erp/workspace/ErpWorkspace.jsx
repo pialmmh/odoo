@@ -122,6 +122,36 @@ function WorkspaceShell() {
       });
       return;
     }
+    if (rest === 'product-simple') {
+      openTab({ kind: 'product-simple-list', key: 'product-simple-list', title: 'Products (Simple)', params: {} });
+      return;
+    }
+    const productSimpleMatch = rest.match(/^product-simple\/([^/]+)$/);
+    if (productSimpleMatch) {
+      const id = productSimpleMatch[1];
+      openTab({
+        kind: 'product-simple-detail',
+        key: `product-simple:${id}`,
+        title: `Product #${id}`,
+        params: { id },
+      });
+      return;
+    }
+    if (rest === 'warehouse') {
+      openTab({ kind: 'warehouse-list', key: 'warehouse-list', title: 'Warehouses', params: {} });
+      return;
+    }
+    const warehouseMatch = rest.match(/^warehouse\/([^/]+)$/);
+    if (warehouseMatch) {
+      const id = warehouseMatch[1];
+      openTab({
+        kind: 'warehouse-detail',
+        key: `warehouse:${id}`,
+        title: `Warehouse #${id}`,
+        params: { id },
+      });
+      return;
+    }
     if (rest === 'bpartner') {
       openTab({ kind: 'bpartner-list', key: 'bpartner-list', title: 'Business Partners', params: {} });
       return;

@@ -268,8 +268,11 @@ export default function Sidebar() {
 
     { section: 'Experimental' },
     { text: 'LiveKit Call (exp)', icon: <Phone20Regular />, path: `${base}/experiments/livekit-call` },
+    { text: 'Call Window (exp)', icon: <Headset20Regular />, path: `${base}/experiments/livekit-call?workspace=1` },
     { text: 'ERP Product (exp)', icon: <Box20Regular />, path: `${base}/erp/product` },
+    { text: 'ERP Product Simple (exp)', icon: <Box20Regular />, path: `${base}/erp/product-simple` },
     { text: 'ERP Business Partner (exp)', icon: <People20Regular />, path: `${base}/erp/bpartner` },
+    { text: 'ERP Warehouses (exp)', icon: <Building20Regular />, path: `${base}/erp/warehouse` },
   ];
 
   const isActive = (path) => {
@@ -281,6 +284,9 @@ export default function Sidebar() {
       return loc.startsWith(path) && !loc.startsWith(`${path}/policies`);
     if (path === `${base}/crm/admin`)
       return loc.startsWith(path) && !loc.startsWith(`${path}/pbxExtensions`);
+    // /erp/product is a prefix of /erp/product-simple — keep them disjoint.
+    if (path === `${base}/erp/product`)
+      return loc.startsWith(path) && !loc.startsWith(`${base}/erp/product-simple`);
     return loc.startsWith(path);
   };
 
