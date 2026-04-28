@@ -1,0 +1,36 @@
+{
+  "actions": [
+    {
+      "id": 278,
+      "name": "Products",
+      "res_model": "product.template",
+      "view_mode": "kanban,tree,form,activity",
+      "views": [
+        [
+          737,
+          "tree"
+        ],
+        [
+          false,
+          "kanban"
+        ],
+        [
+          false,
+          "form"
+        ],
+        [
+          false,
+          "activity"
+        ]
+      ],
+      "view_ids": [],
+      "domain": false,
+      "context": "{'search_default_filter_to_sell': 1}",
+      "search_view_id": false,
+      "target": "current",
+      "limit": 80,
+      "help": "<p class=\"o_view_nocontent_smiling_face\">\n                  Create a new sellable product\n                </p>\n            ",
+      "type": "ir.actions.act_window"
+    }
+  ]
+}

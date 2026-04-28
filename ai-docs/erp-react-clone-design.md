@@ -622,6 +622,35 @@ rm -rf $IDEMP/configuration/org.eclipse.osgi/[0-9]* \
 | 2026-04-29 | New work lives **side-by-side** under `/erp-v2` (UI route) and `com.telcobright.api.erpv2.*` (backend package). Existing `/erp` and `controller/Erp*Controller` are NOT refactored. | User direction — additive rollout, no risk to working screens |
 | 2026-04-29 | Future development happens in the `orchestrix-erp` worktree on the `orchestrix-erp` branch. `main` is for stable / pushable state to GitHub. | User direction |
 | 2026-04-29 | A third backend (ErpNext) is in scope long-term. A tax-rate slice has already been scaffolded on `orchestrix-erp` (`api/.../erp/erpnext/`, `api/.../erp/odoo/`, `api/.../erp/dto/`). Will be folded into `erpv2/` packages when wired. | User direction (commit on orchestrix-erp 47eb3b4) |
+| 2026-04-29 | Variants (`product.product`), product tags, the "Kill Bill" custom notebook tab, and chatter/activity are **permanently dropped** from `/erp-v2`. Reasons: no clean iDempiere counterpart for variants/tags/chatter; KB tab is a project-specific Odoo addon that must not leak. | Helper discovery summary §"Top 3 risks" + product/mapping/idempiere.md |
+
+---
+
+## 8.5. Slice tracker — `/erp-v2` rollout
+
+Each clone slice deliberately ships less than the full target so we get
+a working end-to-end loop fast and widen incrementally. New slices
+append. Closed slices stay for history.
+
+### Slice 1 — Product, read-only (in flight, 2026-04-29)
+
+**Scope:** `/erp-v2/products` list + `/erp-v2/products/:id` read-only
+form (3 tabs: General / Sales / Purchase). Backend: `ErpAdapter` skeleton
++ `IdempiereErpAdapter` read paths + `/api/erp-v2/products`. Backed by
+the existing in-iDempiere BFF; no new write code.
+
+**Deferred to a later slice (intentional, not bugs):**
+
+| Item | Why deferred | Picks up in |
+|------|--------------|-------------|
+| Pricing (`listPrice`, `standardPrice`) — real value | Requires `MProductPrice` resolution against the user's default sales pricelist version. Helper risk #1. Slice 1 returns null/0. | Slice 2 (Pricing widening) |
+| Save / Edit button | Read path must validate first; widening write later isolates the commit. | Slice 2 (Edit + create) |
+| Accounting tab (income/expense accounts) | iDempiere accounts are per-`C_AcctSchema`; needs context resolution we haven't built. | Slice 3 (Accounting) |
+| Customer Taxes / Vendor Taxes (Odoo m2m) | iDempiere uses single `C_TaxCategory_ID`; redesign as one "Tax Class" picker with vendor-neutral labels. Helper risk #3. | Slice 3 (Accounting / tax) |
+| Search facets / filters / group-by panel | Slice 1 uses a simple text filter. Modern facets are their own slice. | Slice 4 (Modern search) |
+| BFF migration for product reads | Slice 1 reuses the legacy direct-JDBC `IdempiereProductService` (pre-existing). It violates the "no SQL against iDempiere" rule but predates this work. New BFF endpoints (`/product/list`, `/product/{id}`) using `MProduct` + `Query` will replace it; until then `IdempiereErpAdapter` adapts the legacy service. | Slice 2 (Pricing + BFF migration) |
+
+**Permanently dropped from `/erp-v2`** (recorded in decision log above): variants, product tags, Kill Bill custom tab, chatter / activity / followers.
 
 ---
 

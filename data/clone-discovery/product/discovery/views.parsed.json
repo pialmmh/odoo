@@ -1,0 +1,2299 @@
+{
+  "kanban": {
+    "view_id": 497,
+    "view_type": "kanban",
+    "model": "product.template",
+    "parsed_arch": {
+      "tag": "kanban",
+      "attrs": {
+        "sample": "1"
+      },
+      "children": [
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "id"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "product_variant_count"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "currency_id"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "activity_state"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "categ_id",
+            "on_change": "1"
+          }
+        },
+        {
+          "tag": "progressbar",
+          "attrs": {
+            "colors": "{\"planned\": \"success\", \"today\": \"warning\", \"overdue\": \"danger\"}"
+          },
+          "raw_attrs": {
+            "field": "activity_state"
+          }
+        },
+        {
+          "tag": "templates",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "t",
+              "attrs": {
+                "t-name": "kanban-box"
+              },
+              "children": [
+                {
+                  "tag": "div",
+                  "attrs": {
+                    "class": "oe_kanban_card oe_kanban_global_click"
+                  },
+                  "children": [
+                    {
+                      "tag": "div",
+                      "attrs": {
+                        "class": "o_kanban_image me-1"
+                      },
+                      "children": [
+                        {
+                          "tag": "img",
+                          "attrs": {
+                            "t-att-src": "kanban_image('product.template', 'image_128', record.id.raw_value)",
+                            "class": "o_image_64_contain"
+                          },
+                          "raw_attrs": {
+                            "alt": "Product"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "div",
+                      "attrs": {
+                        "class": "oe_kanban_details"
+                      },
+                      "children": [
+                        {
+                          "tag": "div",
+                          "attrs": {
+                            "class": "o_kanban_record_top mb-0"
+                          },
+                          "children": [
+                            {
+                              "tag": "div",
+                              "attrs": {
+                                "class": "o_kanban_record_headings"
+                              },
+                              "children": [
+                                {
+                                  "tag": "strong",
+                                  "attrs": {
+                                    "class": "o_kanban_record_title"
+                                  },
+                                  "children": [
+                                    {
+                                      "tag": "field",
+                                      "attrs": {
+                                        "name": "name"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "priority",
+                                "widget": "priority"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "t",
+                          "attrs": {
+                            "t-if": "record.default_code.value"
+                          },
+                          "text": "[",
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "default_code",
+                                "on_change": "1"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "div",
+                          "attrs": {
+                            "t-if": "record.product_variant_count.value > 1"
+                          },
+                          "children": [
+                            {
+                              "tag": "strong",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "tag": "t",
+                                  "attrs": {
+                                    "t-esc": "record.product_variant_count.value"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "div",
+                          "attrs": {
+                            "name": "product_lst_price",
+                            "class": "mt-1"
+                          },
+                          "text": "Price:",
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "list_price",
+                                "widget": "monetary",
+                                "options": "{'currency_field': 'currency_id', 'field_digits': True}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "div",
+                          "attrs": {
+                            "t-if": "record.show_on_hand_qty_status_button.raw_value"
+                          },
+                          "text": "On hand:",
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "qty_available"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "uom_id",
+                                "on_change": "1"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "div",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "product_properties",
+                                "widget": "properties"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "type",
+            "on_change": "1"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "show_on_hand_qty_status_button"
+          }
+        }
+      ]
+    },
+    "arch_raw": "<kanban sample=\"1\">\n                <field name=\"id\"/>\n                <field name=\"product_variant_count\"/>\n                <field name=\"currency_id\"/>\n                <field name=\"activity_state\"/>\n                <field name=\"categ_id\" on_change=\"1\"/>\n                <progressbar field=\"activity_state\" colors=\"{&quot;planned&quot;: &quot;success&quot;, &quot;today&quot;: &quot;warning&quot;, &quot;overdue&quot;: &quot;danger&quot;}\"/>\n                <templates>\n                    <t t-name=\"kanban-box\">\n                        <div class=\"oe_kanban_card oe_kanban_global_click\">\n                            <div class=\"o_kanban_image me-1\">\n                                <img t-att-src=\"kanban_image('product.template', 'image_128', record.id.raw_value)\" alt=\"Product\" class=\"o_image_64_contain\"/>\n                            </div>\n                            <div class=\"oe_kanban_details\">\n                                <div class=\"o_kanban_record_top mb-0\">\n                                    <div class=\"o_kanban_record_headings\">\n                                        <strong class=\"o_kanban_record_title\">\n                                            <field name=\"name\"/>\n                                        </strong>\n                                    </div>\n                                    <field name=\"priority\" widget=\"priority\"/>\n                                </div>\n                                <t t-if=\"record.default_code.value\">[<field name=\"default_code\" on_change=\"1\"/>]</t>\n                                <div t-if=\"record.product_variant_count.value &gt; 1\">\n                                    <strong>\n                                        <t t-esc=\"record.product_variant_count.value\"/> Variants\n                                    </strong>\n                                </div>\n                                <div name=\"product_lst_price\" class=\"mt-1\">\n                                    Price: <field name=\"list_price\" widget=\"monetary\" options=\"{'currency_field': 'currency_id', 'field_digits': True}\"/>\n                                </div>\n                    <div t-if=\"record.show_on_hand_qty_status_button.raw_value\">On hand: <field name=\"qty_available\"/> <field name=\"uom_id\" on_change=\"1\"/></div>\n                    <div>\n                                    <field name=\"product_properties\" widget=\"properties\"/>\n                                </div>\n                            </div>\n                        </div>\n                    </t>\n                </templates>\n                    <field name=\"type\" on_change=\"1\"/>\n                    <field name=\"show_on_hand_qty_status_button\"/>\n            </kanban>"
+  },
+  "list": {
+    "view_id": 737,
+    "view_type": "list",
+    "model": "product.template",
+    "parsed_arch": {
+      "tag": "tree",
+      "attrs": {
+        "string": "Products",
+        "sample": "1"
+      },
+      "children": [
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "default_code",
+            "on_change": "1"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "name"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "list_price"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "taxes_id",
+            "widget": "many2many_tags"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "supplier_taxes_id",
+            "widget": "many2many_tags"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "activity_exception_decoration",
+            "widget": "activity_exception"
+          }
+        }
+      ]
+    },
+    "arch_raw": null
+  },
+  "form": {
+    "view_id": 496,
+    "view_type": "form",
+    "model": "product.template",
+    "parsed_arch": {
+      "tag": "form",
+      "attrs": {
+        "string": "Product",
+        "name": "Product Template"
+      },
+      "children": [
+        {
+          "tag": "header",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "button",
+              "attrs": {
+                "string": "Update Quantity",
+                "name": "action_update_quantity_on_hand",
+                "invisible": "type != 'product'"
+              },
+              "raw_attrs": {
+                "type": "object"
+              }
+            },
+            {
+              "tag": "button",
+              "attrs": {
+                "string": "Replenish",
+                "name": "443",
+                "context": "{'default_product_tmpl_id': id}",
+                "invisible": "type not in ['consu', 'product']"
+              },
+              "raw_attrs": {
+                "type": "action"
+              }
+            },
+            {
+              "tag": "button",
+              "attrs": {
+                "string": "Print Labels",
+                "name": "action_open_label_layout",
+                "invisible": "detailed_type not in ['consu', 'product', 'combo']"
+              },
+              "raw_attrs": {
+                "type": "object"
+              }
+            }
+          ]
+        },
+        {
+          "tag": "sheet",
+          "attrs": {
+            "name": "product_form"
+          },
+          "children": [
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "product_variant_count",
+                "invisible": "1"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "service_type",
+                "widget": "radio",
+                "invisible": "True"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "visible_expense_policy",
+                "invisible": "1"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "is_product_variant",
+                "invisible": "1"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "attribute_line_ids",
+                "invisible": "1",
+                "on_change": "1"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "type",
+                "invisible": "1",
+                "on_change": "1"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "company_id",
+                "invisible": "1",
+                "on_change": "1"
+              },
+              "raw_attrs": {
+                "can_create": "True",
+                "can_write": "True"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "fiscal_country_codes",
+                "invisible": "1"
+              }
+            },
+            {
+              "tag": "div",
+              "attrs": {
+                "class": "oe_button_box",
+                "name": "button_box"
+              },
+              "children": [
+                {
+                  "tag": "button",
+                  "attrs": {
+                    "class": "oe_stat_button",
+                    "name": "open_pricelist_rules",
+                    "icon": "fa-list-ul"
+                  },
+                  "raw_attrs": {
+                    "type": "object"
+                  },
+                  "children": [
+                    {
+                      "tag": "div",
+                      "attrs": {
+                        "class": "o_field_widget o_stat_info"
+                      },
+                      "children": [
+                        {
+                          "tag": "span",
+                          "attrs": {
+                            "class": "o_stat_value"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "pricelist_item_count"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "span",
+                          "attrs": {
+                            "class": "o_stat_text",
+                            "invisible": "pricelist_item_count == 1"
+                          },
+                          "text": "Extra Prices"
+                        },
+                        {
+                          "tag": "span",
+                          "attrs": {
+                            "class": "o_stat_text",
+                            "invisible": "pricelist_item_count != 1"
+                          },
+                          "text": "Extra Price"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "attrs": {
+                    "class": "oe_stat_button",
+                    "name": "action_open_documents",
+                    "icon": "fa-file-text-o"
+                  },
+                  "raw_attrs": {
+                    "type": "object"
+                  },
+                  "children": [
+                    {
+                      "tag": "field",
+                      "attrs": {
+                        "string": "Documents",
+                        "name": "product_document_count",
+                        "widget": "statinfo"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "attrs": {
+                    "name": "170",
+                    "icon": "fa-sitemap",
+                    "class": "oe_stat_button",
+                    "invisible": "product_variant_count <= 1"
+                  },
+                  "raw_attrs": {
+                    "type": "action"
+                  },
+                  "children": [
+                    {
+                      "tag": "field",
+                      "attrs": {
+                        "string": "Variants",
+                        "name": "product_variant_count",
+                        "widget": "statinfo"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "tag": "field",
+                  "attrs": {
+                    "name": "tracking",
+                    "invisible": "1",
+                    "on_change": "1"
+                  }
+                },
+                {
+                  "tag": "field",
+                  "attrs": {
+                    "name": "show_on_hand_qty_status_button",
+                    "invisible": "1"
+                  }
+                },
+                {
+                  "tag": "field",
+                  "attrs": {
+                    "name": "show_forecasted_qty_status_button",
+                    "invisible": "1"
+                  }
+                },
+                {
+                  "tag": "button",
+                  "attrs": {
+                    "name": "action_update_quantity_on_hand",
+                    "invisible": "not show_on_hand_qty_status_button",
+                    "class": "oe_stat_button",
+                    "icon": "fa-cubes"
+                  },
+                  "raw_attrs": {
+                    "type": "object"
+                  },
+                  "children": [
+                    {
+                      "tag": "div",
+                      "attrs": {
+                        "class": "o_field_widget o_stat_info"
+                      },
+                      "children": [
+                        {
+                          "tag": "span",
+                          "attrs": {
+                            "class": "o_stat_value d-flex gap-1"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "qty_available",
+                                "class": "oe_inline"
+                              },
+                              "raw_attrs": {
+                                "nolabel": "1"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "uom_name",
+                                "class": "oe_inline"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "span",
+                          "attrs": {
+                            "class": "o_stat_text"
+                          },
+                          "text": "On Hand"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "attrs": {
+                    "name": "action_product_tmpl_forecast_report",
+                    "invisible": "not show_forecasted_qty_status_button",
+                    "context": "{'default_product_tmpl_id': id}",
+                    "class": "oe_stat_button",
+                    "icon": "fa-area-chart"
+                  },
+                  "raw_attrs": {
+                    "type": "object"
+                  },
+                  "children": [
+                    {
+                      "tag": "div",
+                      "attrs": {
+                        "class": "o_field_widget o_stat_info"
+                      },
+                      "children": [
+                        {
+                          "tag": "span",
+                          "attrs": {
+                            "class": "o_stat_value d-flex gap-1"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "virtual_available",
+                                "class": "oe_inline"
+                              },
+                              "raw_attrs": {
+                                "nolabel": "1"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "uom_name",
+                                "class": "oe_inline"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "span",
+                          "attrs": {
+                            "class": "o_stat_text"
+                          },
+                          "text": "Forecasted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "attrs": {
+                    "name": "action_view_stock_move_lines",
+                    "invisible": "type not in ['product', 'consu']",
+                    "class": "oe_stat_button",
+                    "icon": "fa-exchange"
+                  },
+                  "raw_attrs": {
+                    "type": "object"
+                  },
+                  "children": [
+                    {
+                      "tag": "div",
+                      "attrs": {
+                        "class": "d-flex flex-column"
+                      },
+                      "children": [
+                        {
+                          "tag": "div",
+                          "attrs": {
+                            "class": "o_field_widget o_stat_info align-items-baseline flex-row gap-1 me-1"
+                          },
+                          "children": [
+                            {
+                              "tag": "span",
+                              "attrs": {
+                                "class": "o_stat_text"
+                              },
+                              "text": "In:"
+                            },
+                            {
+                              "tag": "span",
+                              "attrs": {
+                                "class": "o_stat_value"
+                              },
+                              "children": [
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "nbr_moves_in"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "div",
+                          "attrs": {
+                            "class": "o_field_widget o_stat_info align-items-baseline flex-row gap-1 me-1"
+                          },
+                          "children": [
+                            {
+                              "tag": "span",
+                              "attrs": {
+                                "class": "o_stat_text"
+                              },
+                              "text": "Out:"
+                            },
+                            {
+                              "tag": "span",
+                              "attrs": {
+                                "class": "o_stat_value"
+                              },
+                              "children": [
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "nbr_moves_out"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "attrs": {
+                    "name": "action_view_orderpoints",
+                    "invisible": "type != 'product' or nbr_reordering_rules != 1",
+                    "class": "oe_stat_button",
+                    "icon": "fa-refresh"
+                  },
+                  "raw_attrs": {
+                    "type": "object"
+                  },
+                  "children": [
+                    {
+                      "tag": "div",
+                      "attrs": {
+                        "class": "d-flex flex-column"
+                      },
+                      "children": [
+                        {
+                          "tag": "div",
+                          "attrs": {
+                            "class": "o_field_widget o_stat_info align-items-baseline flex-row gap-1 me-1"
+                          },
+                          "children": [
+                            {
+                              "tag": "span",
+                              "attrs": {
+                                "class": "o_stat_text"
+                              },
+                              "text": "Min:"
+                            },
+                            {
+                              "tag": "span",
+                              "attrs": {
+                                "class": "o_stat_value"
+                              },
+                              "children": [
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "reordering_min_qty"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "div",
+                          "attrs": {
+                            "class": "o_field_widget o_stat_info align-items-baseline flex-row gap-1 me-1"
+                          },
+                          "children": [
+                            {
+                              "tag": "span",
+                              "attrs": {
+                                "class": "o_stat_text"
+                              },
+                              "text": "Max:"
+                            },
+                            {
+                              "tag": "span",
+                              "attrs": {
+                                "class": "o_stat_value"
+                              },
+                              "children": [
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "reordering_max_qty"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "attrs": {
+                    "name": "action_view_orderpoints",
+                    "invisible": "type != 'product' or nbr_reordering_rules == 1",
+                    "class": "oe_stat_button",
+                    "icon": "fa-refresh"
+                  },
+                  "raw_attrs": {
+                    "type": "object"
+                  },
+                  "children": [
+                    {
+                      "tag": "field",
+                      "attrs": {
+                        "name": "nbr_reordering_rules",
+                        "widget": "statinfo"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "attrs": {
+                    "class": "oe_stat_button",
+                    "name": "action_view_sales",
+                    "icon": "fa-signal",
+                    "help": "Sold in the last 365 days",
+                    "invisible": "not sale_ok"
+                  },
+                  "raw_attrs": {
+                    "type": "object"
+                  },
+                  "children": [
+                    {
+                      "tag": "div",
+                      "attrs": {
+                        "class": "o_field_widget o_stat_info"
+                      },
+                      "children": [
+                        {
+                          "tag": "span",
+                          "attrs": {
+                            "class": "o_stat_value d-flex gap-1"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "sales_count",
+                                "widget": "statinfo",
+                                "class": "oe_inline"
+                              },
+                              "raw_attrs": {
+                                "nolabel": "1"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "uom_name",
+                                "class": "oe_inline"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "span",
+                          "attrs": {
+                            "class": "o_stat_text"
+                          },
+                          "text": "Sold"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "widget",
+              "attrs": {
+                "name": "web_ribbon",
+                "invisible": "active"
+              },
+              "raw_attrs": {
+                "title": "Archived",
+                "bg_color": "text-bg-danger"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "id",
+                "invisible": "True"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "image_1920",
+                "widget": "image",
+                "class": "oe_avatar",
+                "options": "{'preview_image': 'image_128'}"
+              }
+            },
+            {
+              "tag": "div",
+              "attrs": {
+                "class": "oe_title"
+              },
+              "children": [
+                {
+                  "tag": "label",
+                  "attrs": {
+                    "string": "Product Name"
+                  },
+                  "raw_attrs": {
+                    "for": "name"
+                  }
+                },
+                {
+                  "tag": "h1",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "div",
+                      "attrs": {
+                        "class": "d-flex"
+                      },
+                      "children": [
+                        {
+                          "tag": "field",
+                          "attrs": {
+                            "name": "priority",
+                            "widget": "priority",
+                            "class": "me-3"
+                          }
+                        },
+                        {
+                          "tag": "field",
+                          "attrs": {
+                            "class": "text-break",
+                            "name": "name",
+                            "options": "{'line_breaks': False}",
+                            "widget": "text",
+                            "on_change": "1"
+                          },
+                          "raw_attrs": {
+                            "placeholder": "e.g. Cheese Burger"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "div",
+              "attrs": {
+                "name": "options"
+              },
+              "children": [
+                {
+                  "tag": "span",
+                  "attrs": {
+                    "class": "d-inline-flex"
+                  },
+                  "children": [
+                    {
+                      "tag": "field",
+                      "attrs": {
+                        "name": "sale_ok",
+                        "on_change": "1"
+                      }
+                    },
+                    {
+                      "tag": "label",
+                      "attrs": {},
+                      "raw_attrs": {
+                        "for": "sale_ok"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "tag": "span",
+                  "attrs": {
+                    "class": "d-inline-flex"
+                  },
+                  "children": [
+                    {
+                      "tag": "field",
+                      "attrs": {
+                        "name": "purchase_ok"
+                      }
+                    },
+                    {
+                      "tag": "label",
+                      "attrs": {},
+                      "raw_attrs": {
+                        "for": "purchase_ok"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "notebook",
+              "attrs": {},
+              "children": [
+                {
+                  "tag": "page",
+                  "attrs": {
+                    "string": "General Information",
+                    "name": "general_information"
+                  },
+                  "children": [
+                    {
+                      "tag": "group",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "tag": "group",
+                          "attrs": {
+                            "name": "group_general"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "active",
+                                "invisible": "1"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "detailed_type",
+                                "on_change": "1"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "invoice_policy",
+                                "required": "1"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "expense_policy",
+                                "widget": "radio",
+                                "invisible": "not visible_expense_policy"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "product_tooltip",
+                                "string": "",
+                                "class": "fst-italic text-muted",
+                                "invisible": "type == 'service' and not sale_ok"
+                              }
+                            },
+                            {
+                              "tag": "label",
+                              "attrs": {
+                                "string": "",
+                                "invisible": "type not in ('product', 'consu') or invoice_policy != 'order'"
+                              },
+                              "raw_attrs": {
+                                "for": "product_tooltip"
+                              }
+                            },
+                            {
+                              "tag": "div",
+                              "attrs": {
+                                "invisible": "type not in ('product', 'consu') or invoice_policy != 'order'",
+                                "class": "fst-italic text-muted"
+                              },
+                              "text": "You can invoice them before they are delivered."
+                            },
+                            {
+                              "tag": "label",
+                              "attrs": {
+                                "string": "",
+                                "invisible": "type not in ('product', 'consu') or invoice_policy != 'delivery'"
+                              },
+                              "raw_attrs": {
+                                "for": "product_tooltip"
+                              }
+                            },
+                            {
+                              "tag": "div",
+                              "attrs": {
+                                "invisible": "type not in ('product', 'consu') or invoice_policy != 'delivery'",
+                                "class": "fst-italic text-muted"
+                              },
+                              "text": "Invoice after delivery, based on quantities delivered, not ordered."
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "group",
+                          "attrs": {
+                            "name": "group_standard_price"
+                          },
+                          "children": [
+                            {
+                              "tag": "label",
+                              "attrs": {},
+                              "raw_attrs": {
+                                "for": "list_price"
+                              }
+                            },
+                            {
+                              "tag": "div",
+                              "attrs": {
+                                "name": "pricing",
+                                "class": "o_row"
+                              },
+                              "children": [
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "list_price",
+                                    "class": "oe_inline",
+                                    "widget": "monetary",
+                                    "options": "{'currency_field': 'currency_id', 'field_digits': True}",
+                                    "on_change": "1"
+                                  }
+                                },
+                                {
+                                  "tag": "span",
+                                  "attrs": {
+                                    "class": "ms-2"
+                                  }
+                                },
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "tax_string"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "taxes_id",
+                                "widget": "many2many_tags",
+                                "context": "{'default_type_tax_use':'sale', 'search_default_sale': 1, 'search_default_service': type == 'service', 'search_default_goods': type == 'consu'}",
+                                "on_change": "1"
+                              },
+                              "raw_attrs": {
+                                "can_create": "True",
+                                "can_write": "True"
+                              }
+                            },
+                            {
+                              "tag": "label",
+                              "attrs": {
+                                "invisible": "id and product_variant_count != 1 and not is_product_variant"
+                              },
+                              "raw_attrs": {
+                                "for": "standard_price"
+                              }
+                            },
+                            {
+                              "tag": "div",
+                              "attrs": {
+                                "name": "standard_price_uom",
+                                "invisible": "id and product_variant_count != 1 and not is_product_variant"
+                              },
+                              "children": [
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "standard_price",
+                                    "class": "oe_inline",
+                                    "widget": "monetary",
+                                    "options": "{'currency_field': 'cost_currency_id', 'field_digits': True}"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "categ_id",
+                                "string": "Product Category",
+                                "on_change": "1"
+                              },
+                              "raw_attrs": {
+                                "can_create": "True",
+                                "can_write": "True"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "default_code",
+                                "invisible": "product_variant_count > 1",
+                                "on_change": "1"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "valid_product_template_attribute_line_ids",
+                                "invisible": "1"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "barcode",
+                                "invisible": "product_variant_count > 1 or (product_variant_count == 0 and valid_product_template_attribute_line_ids)"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "product_tag_ids",
+                                "widget": "many2many_tags",
+                                "context": "{'product_template_id': id}"
+                              },
+                              "raw_attrs": {
+                                "can_create": "True",
+                                "can_write": "True"
+                              }
+                            },
+                            {
+                              "tag": "button",
+                              "attrs": {
+                                "name": "167",
+                                "icon": "oi-arrow-right",
+                                "class": "btn-link ps-0",
+                                "string": "Configure tags"
+                              },
+                              "raw_attrs": {
+                                "type": "action",
+                                "colspan": "2"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "currency_id",
+                                "invisible": "1"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "cost_currency_id",
+                                "invisible": "1"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "product_variant_id",
+                                "invisible": "1"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "field",
+                          "attrs": {
+                            "name": "product_properties"
+                          },
+                          "raw_attrs": {
+                            "columns": "2"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "group",
+                      "attrs": {
+                        "string": "Internal Notes"
+                      },
+                      "children": [
+                        {
+                          "tag": "field",
+                          "attrs": {
+                            "name": "description"
+                          },
+                          "raw_attrs": {
+                            "colspan": "2",
+                            "nolabel": "1",
+                            "placeholder": "This note is only for internal purposes."
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "page",
+                  "attrs": {
+                    "name": "variants",
+                    "string": "Attributes & Variants"
+                  },
+                  "children": [
+                    {
+                      "tag": "field",
+                      "attrs": {
+                        "name": "attribute_line_ids",
+                        "widget": "one2many",
+                        "context": "{'show_attribute': False}",
+                        "on_change": "1"
+                      },
+                      "children": [
+                        {
+                          "tag": "tree",
+                          "attrs": {
+                            "string": "Variants",
+                            "editable": "bottom",
+                            "decoration-info": "value_count <= 1"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "value_count",
+                                "column_invisible": "True"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "sequence",
+                                "widget": "handle"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "attribute_id",
+                                "readonly": "id",
+                                "on_change": "1"
+                              },
+                              "raw_attrs": {
+                                "can_create": "True",
+                                "can_write": "True"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "value_ids",
+                                "widget": "many2many_tags",
+                                "options": "{'no_create_edit': True, 'color_field': 'color'}",
+                                "context": "{'default_attribute_id': attribute_id, 'show_attribute': False}",
+                                "on_change": "1"
+                              },
+                              "raw_attrs": {
+                                "can_create": "True",
+                                "can_write": "True"
+                              }
+                            },
+                            {
+                              "tag": "button",
+                              "attrs": {
+                                "string": "Configure",
+                                "class": "float-end btn-secondary",
+                                "name": "action_open_attribute_values"
+                              },
+                              "raw_attrs": {
+                                "type": "object"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "p",
+                      "attrs": {
+                        "class": "oe_grey oe_edit_only"
+                      },
+                      "children": [
+                        {
+                          "tag": "strong",
+                          "attrs": {},
+                          "text": "Warning"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "page",
+                  "attrs": {
+                    "string": "Sales",
+                    "name": "sales",
+                    "invisible": "not sale_ok"
+                  },
+                  "children": [
+                    {
+                      "tag": "group",
+                      "attrs": {
+                        "name": "sale"
+                      },
+                      "children": [
+                        {
+                          "tag": "group",
+                          "attrs": {
+                            "string": "Upsell & Cross-Sell",
+                            "name": "upsell",
+                            "invisible": "0"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "optional_product_ids",
+                                "widget": "many2many_tags",
+                                "options": "{'color_field': 'color'}",
+                                "domain": "[('id', '!=', id), '|', ('company_id', '=', company_id), ('company_id', '=', False)]"
+                              },
+                              "raw_attrs": {
+                                "placeholder": "Recommend when 'Adding to Cart' or quotation",
+                                "can_create": "True",
+                                "can_write": "True"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "group",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "tag": "group",
+                          "attrs": {
+                            "string": "Sales Description",
+                            "name": "description"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "description_sale"
+                              },
+                              "raw_attrs": {
+                                "colspan": "2",
+                                "nolabel": "1",
+                                "placeholder": "This note is added to sales orders and invoices."
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "page",
+                  "attrs": {
+                    "string": "Purchase",
+                    "name": "purchase",
+                    "invisible": "not purchase_ok"
+                  },
+                  "children": [
+                    {
+                      "tag": "group",
+                      "attrs": {
+                        "name": "purchase"
+                      },
+                      "children": [
+                        {
+                          "tag": "group",
+                          "attrs": {
+                            "string": "Vendor Bills",
+                            "name": "bill"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "supplier_taxes_id",
+                                "widget": "many2many_tags",
+                                "context": "{'default_type_tax_use':'purchase', 'search_default_purchase': 1, 'search_default_service': type == 'service', 'search_default_goods': type == 'consu'}"
+                              },
+                              "raw_attrs": {
+                                "can_create": "True",
+                                "can_write": "True"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "page",
+                  "attrs": {
+                    "string": "Inventory",
+                    "name": "inventory",
+                    "invisible": "type == 'service'"
+                  },
+                  "children": [
+                    {
+                      "tag": "group",
+                      "attrs": {
+                        "name": "inventory"
+                      },
+                      "children": [
+                        {
+                          "tag": "field",
+                          "attrs": {
+                            "name": "has_available_route_ids",
+                            "invisible": "1"
+                          }
+                        },
+                        {
+                          "tag": "group",
+                          "attrs": {
+                            "string": "Operations",
+                            "name": "operations"
+                          },
+                          "children": [
+                            {
+                              "tag": "label",
+                              "attrs": {
+                                "invisible": "type == 'service'"
+                              },
+                              "raw_attrs": {
+                                "for": "route_ids"
+                              }
+                            },
+                            {
+                              "tag": "div",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "route_ids",
+                                    "class": "mb-0",
+                                    "widget": "many2many_checkboxes",
+                                    "invisible": "not has_available_route_ids or type == 'service'"
+                                  },
+                                  "raw_attrs": {
+                                    "can_create": "True",
+                                    "can_write": "True"
+                                  }
+                                },
+                                {
+                                  "tag": "button",
+                                  "attrs": {
+                                    "string": "View Diagram",
+                                    "name": "482",
+                                    "icon": "oi-arrow-right",
+                                    "invisible": "type not in ['product', 'consu']",
+                                    "class": "btn btn-link pt-0",
+                                    "context": "{'default_product_tmpl_id': id}"
+                                  },
+                                  "raw_attrs": {
+                                    "id": "stock.view_diagram_button",
+                                    "type": "action"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "route_from_categ_ids",
+                                "widget": "many2many_tags",
+                                "invisible": "not route_from_categ_ids"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "group",
+                          "attrs": {
+                            "name": "group_lots_and_weight",
+                            "string": "Logistics",
+                            "invisible": "type not in ['product', 'consu']"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "responsible_id",
+                                "domain": "[('share', '=', False)]",
+                                "widget": "many2one_avatar_user"
+                              },
+                              "raw_attrs": {
+                                "can_create": "True",
+                                "can_write": "True"
+                              }
+                            },
+                            {
+                              "tag": "label",
+                              "attrs": {
+                                "invisible": "product_variant_count > 1 and not is_product_variant"
+                              },
+                              "raw_attrs": {
+                                "for": "weight"
+                              }
+                            },
+                            {
+                              "tag": "div",
+                              "attrs": {
+                                "class": "o_row",
+                                "name": "weight",
+                                "invisible": "product_variant_count > 1 and not is_product_variant"
+                              },
+                              "children": [
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "weight",
+                                    "class": "oe_inline"
+                                  }
+                                },
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "weight_uom_name"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "label",
+                              "attrs": {
+                                "invisible": "product_variant_count > 1 and not is_product_variant"
+                              },
+                              "raw_attrs": {
+                                "for": "volume"
+                              }
+                            },
+                            {
+                              "tag": "div",
+                              "attrs": {
+                                "class": "o_row",
+                                "name": "volume",
+                                "invisible": "product_variant_count > 1 and not is_product_variant"
+                              },
+                              "children": [
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "volume",
+                                    "string": "Volume",
+                                    "class": "oe_inline"
+                                  }
+                                },
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "volume_uom_name"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "label",
+                              "attrs": {
+                                "invisible": "not sale_ok"
+                              },
+                              "raw_attrs": {
+                                "for": "sale_delay"
+                              }
+                            },
+                            {
+                              "tag": "div",
+                              "attrs": {
+                                "invisible": "not sale_ok"
+                              },
+                              "children": [
+                                {
+                                  "tag": "field",
+                                  "attrs": {
+                                    "name": "sale_delay",
+                                    "class": "oe_inline"
+                                  },
+                                  "raw_attrs": {
+                                    "style": "vertical-align:baseline"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "group",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "tag": "group",
+                          "attrs": {
+                            "string": "Description for Receipts"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "description_pickingin"
+                              },
+                              "raw_attrs": {
+                                "colspan": "2",
+                                "nolabel": "1",
+                                "placeholder": "This note is added to receipt orders (e.g. where to store the product in the warehouse)."
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "group",
+                          "attrs": {
+                            "string": "Description for Delivery Orders"
+                          },
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "description_pickingout"
+                              },
+                              "raw_attrs": {
+                                "colspan": "2",
+                                "nolabel": "1",
+                                "placeholder": "This note is added to delivery orders."
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "page",
+                  "attrs": {
+                    "string": "Accounting",
+                    "name": "invoicing"
+                  },
+                  "children": [
+                    {
+                      "tag": "group",
+                      "attrs": {
+                        "name": "accounting"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "tag": "page",
+                  "attrs": {
+                    "string": "Kill Bill",
+                    "name": "killbill"
+                  },
+                  "children": [
+                    {
+                      "tag": "group",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "tag": "group",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "x_kb_product_name"
+                              }
+                            },
+                            {
+                              "tag": "field",
+                              "attrs": {
+                                "name": "x_kb_category"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "div",
+          "attrs": {
+            "class": "oe_chatter"
+          },
+          "children": [
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "message_follower_ids"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "activity_ids"
+              }
+            },
+            {
+              "tag": "field",
+              "attrs": {
+                "name": "message_ids"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "arch_raw": "<form string=\"Product\" name=\"Product Template\">\n                <header>\n                        <button string=\"Update Quantity\" type=\"object\" name=\"action_update_quantity_on_hand\" invisible=\"type != 'product'\"/>\n                        <button string=\"Replenish\" type=\"action\" name=\"443\" context=\"{'default_product_tmpl_id': id}\" invisible=\"type not in ['consu', 'product']\"/>\n                    <button string=\"Print Labels\" type=\"object\" name=\"action_open_label_layout\" invisible=\"detailed_type not in ['consu', 'product', 'combo']\"/>\n                </header>\n                <sheet name=\"product_form\">\n                    <field name=\"product_variant_count\" invisible=\"1\"/>\n                <field name=\"service_type\" widget=\"radio\" invisible=\"True\"/>\n                <field name=\"visible_expense_policy\" invisible=\"1\"/>\n                    <field name=\"is_product_variant\" invisible=\"1\"/>\n                    <field name=\"attribute_line_ids\" invisible=\"1\" on_change=\"1\"/>\n                    <field name=\"type\" invisible=\"1\" on_change=\"1\"/>\n                    <field name=\"company_id\" invisible=\"1\" on_change=\"1\" can_create=\"True\" can_write=\"True\"/>\n                    <field name=\"fiscal_country_codes\" invisible=\"1\"/>\n                    <div class=\"oe_button_box\" name=\"button_box\">\n                        <button class=\"oe_stat_button\" name=\"open_pricelist_rules\" icon=\"fa-list-ul\" type=\"object\">\n                               <div class=\"o_field_widget o_stat_info\">\n                                    <span class=\"o_stat_value\">\n                                        <field name=\"pricelist_item_count\"/>\n                                    </span>\n                                    <span class=\"o_stat_text\" invisible=\"pricelist_item_count == 1\">\n                                        Extra Prices\n                                    </span>\n                                    <span class=\"o_stat_text\" invisible=\"pricelist_item_count != 1\">\n                                        Extra Price\n                                    </span>\n                               </div>\n                        </button>\n                        <button class=\"oe_stat_button\" name=\"action_open_documents\" type=\"object\" icon=\"fa-file-text-o\">\n                            <field string=\"Documents\" name=\"product_document_count\" widget=\"statinfo\"/>\n                        </button>\n                <button name=\"170\" type=\"action\" icon=\"fa-sitemap\" class=\"oe_stat_button\" invisible=\"product_variant_count &lt;= 1\">\n                    <field string=\"Variants\" name=\"product_variant_count\" widget=\"statinfo\"/>\n                </button>\n                        <field name=\"tracking\" invisible=\"1\" on_change=\"1\"/>\n                            <field name=\"show_on_hand_qty_status_button\" invisible=\"1\"/>\n                            <field name=\"show_forecasted_qty_status_button\" invisible=\"1\"/>\n                            <button type=\"object\" name=\"action_update_quantity_on_hand\" invisible=\"not show_on_hand_qty_status_button\" class=\"oe_stat_button\" icon=\"fa-cubes\">\n                                <div class=\"o_field_widget o_stat_info\">\n                                    <span class=\"o_stat_value d-flex gap-1\">\n                                        <field name=\"qty_available\" nolabel=\"1\" class=\"oe_inline\"/>\n                                        <field name=\"uom_name\" class=\"oe_inline\"/>\n                                    </span>\n                                    <span class=\"o_stat_text\">On Hand</span>\n                                </div>\n                            </button>\n                            <button type=\"object\" name=\"action_product_tmpl_forecast_report\" invisible=\"not show_forecasted_qty_status_button\" context=\"{'default_product_tmpl_id': id}\" class=\"oe_stat_button\" icon=\"fa-area-chart\">\n                                <div class=\"o_field_widget o_stat_info\">\n                                    <span class=\"o_stat_value d-flex gap-1\">\n                                        <field name=\"virtual_available\" nolabel=\"1\" class=\"oe_inline\"/>\n                                        <field name=\"uom_name\" class=\"oe_inline\"/>\n                                    </span>\n                                    <span class=\"o_stat_text\">Forecasted</span>\n                                </div>\n                            </button>\n                            <button type=\"object\" name=\"action_view_stock_move_lines\" invisible=\"type not in ['product', 'consu']\" class=\"oe_stat_button\" icon=\"fa-exchange\">\n                                <div class=\"d-flex flex-column\">\n                                    <div class=\"o_field_widget o_stat_info align-items-baseline flex-row gap-1 me-1\">\n                                        <span class=\"o_stat_text\">In:</span>\n                                        <span class=\"o_stat_value\"><field name=\"nbr_moves_in\"/></span>\n                                    </div>\n                                    <div class=\"o_field_widget o_stat_info align-items-baseline flex-row gap-1 me-1\">\n                                        <span class=\"o_stat_text\">Out:</span>\n                                        <span class=\"o_stat_value\"><field name=\"nbr_moves_out\"/></span>\n                                    </div>\n                                </div>\n                            </button>\n                            <button type=\"object\" name=\"action_view_orderpoints\" invisible=\"type != 'product' or nbr_reordering_rules != 1\" class=\"oe_stat_button\" icon=\"fa-refresh\">\n                                <div class=\"d-flex flex-column\">\n                                    <div class=\"o_field_widget o_stat_info align-items-baseline flex-row gap-1 me-1\">\n                                        <span class=\"o_stat_text\">Min:</span>\n                                        <span class=\"o_stat_value\"><field name=\"reordering_min_qty\"/></span>\n                                    </div>\n                                    <div class=\"o_field_widget o_stat_info align-items-baseline flex-row gap-1 me-1\">\n                                        <span class=\"o_stat_text\">Max:</span>\n                                        <span class=\"o_stat_value\"><field name=\"reordering_max_qty\"/></span>\n                                    </div>\n                                </div>\n                            </button>\n                            <button type=\"object\" name=\"action_view_orderpoints\" invisible=\"type != 'product' or nbr_reordering_rules == 1\" class=\"oe_stat_button\" icon=\"fa-refresh\">\n                                <field name=\"nbr_reordering_rules\" widget=\"statinfo\"/>\n                            </button>\n                            \n                            \n                             \n                        <button class=\"oe_stat_button\" name=\"action_view_sales\" type=\"object\" icon=\"fa-signal\" help=\"Sold in the last 365 days\" invisible=\"not sale_ok\">\n                    <div class=\"o_field_widget o_stat_info\">\n                        <span class=\"o_stat_value d-flex gap-1\">\n                            <field name=\"sales_count\" widget=\"statinfo\" nolabel=\"1\" class=\"oe_inline\"/>\n                            <field name=\"uom_name\" class=\"oe_inline\"/>\n                        </span>\n                        <span class=\"o_stat_text\">Sold</span>\n                    </div>\n                </button>\n                    </div>\n                    <widget name=\"web_ribbon\" title=\"Archived\" bg_color=\"text-bg-danger\" invisible=\"active\"/>\n                    <field name=\"id\" invisible=\"True\"/>\n                    <field name=\"image_1920\" widget=\"image\" class=\"oe_avatar\" options=\"{'preview_image': 'image_128'}\"/>\n                    <div class=\"oe_title\">\n                        <label for=\"name\" string=\"Product Name\"/>\n                        <h1>\n                            <div class=\"d-flex\">\n                                <field name=\"priority\" widget=\"priority\" class=\"me-3\"/>\n                                <field class=\"text-break\" name=\"name\" options=\"{'line_breaks': False}\" widget=\"text\" placeholder=\"e.g. Cheese Burger\" on_change=\"1\"/>\n                            </div>\n                        </h1>\n                    </div>\n                    <div name=\"options\">\n                        <span class=\"d-inline-flex\">\n                            <field name=\"sale_ok\" on_change=\"1\"/>\n                            <label for=\"sale_ok\"/>\n                        </span>\n                        <span class=\"d-inline-flex\">\n                            <field name=\"purchase_ok\"/>\n                            <label for=\"purchase_ok\"/>\n                        </span>\n                    </div>\n                    <notebook>\n                        <page string=\"General Information\" name=\"general_information\">\n                            <group>\n                                <group name=\"group_general\">\n                                    <field name=\"active\" invisible=\"1\"/>\n                                    <field name=\"detailed_type\" on_change=\"1\"/>\n                <field name=\"invoice_policy\" required=\"1\"/>\n                <field name=\"expense_policy\" widget=\"radio\" invisible=\"not visible_expense_policy\"/>\n                                    <field name=\"product_tooltip\" string=\"\" class=\"fst-italic text-muted\" invisible=\"type == 'service' and not sale_ok\"/>\n                <label for=\"product_tooltip\" string=\"\" invisible=\"type not in ('product', 'consu') or invoice_policy != 'order'\"/>\n                <div invisible=\"type not in ('product', 'consu') or invoice_policy != 'order'\" class=\"fst-italic text-muted\">\n                    You can invoice them before they are delivered.\n                </div>\n                <label for=\"product_tooltip\" string=\"\" invisible=\"type not in ('product', 'consu') or invoice_policy != 'delivery'\"/>\n                <div invisible=\"type not in ('product', 'consu') or invoice_policy != 'delivery'\" class=\"fst-italic text-muted\">\n                    Invoice after delivery, based on quantities delivered, not ordered.\n                </div>\n                                    \n                                    \n                                </group>\n                                <group name=\"group_standard_price\">\n                                    <label for=\"list_price\"/>\n                                    <div name=\"pricing\" class=\"o_row\">\n                                      <field name=\"list_price\" class=\"oe_inline\" widget=\"monetary\" options=\"{'currency_field': 'currency_id', 'field_digits': True}\" on_change=\"1\"/>\n                    <span class=\"ms-2\"/><field name=\"tax_string\"/>\n                                    </div>\n                    <field name=\"taxes_id\" widget=\"many2many_tags\" context=\"{'default_type_tax_use':'sale', 'search_default_sale': 1, 'search_default_service': type == 'service', 'search_default_goods': type == 'consu'}\" on_change=\"1\" can_create=\"True\" can_write=\"True\"/>\n\n                                    <!--\n                                        `id` condition to prevent invisibility on new products\n                                        when `product_variant_count` is 0.\n                                        `product_variant_count != 1` to handle cases with dynamic\n                                        / multiple variants since id will be set after saving.\n                                        #TODO : revert this and create a compute field in master\n                                        to ensure invisivility for dynamic variants only.\n                                    -->\n                                    <label for=\"standard_price\" invisible=\"id and product_variant_count != 1 and not is_product_variant\"/>\n                                    <div name=\"standard_price_uom\" invisible=\"id and product_variant_count != 1 and not is_product_variant\">\n                                        <field name=\"standard_price\" class=\"oe_inline\" widget=\"monetary\" options=\"{'currency_field': 'cost_currency_id', 'field_digits': True}\"/>\n                                        \n                                    </div>\n                                    <field name=\"categ_id\" string=\"Product Category\" on_change=\"1\" can_create=\"True\" can_write=\"True\"/>\n                <field name=\"default_code\" invisible=\"product_variant_count &gt; 1\" on_change=\"1\"/>\n                <field name=\"valid_product_template_attribute_line_ids\" invisible=\"1\"/>\n                <field name=\"barcode\" invisible=\"product_variant_count &gt; 1 or (product_variant_count == 0 and valid_product_template_attribute_line_ids)\"/>\n                                    <field name=\"product_tag_ids\" widget=\"many2many_tags\" context=\"{'product_template_id': id}\" can_create=\"True\" can_write=\"True\"/>\n                                    <button name=\"167\" icon=\"oi-arrow-right\" type=\"action\" class=\"btn-link ps-0\" colspan=\"2\" string=\"Configure tags\"/>\n                                    \n                                    <field name=\"currency_id\" invisible=\"1\"/>\n                                    <field name=\"cost_currency_id\" invisible=\"1\"/>\n                                    <field name=\"product_variant_id\" invisible=\"1\"/>\n                                </group>\n                <field name=\"product_properties\" columns=\"2\"/>\n                            </group>\n                            <group string=\"Internal Notes\">\n                                <field colspan=\"2\" name=\"description\" nolabel=\"1\" placeholder=\"This note is only for internal purposes.\"/>\n                            </group>\n                        </page>\n                <page name=\"variants\" string=\"Attributes &amp; Variants\">\n                    <field name=\"attribute_line_ids\" widget=\"one2many\" context=\"{'show_attribute': False}\" on_change=\"1\">\n                        <tree string=\"Variants\" editable=\"bottom\" decoration-info=\"value_count &lt;= 1\">\n                            <field name=\"value_count\" column_invisible=\"True\"/>\n                            <field name=\"sequence\" widget=\"handle\"/>\n                            <field name=\"attribute_id\" readonly=\"id\" on_change=\"1\" can_create=\"True\" can_write=\"True\"/>\n                            <field name=\"value_ids\" widget=\"many2many_tags\" options=\"{'no_create_edit': True, 'color_field': 'color'}\" context=\"{'default_attribute_id': attribute_id, 'show_attribute': False}\" on_change=\"1\" can_create=\"True\" can_write=\"True\"/>\n                            <button string=\"Configure\" class=\"float-end btn-secondary\" type=\"object\" name=\"action_open_attribute_values\"/>\n                        </tree>\n                    </field>\n                        <p class=\"oe_grey oe_edit_only\">\n                        <strong>Warning</strong>: adding or deleting attributes\n                        will delete and recreate existing variants and lead\n                        to the loss of their possible customizations.\n                    </p>\n                </page>\n                        <page string=\"Sales\" name=\"sales\" invisible=\"not sale_ok\">\n                            <group name=\"sale\">\n                                <group string=\"Upsell &amp; Cross-Sell\" name=\"upsell\" invisible=\"0\">\n                <field name=\"optional_product_ids\" widget=\"many2many_tags\" options=\"{'color_field': 'color'}\" domain=\"[('id', '!=', id), '|', ('company_id', '=', company_id), ('company_id', '=', False)]\" placeholder=\"Recommend when 'Adding to Cart' or quotation\" can_create=\"True\" can_write=\"True\"/></group>\n                            </group>\n                            <group>\n                                <group string=\"Sales Description\" name=\"description\">\n                                    <field colspan=\"2\" name=\"description_sale\" nolabel=\"1\" placeholder=\"This note is added to sales orders and invoices.\"/>\n                                </group>\n                \n                </group>\n                        </page>\n                        <page string=\"Purchase\" name=\"purchase\" invisible=\"not purchase_ok\">\n                            <group name=\"purchase\">\n                                <group string=\"Vendor Bills\" name=\"bill\">\n                    <field name=\"supplier_taxes_id\" widget=\"many2many_tags\" context=\"{'default_type_tax_use':'purchase', 'search_default_purchase': 1, 'search_default_service': type == 'service', 'search_default_goods': type == 'consu'}\" can_create=\"True\" can_write=\"True\"/></group>\n                            </group>\n                        </page>\n                        <page string=\"Inventory\" name=\"inventory\" invisible=\"type == 'service'\">\n                            <group name=\"inventory\">\n                    <field name=\"has_available_route_ids\" invisible=\"1\"/>\n                    <group string=\"Operations\" name=\"operations\">\n                        <label for=\"route_ids\" invisible=\"type == 'service'\"/>\n                        <div>\n                            <field name=\"route_ids\" class=\"mb-0\" widget=\"many2many_checkboxes\" invisible=\"not has_available_route_ids or type == 'service'\" can_create=\"True\" can_write=\"True\"/>\n                            <button id=\"stock.view_diagram_button\" string=\"View Diagram\" type=\"action\" name=\"482\" icon=\"oi-arrow-right\" invisible=\"type not in ['product', 'consu']\" class=\"btn btn-link pt-0\" context=\"{'default_product_tmpl_id': id}\"/>\n                        </div>\n                        <field name=\"route_from_categ_ids\" widget=\"many2many_tags\" invisible=\"not route_from_categ_ids\"/>\n                    </group>\n                                <group name=\"group_lots_and_weight\" string=\"Logistics\" invisible=\"type not in ['product', 'consu']\">\n                        <field name=\"responsible_id\" domain=\"[('share', '=', False)]\" widget=\"many2one_avatar_user\" can_create=\"True\" can_write=\"True\"/>\n                                    <label for=\"weight\" invisible=\"product_variant_count &gt; 1 and not is_product_variant\"/>\n                                    <div class=\"o_row\" name=\"weight\" invisible=\"product_variant_count &gt; 1 and not is_product_variant\">\n                                        <field name=\"weight\" class=\"oe_inline\"/>\n                                        <field name=\"weight_uom_name\"/>\n                                    </div>\n                                    <label for=\"volume\" invisible=\"product_variant_count &gt; 1 and not is_product_variant\"/>\n                                    <div class=\"o_row\" name=\"volume\" invisible=\"product_variant_count &gt; 1 and not is_product_variant\">\n                                        <field name=\"volume\" string=\"Volume\" class=\"oe_inline\"/>\n                                        <field name=\"volume_uom_name\"/>\n                                    </div>\n                    <label for=\"sale_delay\" invisible=\"not sale_ok\"/>\n                    <div invisible=\"not sale_ok\">\n                        <field name=\"sale_delay\" class=\"oe_inline\" style=\"vertical-align:baseline\"/> days\n                    </div>\n                                </group>\n                    \n                     \n                            </group>\n                            \n                    <group>\n                        <group string=\"Description for Receipts\">\n                            <field name=\"description_pickingin\" colspan=\"2\" nolabel=\"1\" placeholder=\"This note is added to receipt orders (e.g. where to store the product in the warehouse).\"/>\n                        </group>\n                        <group string=\"Description for Delivery Orders\">\n                            <field name=\"description_pickingout\" colspan=\"2\" nolabel=\"1\" placeholder=\"This note is added to delivery orders.\"/>\n                        </group>\n                        \n                    </group>\n                        </page>\n                    <page string=\"Accounting\" name=\"invoicing\">\n                        \n                        <group name=\"accounting\"/>\n                    </page>\n                <page string=\"Kill Bill\" name=\"killbill\">\n                    <group>\n                        <group>\n                            <field name=\"x_kb_product_name\"/>\n                            <field name=\"x_kb_category\"/>\n                        </group>\n                    </group>\n                </page>\n                    </notebook>\n                </sheet>\n                <div class=\"oe_chatter\">\n                    <field name=\"message_follower_ids\"/>\n                    <field name=\"activity_ids\"/>\n                    <field name=\"message_ids\"/>\n                </div>\n            </form>"
+  },
+  "search": {
+    "view_id": 453,
+    "view_type": "search",
+    "model": "product.template",
+    "parsed_arch": {
+      "tag": "search",
+      "attrs": {
+        "string": "Product"
+      },
+      "children": [
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "name",
+            "string": "Product",
+            "filter_domain": "['|', '|', '|', ('default_code', 'ilike', self), ('product_variant_ids.default_code', 'ilike', self),('name', 'ilike', self), ('barcode', 'ilike', self)]"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "categ_id",
+            "filter_domain": "[('categ_id', 'child_of', raw_value)]"
+          }
+        },
+        {
+          "tag": "separator",
+          "attrs": {}
+        },
+        {
+          "tag": "filter",
+          "attrs": {
+            "string": "Services",
+            "name": "services",
+            "domain": "[('type','=','service')]"
+          }
+        },
+        {
+          "tag": "filter",
+          "attrs": {
+            "string": "Products",
+            "name": "consumable",
+            "domain": "[('type', 'in', ['consu', 'product'])]"
+          }
+        },
+        {
+          "tag": "separator",
+          "attrs": {}
+        },
+        {
+          "tag": "filter",
+          "attrs": {
+            "string": "Can be Sold",
+            "name": "filter_to_sell",
+            "domain": "[('sale_ok','=',True)]"
+          }
+        },
+        {
+          "tag": "filter",
+          "attrs": {
+            "string": "Can be Purchased",
+            "name": "filter_to_purchase",
+            "domain": "[('purchase_ok', '=', True)]"
+          }
+        },
+        {
+          "tag": "separator",
+          "attrs": {}
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "string": "Attributes",
+            "name": "attribute_line_ids"
+          }
+        },
+        {
+          "tag": "filter",
+          "attrs": {
+            "invisible": "1",
+            "string": "Late Activities",
+            "name": "activities_overdue",
+            "domain": "[('my_activity_date_deadline', '<', context_today().strftime('%Y-%m-%d'))]",
+            "help": "Show all records which has next action date is before today"
+          }
+        },
+        {
+          "tag": "filter",
+          "attrs": {
+            "invisible": "1",
+            "string": "Today Activities",
+            "name": "activities_today",
+            "domain": "[('my_activity_date_deadline', '=', context_today().strftime('%Y-%m-%d'))]"
+          }
+        },
+        {
+          "tag": "filter",
+          "attrs": {
+            "invisible": "1",
+            "string": "Future Activities",
+            "name": "activities_upcoming_all",
+            "domain": "[('my_activity_date_deadline', '>', context_today().strftime('%Y-%m-%d'))                     ]"
+          }
+        },
+        {
+          "tag": "separator",
+          "attrs": {}
+        },
+        {
+          "tag": "filter",
+          "attrs": {
+            "string": "Favorites",
+            "name": "favorites",
+            "domain": "[('priority','=','1')]"
+          }
+        },
+        {
+          "tag": "separator",
+          "attrs": {}
+        },
+        {
+          "tag": "filter",
+          "attrs": {
+            "string": "Warnings",
+            "name": "activities_exception",
+            "domain": "[('activity_exception_decoration', '!=', False)]"
+          }
+        },
+        {
+          "tag": "separator",
+          "attrs": {}
+        },
+        {
+          "tag": "filter",
+          "attrs": {
+            "string": "Archived",
+            "name": "inactive",
+            "domain": "[('active','=',False)]"
+          }
+        },
+        {
+          "tag": "group",
+          "attrs": {
+            "expand": "1",
+            "string": "Group By"
+          },
+          "children": [
+            {
+              "tag": "filter",
+              "attrs": {
+                "string": "Product Type",
+                "name": "type",
+                "context": "{'group_by':'detailed_type'}"
+              }
+            },
+            {
+              "tag": "filter",
+              "attrs": {
+                "string": "Product Category",
+                "name": "categ_id",
+                "context": "{'group_by':'categ_id'}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "arch_raw": "<search string=\"Product\">\n                <field name=\"name\" string=\"Product\" filter_domain=\"['|', '|', '|', ('default_code', 'ilike', self), ('product_variant_ids.default_code', 'ilike', self),('name', 'ilike', self), ('barcode', 'ilike', self)]\"/>\n                <field name=\"categ_id\" filter_domain=\"[('categ_id', 'child_of', raw_value)]\"/>\n                <separator/>\n                <filter string=\"Services\" name=\"services\" domain=\"[('type','=','service')]\"/>\n                <filter string=\"Products\" name=\"consumable\" domain=\"[('type', 'in', ['consu', 'product'])]\"/>\n                <separator/>\n                <filter string=\"Can be Sold\" name=\"filter_to_sell\" domain=\"[('sale_ok','=',True)]\"/>\n                <filter string=\"Can be Purchased\" name=\"filter_to_purchase\" domain=\"[('purchase_ok', '=', True)]\"/>\n                <separator/>\n                <field string=\"Attributes\" name=\"attribute_line_ids\"/>\n                <filter invisible=\"1\" string=\"Late Activities\" name=\"activities_overdue\" domain=\"[('my_activity_date_deadline', '&lt;', context_today().strftime('%Y-%m-%d'))]\" help=\"Show all records which has next action date is before today\"/>\n                <filter invisible=\"1\" string=\"Today Activities\" name=\"activities_today\" domain=\"[('my_activity_date_deadline', '=', context_today().strftime('%Y-%m-%d'))]\"/>\n                <filter invisible=\"1\" string=\"Future Activities\" name=\"activities_upcoming_all\" domain=\"[('my_activity_date_deadline', '&gt;', context_today().strftime('%Y-%m-%d'))                     ]\"/>\n                <separator/>\n                <filter string=\"Favorites\" name=\"favorites\" domain=\"[('priority','=','1')]\"/>\n                <separator/>\n                <filter string=\"Warnings\" name=\"activities_exception\" domain=\"[('activity_exception_decoration', '!=', False)]\"/>\n                <separator/>\n                <filter string=\"Archived\" name=\"inactive\" domain=\"[('active','=',False)]\"/>\n                <group expand=\"1\" string=\"Group By\">\n                    <filter string=\"Product Type\" name=\"type\" context=\"{'group_by':'detailed_type'}\"/>\n                    <filter string=\"Product Category\" name=\"categ_id\" context=\"{'group_by':'categ_id'}\"/>\n                </group>\n            </search>"
+  },
+  "activity": {
+    "view_id": 498,
+    "view_type": "activity",
+    "model": "product.template",
+    "parsed_arch": {
+      "tag": "activity",
+      "attrs": {
+        "string": "Products"
+      },
+      "children": [
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "id"
+          }
+        },
+        {
+          "tag": "templates",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "div",
+              "attrs": {
+                "t-name": "activity-box"
+              },
+              "children": [
+                {
+                  "tag": "img",
+                  "attrs": {
+                    "t-att-src": "activity_image('product.template', 'image_128', record.id.raw_value)",
+                    "t-att-title": "record.id.value",
+                    "t-att-alt": "record.id.value"
+                  },
+                  "raw_attrs": {
+                    "role": "img"
+                  }
+                },
+                {
+                  "tag": "div",
+                  "attrs": {
+                    "class": "ms-2"
+                  },
+                  "children": [
+                    {
+                      "tag": "field",
+                      "attrs": {
+                        "name": "name",
+                        "class": "o_text_block"
+                      },
+                      "raw_attrs": {
+                        "display": "full"
+                      }
+                    },
+                    {
+                      "tag": "div",
+                      "attrs": {
+                        "t-if": "record.default_code.value",
+                        "class": "o_text_block text-muted"
+                      },
+                      "text": "[",
+                      "children": [
+                        {
+                          "tag": "field",
+                          "attrs": {
+                            "name": "default_code"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "arch_raw": null
+  },
+  "tree_default": {
+    "view_id": 495,
+    "view_type": "tree_default",
+    "model": "product.template",
+    "parsed_arch": {
+      "tag": "tree",
+      "attrs": {
+        "string": "Product",
+        "multi_edit": "1",
+        "sample": "1"
+      },
+      "children": [
+        {
+          "tag": "header",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "button",
+              "attrs": {
+                "string": "Print Labels",
+                "name": "action_open_label_layout"
+              },
+              "raw_attrs": {
+                "type": "object"
+              }
+            }
+          ]
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "product_variant_count",
+            "column_invisible": "True"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "sale_ok",
+            "column_invisible": "True"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "currency_id",
+            "column_invisible": "True"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "cost_currency_id",
+            "column_invisible": "True"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "priority",
+            "widget": "priority",
+            "optional": "show"
+          },
+          "raw_attrs": {
+            "nolabel": "1"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "name",
+            "string": "Product Name"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "default_code",
+            "optional": "show",
+            "on_change": "1"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "responsible_id",
+            "widget": "many2one_avatar_user",
+            "optional": "hide"
+          },
+          "raw_attrs": {
+            "can_create": "True",
+            "can_write": "True"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "product_tag_ids",
+            "widget": "many2many_tags",
+            "optional": "show"
+          },
+          "raw_attrs": {
+            "can_create": "True",
+            "can_write": "True"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "barcode",
+            "optional": "hide",
+            "readonly": "product_variant_count != 1"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "list_price",
+            "string": "Sales Price",
+            "widget": "monetary",
+            "options": "{'currency_field': 'currency_id'}",
+            "optional": "show",
+            "decoration-muted": "not sale_ok"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "standard_price",
+            "widget": "monetary",
+            "options": "{'currency_field': 'cost_currency_id'}",
+            "optional": "show",
+            "readonly": "1"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "categ_id",
+            "optional": "hide",
+            "on_change": "1"
+          },
+          "raw_attrs": {
+            "can_create": "True",
+            "can_write": "True"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "detailed_type",
+            "optional": "hide",
+            "readonly": "1",
+            "on_change": "1"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "type",
+            "column_invisible": "True",
+            "on_change": "1"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "show_on_hand_qty_status_button",
+            "column_invisible": "True"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "qty_available",
+            "invisible": "not show_on_hand_qty_status_button",
+            "string": "On Hand",
+            "optional": "show",
+            "decoration-danger": "qty_available < 0"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "virtual_available",
+            "invisible": "not show_on_hand_qty_status_button",
+            "string": "Forecasted",
+            "optional": "show",
+            "decoration-danger": "virtual_available < 0",
+            "decoration-bf": "1"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "active",
+            "column_invisible": "True"
+          }
+        },
+        {
+          "tag": "field",
+          "attrs": {
+            "name": "activity_exception_decoration",
+            "widget": "activity_exception"
+          }
+        }
+      ]
+    },
+    "arch_raw": null
+  }
+}

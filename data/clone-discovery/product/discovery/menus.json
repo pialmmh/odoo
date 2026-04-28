@@ -1,0 +1,72 @@
+{
+  "scope_target_menu_id": 138,
+  "breadcrumb": [
+    {
+      "id": 131,
+      "name": "Invoicing",
+      "xmlid": "account.menu_finance",
+      "actionID": 254
+    },
+    {
+      "id": 133,
+      "name": "Customers",
+      "xmlid": "account.menu_finance_receivables",
+      "actionID": false
+    },
+    {
+      "id": 138,
+      "name": "Products",
+      "xmlid": "account.product_product_menu_sellable",
+      "actionID": 278
+    }
+  ],
+  "subtree": {
+    "138": {
+      "id": 138,
+      "name": "Products",
+      "children": [],
+      "appID": 131,
+      "xmlid": "account.product_product_menu_sellable",
+      "actionID": 278,
+      "actionModel": "ir.actions.act_window",
+      "webIcon": false,
+      "webIconData": false,
+      "webIconDataMimetype": false
+    },
+    "133": {
+      "id": 133,
+      "name": "Customers",
+      "children": [
+        134,
+        135,
+        137,
+        138,
+        139
+      ],
+      "appID": 131,
+      "xmlid": "account.menu_finance_receivables",
+      "actionID": false,
+      "actionModel": false,
+      "webIcon": false,
+      "webIconData": false,
+      "webIconDataMimetype": false
+    },
+    "131": {
+      "id": 131,
+      "name": "Invoicing",
+      "children": [
+        133,
+        140,
+        156,
+        161
+      ],
+      "appID": 131,
+      "xmlid": "account.menu_finance",
+      "actionID": 254,
+      "actionModel": "ir.actions.act_window",
+      "webIcon": "account,static/description/icon.png",
+      "webIconData": "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",
+      "webIconDataMimetype": "image/png"
+    }
+  }
+}
