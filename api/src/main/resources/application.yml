@@ -2,29 +2,22 @@ server:
   port: 8180
 
 erp:
-  # Which ERP backend this deployment talks to. Currently: odoo.
-  # Adding a new backend means implementing ErpClient + any domain services.
+  # ── Legacy `provider` — read by the old ErpClient pattern in
+  #    com.telcobright.api.erp.* (tax-rate slice, Odoo proxy). Coexists
+  #    with the new `backend` below; will be unified later.
   provider: odoo
+  # ── New `backend` — selects the active ErpAdapter implementation
+  #    in com.telcobright.api.erpv2.*. Wires IdempiereErpAdapter for
+  #    /api/erp-v2/** when set to `idempiere`.
+  backend: idempiere
   odoo:
     url: http://127.0.0.1:7169
     db: odoo_billing
     username: admin
     password: admin
-  # Experimental iDempiere connection — read-only Postgres access used by
-  # the /api/erp/* endpoints. Not the primary catalog source.
   idempiere:
-    jdbcUrl: jdbc:postgresql://127.0.0.1:5433/idempiere
-    username: adempiere
-    password: adempiere
-    schema: adempiere
-    clientId: 0       # GardenWorld is client 11; 0 = system. Filter applied at query.
-    clientIds: 0,11   # comma-separated allowed clients (system + GardenWorld for dev)
-
-erp:
-  # iDempiere connection — Postgres access used only by the grandfathered
-  # Product service (/api/erp/products). New screens (BPartner, …) go through
-  # the BFF proxy below.
-  idempiere:
+    # iDempiere Postgres — read by the grandfathered IdempiereProductService
+    # (direct JDBC). New BFF endpoints replace this in slice 2.
     jdbcUrl: jdbc:postgresql://127.0.0.1:5433/idempiere
     username: adempiere
     password: adempiere
