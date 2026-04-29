@@ -52,7 +52,12 @@ public class IdempiereDtoMapper {
 
                 // Purchase — pricing deferred to slice 2
                 /* standardPrice */ null,
-                asString(row.get("purchaseDescription"), row.get("purchasenote"))
+                asString(row.get("purchaseDescription"), row.get("purchasenote")),
+
+                // Attributes — set membership only in slice 3 stub;
+                // detailed values + combinations come in a later slice.
+                asLong(row.get("attributeSetId"), row.get("mAttributesetId")),
+                asString(row.get("attributeSetName"))
         );
     }
 

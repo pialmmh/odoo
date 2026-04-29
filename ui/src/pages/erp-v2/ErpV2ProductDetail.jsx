@@ -146,6 +146,7 @@ export default function ErpV2ProductDetail() {
               <Tab value="general">General Information</Tab>
               <Tab value="sales">Sales</Tab>
               <Tab value="purchase">Purchase</Tab>
+              <Tab value="attributes">Attributes &amp; Variants</Tab>
             </TabList>
           </div>
 
@@ -269,6 +270,32 @@ export default function ErpV2ProductDetail() {
                 <Field label="Purchase Description">
                   <Textarea value={txt(product.purchaseDescription)} readOnly rows={3} />
                 </Field>
+              </div>
+            </div>
+          )}
+
+          {tab === 'attributes' && (
+            <div className={styles.grid}>
+              {/* Row 1: Attribute Set(6) + spacer(6) = 12 */}
+              <div className={styles.span6}>
+                <Field
+                  label="Attribute Set"
+                  hint="The named group of attributes assigned to this product (e.g. Color, Size)."
+                >
+                  <Input value={txt(product.attributeSetName)} readOnly />
+                </Field>
+              </div>
+              <div className={mergeClasses(styles.span6, styles.spacer)} />
+
+              {/* Row 2: notice(12) */}
+              <div className={styles.span12}>
+                <div className={styles.bannerNote}>
+                  Detailed attribute values and per-line combinations
+                  surface in a future slice. Combinations on inventory
+                  documents are stored against this product as
+                  attribute-set instances rather than as separate variant
+                  records.
+                </div>
               </div>
             </div>
           )}

@@ -51,5 +51,11 @@ public record ProductDto(
 
         // ── Purchase (Purchase tab) ─────────────────────────────────
         BigDecimal standardPrice,    // slice 1: null — pricing in slice 2
-        String purchaseDescription
+        String purchaseDescription,
+
+        // ── Attributes & Variants (Slice 3 — read-only stub) ────────
+        // Detail values + per-line combinations land in a future slice.
+        Long attributeSetId,
+        String attributeSetName
 ) {}
+
