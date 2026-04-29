@@ -623,6 +623,8 @@ rm -rf $IDEMP/configuration/org.eclipse.osgi/[0-9]* \
 | 2026-04-29 | Future development happens in the `orchestrix-erp` worktree on the `orchestrix-erp` branch. `main` is for stable / pushable state to GitHub. | User direction |
 | 2026-04-29 | A third backend (ErpNext) is in scope long-term. A tax-rate slice has already been scaffolded on `orchestrix-erp` (`api/.../erp/erpnext/`, `api/.../erp/odoo/`, `api/.../erp/dto/`). Will be folded into `erpv2/` packages when wired. | User direction (commit on orchestrix-erp 47eb3b4) |
 | 2026-04-29 | Variants (`product.product`), product tags, the "Kill Bill" custom notebook tab, and chatter/activity are **permanently dropped** from `/erp-v2`. Reasons: no clean iDempiere counterpart for variants/tags/chatter; KB tab is a project-specific Odoo addon that must not leak. | Helper discovery summary §"Top 3 risks" + product/mapping/idempiere.md |
+| 2026-04-29 | **Reversed the previous decision on variants/attributes.** Attributes are first-class in iDempiere (`M_AttributeSet` + `M_Attribute` + `M_AttributeValue` + `M_AttributeSetInstance`). What's *missing* from iDempiere is per-variant SKU/price (Odoo materialises one `product.product` row per combination; iDempiere doesn't). Variants & attributes are NOW deferred to **Slice 3 — Variants & Attributes**, not dropped. Per-combination pricing remains out of scope unless a downstream consumer asks for it. | User pushback after first product page rendered; re-examined the helper risk note |
+| 2026-04-29 | Discovery protocol gets a recursive arch-walking step (visited set + depth limit, default 3) — follows Many2one/Many2many/One2many beyond 1 hop, follows `<button>` action references, and follows inline `view_id` embeds. Without this, "Replenish" buttons / smart buttons / cross-screen jumps in Odoo are invisible to the helper. | User direction — "we need a crawler that efficiently tracks all the links/nested links, up to any level" |
 
 ---
 
@@ -650,7 +652,46 @@ the existing in-iDempiere BFF; no new write code.
 | Search facets / filters / group-by panel | Slice 1 uses a simple text filter. Modern facets are their own slice. | Slice 4 (Modern search) |
 | BFF migration for product reads | Slice 1 reuses the legacy direct-JDBC `IdempiereProductService` (pre-existing). It violates the "no SQL against iDempiere" rule but predates this work. New BFF endpoints (`/product/list`, `/product/{id}`) using `MProduct` + `Query` will replace it; until then `IdempiereErpAdapter` adapts the legacy service. | Slice 2 (Pricing + BFF migration) |
 
-**Permanently dropped from `/erp-v2`** (recorded in decision log above): variants, product tags, Kill Bill custom tab, chatter / activity / followers.
+### Slice 3 — Variants & Attributes (added 2026-04-29 after rethink)
+
+**Scope:** Attribute set + attribute values modelled in iDempiere
+(`M_AttributeSet`, `M_Attribute`, `M_AttributeValue`,
+`M_AttributeSetInstance`). The `/erp-v2` Product detail gets a 4th
+notebook tab — **"Attributes & Variants"** — surfacing:
+
+- The `M_AttributeSet` assigned to the product (read-only label of
+  the set + which attributes are inside it).
+- For each attribute: its allowed `M_AttributeValue`s.
+- A list of existing `M_AttributeSetInstance`s for this product
+  (rendered as a flat list of "combinations seen on documents", since
+  iDempiere doesn't materialise per-combination rows like Odoo's
+  `product.product`).
+
+**Mapping note (so we don't drop again):**
+
+| Odoo concept                              | iDempiere counterpart                                    |
+|-------------------------------------------|----------------------------------------------------------|
+| `product.attribute` (e.g. "Color")        | `M_Attribute`                                            |
+| `product.attribute.value` (e.g. "Red")    | `M_AttributeValue`                                       |
+| `product.template.attribute.line`         | `M_AttributeSet` ↔ `M_Attribute` membership              |
+| `product.template.attribute.value`        | (effectively `M_AttributeValue` filtered by set)         |
+| `product.product` (one row per combo)     | **No counterpart** — combos live as `M_AttributeSetInstance` records on documents (M_InOutLine, C_OrderLine, etc.). The product master is single-row. |
+
+The user-visible difference: in Odoo each combination has its own
+SKU / barcode / price; in our `/erp-v2` clone, those stay on the
+template. Per-combination pricing is **not in scope** of slice 3 —
+that's a future slice if/when needed.
+
+**Tags** (`product.tag`) — still no first-class iDempiere counterpart;
+will surface as a free-text "Tags" field stored in
+`MProduct.Group1`/`Group2` if explicitly requested. Out of scope
+unless a downstream consumer needs them.
+
+**Permanently dropped from `/erp-v2`**: Kill Bill custom notebook tab
+(`x_kb_*` fields from `custom-addons/kb_integration` — project-specific
+addon that must not leak), chatter / activity / followers (no iDempiere
+counterpart; if needed render with our own notification UI, not Odoo
+Discuss).
 
 ---
 

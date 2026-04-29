@@ -183,6 +183,69 @@ In this order, scoped to the user's chosen subtree:
 If any model referenced by an action is missing from `ir.model`, log
 it in `summary.md` under "models flagged" — do not silently drop.
 
+### 5.3.1 Recursive arch walk (added 2026-04-29)
+
+The flat `(model, view_type)` enumeration from §5.3 misses everything
+the user can navigate *to* from a page — smart buttons, statusbar
+buttons, embedded list views inside form `<field>` widgets,
+context-jumping actions. Without this step the helper produces a
+surface that looks complete on paper but feels half-clone in the
+browser.
+
+Walk every captured arch (kanban, list, form, search) and **enqueue
+new discovery targets** until a depth limit or visited set saturates:
+
+1. **Initialise** `visited = set(initial (model, view_type) pairs)`,
+   `queue = those pairs`, `depth = {pair: 0}`. Default `MAX_DEPTH = 3`.
+2. **Per pair, scan the arch's JSON AST for**:
+   - `<field name="X">` whose `ttype` is `many2one` / `one2many` /
+     `many2many` (look up in `models.json`). The relation's
+     `(target_model, "form")` and `(target_model, "list")` are added.
+     Embedded inline `<field mode="...">` views with explicit `view_id`
+     attributes follow that exact view; otherwise resolve the model's
+     default views.
+   - `<button name="ACTION_OR_METHOD" type="object" />` —
+     `name` is a Python method on the model. Skip; semantics are
+     server-side. Note in `mapping/odoo-source.md` that the button
+     exists.
+   - `<button name="N" type="action" />` — `N` is an `ir.actions.*` id.
+     Read it; if `ir.actions.act_window`, add `(res_model, view_mode[0])`
+     to the queue. Other action types (`ir.actions.client`,
+     `ir.actions.report`) are noted in `mapping/odoo-source.md` but not
+     followed.
+   - `<header>` smart-button references — same as buttons above; many
+     are `type="action"` opening "Bills of Materials", "Replenish",
+     stock movements, etc.
+   - `<groupby>` / `<searchpanel>` / `<filter>` `domain` strings —
+     do NOT follow; static filter expressions, not navigation.
+3. **Skip rules**:
+   - Pair already in `visited`.
+   - `depth[parent] + 1 > MAX_DEPTH`.
+   - Target model is in a deny-list of pure infrastructure entities
+     (`ir.*`, `mail.*` except `mail.activity` heads, `bus.*`, `base.*`,
+     `web.*`). Note them in `summary.md` under "skipped models" so the
+     user sees what was elided.
+4. **For every newly enqueued pair**: re-run the §5.3 step 4–5 sequence
+   to dump its `view.get_view`, parse the arch, append to
+   `views.json` / `views.parsed.json`. Do **not** re-fetch
+   `models.json` for already-introspected models; do fetch for newly
+   discovered ones.
+5. **Record the graph** in `discovery/navigation-graph.json`:
+   `{from: [model, view_type], via: "field|button|action|smart_button",
+   ref: "field-name-or-action-id", to: [model, view_type],
+   depth: N}`. The main agent uses this to decide which links are
+   worth surfacing in the React clone (e.g. a "Replenish" button on
+   the product form needs an `/erp-v2/replenish` flow if we want
+   parity).
+
+For the `product` slug specifically, expect this walk to enqueue at
+least: `uom.uom`, `product.category`, `product.attribute`,
+`product.attribute.value`, `product.template.attribute.line`,
+`product.supplierinfo`, `account.tax`, `account.account` — most of
+which the original 1-hop dump already covered, plus the attribute
+chain that the previous run did not reach because attribute lines are
+behind a One2many embed.
+
 ### 5.4 Visual reference (Playwright)
 
 Use Playwright MCP. Log in once, persist storage state. Capture **only

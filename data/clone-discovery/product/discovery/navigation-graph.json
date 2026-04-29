@@ -1,0 +1,3259 @@
+{
+  "edges": [
+    {
+      "from": [
+        "product.template",
+        "kanban"
+      ],
+      "via": "field",
+      "ref": "currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "kanban"
+      ],
+      "via": "field",
+      "ref": "categ_id",
+      "to": [
+        "product.category",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "kanban"
+      ],
+      "via": "field",
+      "ref": "uom_id",
+      "to": [
+        "uom.uom",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "list"
+      ],
+      "via": "field",
+      "ref": "taxes_id",
+      "to": [
+        "account.tax",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "product.template",
+        "list"
+      ],
+      "via": "field",
+      "ref": "taxes_id",
+      "to": [
+        "account.tax",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "list"
+      ],
+      "via": "field",
+      "ref": "supplier_taxes_id",
+      "to": [
+        "account.tax",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "list"
+      ],
+      "via": "field",
+      "ref": "supplier_taxes_id",
+      "to": [
+        "account.tax",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "taxes_id",
+      "to": [
+        "account.tax",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "taxes_id",
+      "to": [
+        "account.tax",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "categ_id",
+      "to": [
+        "product.category",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "valid_product_template_attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "valid_product_template_attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_tag_ids",
+      "to": [
+        "product.tag",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_tag_ids",
+      "to": [
+        "product.tag",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "cost_currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_variant_id",
+      "to": [
+        "product.product",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "optional_product_ids",
+      "to": [
+        "product.template",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "optional_product_ids",
+      "to": [
+        "product.template",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "supplier_taxes_id",
+      "to": [
+        "account.tax",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "supplier_taxes_id",
+      "to": [
+        "account.tax",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "route_ids",
+      "to": [
+        "stock.route",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "route_ids",
+      "to": [
+        "stock.route",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "route_from_categ_ids",
+      "to": [
+        "stock.route",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "route_from_categ_ids",
+      "to": [
+        "stock.route",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "responsible_id",
+      "to": [
+        "res.users",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "activity_ids",
+      "to": [
+        "mail.activity",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "field",
+      "ref": "activity_ids",
+      "to": [
+        "mail.activity",
+        "form"
+      ],
+      "depth": 1
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "action",
+      "ref": "170",
+      "to": [
+        "product.product",
+        "tree"
+      ],
+      "depth": 1,
+      "note": "(action lookup)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "action",
+      "ref": "167",
+      "to": [
+        "product.tag",
+        "tree"
+      ],
+      "depth": 1,
+      "note": "(action lookup)"
+    },
+    {
+      "from": [
+        "product.template",
+        "search"
+      ],
+      "via": "field",
+      "ref": "categ_id",
+      "to": [
+        "product.category",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "search"
+      ],
+      "via": "field",
+      "ref": "attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "search"
+      ],
+      "via": "field",
+      "ref": "attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "list"
+      ],
+      "via": "field",
+      "ref": "currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "list"
+      ],
+      "via": "field",
+      "ref": "cost_currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "list"
+      ],
+      "via": "field",
+      "ref": "responsible_id",
+      "to": [
+        "res.users",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "list"
+      ],
+      "via": "field",
+      "ref": "product_tag_ids",
+      "to": [
+        "product.tag",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "list"
+      ],
+      "via": "field",
+      "ref": "product_tag_ids",
+      "to": [
+        "product.tag",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "list"
+      ],
+      "via": "field",
+      "ref": "categ_id",
+      "to": [
+        "product.category",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.currency",
+        "form"
+      ],
+      "via": "field",
+      "ref": "rate_ids",
+      "to": [
+        "res.currency.rate",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "res.currency",
+        "form"
+      ],
+      "via": "field",
+      "ref": "rate_ids",
+      "to": [
+        "res.currency.rate",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "product.category",
+        "form"
+      ],
+      "via": "field",
+      "ref": "parent_id",
+      "to": [
+        "product.category",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.category",
+        "form"
+      ],
+      "via": "field",
+      "ref": "removal_strategy_id",
+      "to": [
+        "product.removal",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "product.category",
+        "form"
+      ],
+      "via": "action",
+      "ref": "168",
+      "to": [
+        "product.template",
+        "kanban"
+      ],
+      "depth": 2,
+      "note": "(action lookup)"
+    },
+    {
+      "from": [
+        "uom.uom",
+        "form"
+      ],
+      "via": "field",
+      "ref": "category_id",
+      "to": [
+        "uom.category",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "invoice_repartition_line_ids",
+      "to": [
+        "account.tax.repartition.line",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "invoice_repartition_line_ids",
+      "to": [
+        "account.tax.repartition.line",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "refund_repartition_line_ids",
+      "to": [
+        "account.tax.repartition.line",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "refund_repartition_line_ids",
+      "to": [
+        "account.tax.repartition.line",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "children_tax_ids",
+      "to": [
+        "account.tax",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "children_tax_ids",
+      "to": [
+        "account.tax",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "tax_group_id",
+      "to": [
+        "account.tax.group",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "account.tax",
+        "form"
+      ],
+      "via": "field",
+      "ref": "country_id",
+      "to": [
+        "res.country",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "product.template.attribute.line",
+        "form"
+      ],
+      "via": "field",
+      "ref": "attribute_id",
+      "to": [
+        "product.attribute",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "product.template.attribute.line",
+        "form"
+      ],
+      "via": "field",
+      "ref": "value_ids",
+      "to": [
+        "product.attribute.value",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "product.template.attribute.line",
+        "form"
+      ],
+      "via": "field",
+      "ref": "value_ids",
+      "to": [
+        "product.attribute.value",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "all_child_ids",
+      "to": [
+        "res.company",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "all_child_ids",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "state_id",
+      "to": [
+        "res.country.state",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "country_id",
+      "to": [
+        "res.country",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "account_enabled_tax_country_ids",
+      "to": [
+        "res.country",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "account_enabled_tax_country_ids",
+      "to": [
+        "res.country",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "parent_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "child_ids",
+      "to": [
+        "res.company",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "child_ids",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "partner_id",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "child_ids",
+      "to": [
+        "res.company",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.company",
+        "form"
+      ],
+      "via": "field",
+      "ref": "child_ids",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.tag",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_template_ids",
+      "to": [
+        "product.template",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.tag",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_template_ids",
+      "to": [
+        "product.template",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.tag",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_product_ids",
+      "to": [
+        "product.product",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "product.tag",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_product_ids",
+      "to": [
+        "product.product",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.tag",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_ids",
+      "to": [
+        "product.product",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.tag",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_ids",
+      "to": [
+        "product.product",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_tmpl_id",
+      "to": [
+        "product.template",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_template_variant_value_ids",
+      "to": [
+        "product.template.attribute.value",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_template_variant_value_ids",
+      "to": [
+        "product.template.attribute.value",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "taxes_id",
+      "to": [
+        "account.tax",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "taxes_id",
+      "to": [
+        "account.tax",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "categ_id",
+      "to": [
+        "product.category",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_tag_ids",
+      "to": [
+        "product.tag",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_tag_ids",
+      "to": [
+        "product.tag",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "additional_product_tag_ids",
+      "to": [
+        "product.tag",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "additional_product_tag_ids",
+      "to": [
+        "product.tag",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "cost_currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_variant_id",
+      "to": [
+        "product.product",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "optional_product_ids",
+      "to": [
+        "product.template",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "optional_product_ids",
+      "to": [
+        "product.template",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "supplier_taxes_id",
+      "to": [
+        "account.tax",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "supplier_taxes_id",
+      "to": [
+        "account.tax",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "route_ids",
+      "to": [
+        "stock.route",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "route_ids",
+      "to": [
+        "stock.route",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "route_from_categ_ids",
+      "to": [
+        "stock.route",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "route_from_categ_ids",
+      "to": [
+        "stock.route",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "activity_ids",
+      "to": [
+        "mail.activity",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "field",
+      "ref": "activity_ids",
+      "to": [
+        "mail.activity",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "action",
+      "ref": "167",
+      "to": [
+        "product.tag",
+        "tree"
+      ],
+      "depth": 2,
+      "note": "(action lookup)"
+    },
+    {
+      "from": [
+        "stock.route",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "stock.route",
+        "form"
+      ],
+      "via": "field",
+      "ref": "warehouse_domain_ids",
+      "to": [
+        "stock.warehouse",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "stock.route",
+        "form"
+      ],
+      "via": "field",
+      "ref": "warehouse_domain_ids",
+      "to": [
+        "stock.warehouse",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "stock.route",
+        "form"
+      ],
+      "via": "field",
+      "ref": "warehouse_ids",
+      "to": [
+        "stock.warehouse",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "stock.route",
+        "form"
+      ],
+      "via": "field",
+      "ref": "warehouse_ids",
+      "to": [
+        "stock.warehouse",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "stock.route",
+        "form"
+      ],
+      "via": "field",
+      "ref": "rule_ids",
+      "to": [
+        "stock.rule",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "stock.route",
+        "form"
+      ],
+      "via": "field",
+      "ref": "rule_ids",
+      "to": [
+        "stock.rule",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "mail.activity",
+        "form"
+      ],
+      "via": "field",
+      "ref": "user_id",
+      "to": [
+        "res.users",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "mail.activity",
+        "form"
+      ],
+      "via": "field",
+      "ref": "calendar_event_id",
+      "to": [
+        "calendar.event",
+        "form"
+      ],
+      "depth": 2
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "action",
+      "ref": "170",
+      "to": [
+        "product.product",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "action",
+      "ref": "170",
+      "to": [
+        "product.product",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "action",
+      "ref": "167",
+      "to": [
+        "product.tag",
+        "list"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "action",
+      "ref": "167",
+      "to": [
+        "product.tag",
+        "form"
+      ],
+      "depth": 1,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.currency.rate",
+        "form"
+      ],
+      "via": "field",
+      "ref": "currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.category",
+        "form"
+      ],
+      "via": "action",
+      "ref": "168",
+      "to": [
+        "product.template",
+        "kanban"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.category",
+        "form"
+      ],
+      "via": "action",
+      "ref": "168",
+      "to": [
+        "product.template",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.category",
+        "form"
+      ],
+      "via": "action",
+      "ref": "168",
+      "to": [
+        "product.template",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "uom.category",
+        "form"
+      ],
+      "via": "field",
+      "ref": "reference_uom_id",
+      "to": [
+        "uom.uom",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "uom.category",
+        "form"
+      ],
+      "via": "field",
+      "ref": "uom_ids",
+      "to": [
+        "uom.uom",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "uom.category",
+        "form"
+      ],
+      "via": "field",
+      "ref": "uom_ids",
+      "to": [
+        "uom.uom",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax.repartition.line",
+        "form"
+      ],
+      "via": "field",
+      "ref": "account_id",
+      "to": [
+        "account.account",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "account.tax.repartition.line",
+        "form"
+      ],
+      "via": "field",
+      "ref": "tag_ids",
+      "to": [
+        "account.account.tag",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "account.tax.repartition.line",
+        "form"
+      ],
+      "via": "field",
+      "ref": "tag_ids",
+      "to": [
+        "account.account.tag",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "account.tax.repartition.line",
+        "form"
+      ],
+      "via": "field",
+      "ref": "tax_id",
+      "to": [
+        "account.tax",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax.repartition.line",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax.group",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax.group",
+        "form"
+      ],
+      "via": "field",
+      "ref": "country_id",
+      "to": [
+        "res.country",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax.group",
+        "form"
+      ],
+      "via": "field",
+      "ref": "tax_payable_account_id",
+      "to": [
+        "account.account",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax.group",
+        "form"
+      ],
+      "via": "field",
+      "ref": "tax_receivable_account_id",
+      "to": [
+        "account.account",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "account.tax.group",
+        "form"
+      ],
+      "via": "field",
+      "ref": "advance_tax_payment_account_id",
+      "to": [
+        "account.account",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.country",
+        "form"
+      ],
+      "via": "field",
+      "ref": "currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.country",
+        "form"
+      ],
+      "via": "field",
+      "ref": "state_ids",
+      "to": [
+        "res.country.state",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "res.country",
+        "form"
+      ],
+      "via": "field",
+      "ref": "state_ids",
+      "to": [
+        "res.country.state",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.attribute",
+        "form"
+      ],
+      "via": "field",
+      "ref": "value_ids",
+      "to": [
+        "product.attribute.value",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.attribute",
+        "form"
+      ],
+      "via": "field",
+      "ref": "value_ids",
+      "to": [
+        "product.attribute.value",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.attribute.value",
+        "form"
+      ],
+      "via": "field",
+      "ref": "attribute_id",
+      "to": [
+        "product.attribute",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.attribute.value",
+        "form"
+      ],
+      "via": "field",
+      "ref": "pav_attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.attribute.value",
+        "form"
+      ],
+      "via": "field",
+      "ref": "pav_attribute_line_ids",
+      "to": [
+        "product.template.attribute.line",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.attribute.value",
+        "form"
+      ],
+      "via": "field",
+      "ref": "attribute_id",
+      "to": [
+        "product.attribute",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.country.state",
+        "form"
+      ],
+      "via": "field",
+      "ref": "country_id",
+      "to": [
+        "res.country",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "same_vat_partner_id",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "same_company_registry_partner_id",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "commercial_partner_id",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "parent_id",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "state_id",
+      "to": [
+        "res.country.state",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "country_id",
+      "to": [
+        "res.country",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "user_ids",
+      "to": [
+        "res.users",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "user_ids",
+      "to": [
+        "res.users",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "title",
+      "to": [
+        "res.partner.title",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "category_id",
+      "to": [
+        "res.partner.category",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "category_id",
+      "to": [
+        "res.partner.category",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "child_ids",
+      "to": [
+        "res.partner",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "child_ids",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "title",
+      "to": [
+        "res.partner.title",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "parent_id",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "country_id",
+      "to": [
+        "res.country",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "state_id",
+      "to": [
+        "res.country.state",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "state_id",
+      "to": [
+        "res.country.state",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "country_id",
+      "to": [
+        "res.country",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "parent_id",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "title",
+      "to": [
+        "res.partner.title",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "state_id",
+      "to": [
+        "res.country.state",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "country_id",
+      "to": [
+        "res.country",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "user_id",
+      "to": [
+        "res.users",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "user_id",
+      "to": [
+        "res.users",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "team_id",
+      "to": [
+        "crm.team",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "property_payment_term_id",
+      "to": [
+        "account.payment.term",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "property_product_pricelist",
+      "to": [
+        "product.pricelist",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "property_supplier_payment_term_id",
+      "to": [
+        "account.payment.term",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "property_account_position_id",
+      "to": [
+        "account.fiscal.position",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "industry_id",
+      "to": [
+        "res.partner.industry",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "bank_ids",
+      "to": [
+        "res.partner.bank",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "bank_ids",
+      "to": [
+        "res.partner.bank",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "activity_ids",
+      "to": [
+        "mail.activity",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "res.partner",
+        "form"
+      ],
+      "via": "field",
+      "ref": "activity_ids",
+      "to": [
+        "mail.activity",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template.attribute.value",
+        "form"
+      ],
+      "via": "field",
+      "ref": "currency_id",
+      "to": [
+        "res.currency",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template.attribute.value",
+        "form"
+      ],
+      "via": "field",
+      "ref": "exclude_for",
+      "to": [
+        "product.template.attribute.exclusion",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "product.template.attribute.value",
+        "form"
+      ],
+      "via": "field",
+      "ref": "exclude_for",
+      "to": [
+        "product.template.attribute.exclusion",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "product.template.attribute.value",
+        "form"
+      ],
+      "via": "field",
+      "ref": "product_tmpl_id",
+      "to": [
+        "product.template",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "action",
+      "ref": "167",
+      "to": [
+        "product.tag",
+        "list"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.product",
+        "form"
+      ],
+      "via": "action",
+      "ref": "167",
+      "to": [
+        "product.tag",
+        "form"
+      ],
+      "depth": 2,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "stock.warehouse",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "stock.warehouse",
+        "form"
+      ],
+      "via": "field",
+      "ref": "partner_id",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "stock.rule",
+        "form"
+      ],
+      "via": "field",
+      "ref": "company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "stock.rule",
+        "form"
+      ],
+      "via": "field",
+      "ref": "picking_type_id",
+      "to": [
+        "stock.picking.type",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "stock.rule",
+        "form"
+      ],
+      "via": "field",
+      "ref": "location_src_id",
+      "to": [
+        "stock.location",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "stock.rule",
+        "form"
+      ],
+      "via": "field",
+      "ref": "location_dest_id",
+      "to": [
+        "stock.location",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "stock.rule",
+        "form"
+      ],
+      "via": "field",
+      "ref": "route_id",
+      "to": [
+        "stock.route",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "stock.rule",
+        "form"
+      ],
+      "via": "field",
+      "ref": "route_company_id",
+      "to": [
+        "res.company",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "stock.rule",
+        "form"
+      ],
+      "via": "field",
+      "ref": "partner_address_id",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "recurrence_id",
+      "to": [
+        "calendar.recurrence",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "recurrence_id",
+      "to": [
+        "calendar.recurrence",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "categ_ids",
+      "to": [
+        "calendar.event.type",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "categ_ids",
+      "to": [
+        "calendar.event.type",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "user_id",
+      "to": [
+        "res.users",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "alarm_ids",
+      "to": [
+        "calendar.alarm",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(resolved on retry \u2014 view_type=tree)"
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "alarm_ids",
+      "to": [
+        "calendar.alarm",
+        "form"
+      ],
+      "depth": 3
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "partner_ids",
+      "to": [
+        "res.partner",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "partner_ids",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "invalid_email_partner_ids",
+      "to": [
+        "res.partner",
+        "list"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "calendar.event",
+        "form"
+      ],
+      "via": "field",
+      "ref": "invalid_email_partner_ids",
+      "to": [
+        "res.partner",
+        "form"
+      ],
+      "depth": 3,
+      "note": "(already visited)"
+    },
+    {
+      "from": [
+        "product.template",
+        "form"
+      ],
+      "via": "smart_button",
+      "ref": "443",
+      "to": [
+        "product.replenish",
+        "form"
+      ],
+      "depth": 1
+    }
+  ],
+  "visited_pairs": [
+    [
+      "account.account",
+      "form"
+    ],
+    [
+      "account.account.tag",
+      "form"
+    ],
+    [
+      "account.account.tag",
+      "list"
+    ],
+    [
+      "account.fiscal.position",
+      "form"
+    ],
+    [
+      "account.payment.term",
+      "form"
+    ],
+    [
+      "account.tax",
+      "form"
+    ],
+    [
+      "account.tax",
+      "list"
+    ],
+    [
+      "account.tax.group",
+      "form"
+    ],
+    [
+      "account.tax.repartition.line",
+      "form"
+    ],
+    [
+      "account.tax.repartition.line",
+      "list"
+    ],
+    [
+      "calendar.alarm",
+      "form"
+    ],
+    [
+      "calendar.alarm",
+      "list"
+    ],
+    [
+      "calendar.event",
+      "form"
+    ],
+    [
+      "calendar.event.type",
+      "form"
+    ],
+    [
+      "calendar.event.type",
+      "list"
+    ],
+    [
+      "calendar.recurrence",
+      "form"
+    ],
+    [
+      "crm.team",
+      "form"
+    ],
+    [
+      "mail.activity",
+      "form"
+    ],
+    [
+      "mail.activity",
+      "list"
+    ],
+    [
+      "product.attribute",
+      "form"
+    ],
+    [
+      "product.attribute.value",
+      "form"
+    ],
+    [
+      "product.attribute.value",
+      "list"
+    ],
+    [
+      "product.category",
+      "form"
+    ],
+    [
+      "product.pricelist",
+      "form"
+    ],
+    [
+      "product.product",
+      "form"
+    ],
+    [
+      "product.product",
+      "list"
+    ],
+    [
+      "product.removal",
+      "form"
+    ],
+    [
+      "product.tag",
+      "form"
+    ],
+    [
+      "product.tag",
+      "list"
+    ],
+    [
+      "product.template",
+      "activity"
+    ],
+    [
+      "product.template",
+      "form"
+    ],
+    [
+      "product.template",
+      "kanban"
+    ],
+    [
+      "product.template",
+      "list"
+    ],
+    [
+      "product.template",
+      "search"
+    ],
+    [
+      "product.template.attribute.exclusion",
+      "form"
+    ],
+    [
+      "product.template.attribute.exclusion",
+      "list"
+    ],
+    [
+      "product.template.attribute.line",
+      "form"
+    ],
+    [
+      "product.template.attribute.line",
+      "list"
+    ],
+    [
+      "product.template.attribute.value",
+      "form"
+    ],
+    [
+      "product.template.attribute.value",
+      "list"
+    ],
+    [
+      "res.company",
+      "form"
+    ],
+    [
+      "res.company",
+      "list"
+    ],
+    [
+      "res.country",
+      "form"
+    ],
+    [
+      "res.country",
+      "list"
+    ],
+    [
+      "res.country.state",
+      "form"
+    ],
+    [
+      "res.country.state",
+      "list"
+    ],
+    [
+      "res.currency",
+      "form"
+    ],
+    [
+      "res.currency.rate",
+      "form"
+    ],
+    [
+      "res.currency.rate",
+      "list"
+    ],
+    [
+      "res.partner",
+      "form"
+    ],
+    [
+      "res.partner",
+      "list"
+    ],
+    [
+      "res.partner.bank",
+      "form"
+    ],
+    [
+      "res.partner.bank",
+      "list"
+    ],
+    [
+      "res.partner.category",
+      "form"
+    ],
+    [
+      "res.partner.category",
+      "list"
+    ],
+    [
+      "res.partner.industry",
+      "form"
+    ],
+    [
+      "res.partner.title",
+      "form"
+    ],
+    [
+      "res.users",
+      "form"
+    ],
+    [
+      "res.users",
+      "list"
+    ],
+    [
+      "stock.location",
+      "form"
+    ],
+    [
+      "stock.picking.type",
+      "form"
+    ],
+    [
+      "stock.route",
+      "form"
+    ],
+    [
+      "stock.route",
+      "list"
+    ],
+    [
+      "stock.rule",
+      "form"
+    ],
+    [
+      "stock.rule",
+      "list"
+    ],
+    [
+      "stock.warehouse",
+      "form"
+    ],
+    [
+      "stock.warehouse",
+      "list"
+    ],
+    [
+      "uom.category",
+      "form"
+    ],
+    [
+      "uom.uom",
+      "form"
+    ],
+    [
+      "uom.uom",
+      "list"
+    ],
+    [
+      "product.replenish",
+      "form"
+    ]
+  ],
+  "max_depth": 3
+}
