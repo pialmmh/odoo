@@ -1,14 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Box, Card, CardContent, Typography, TextField, Button, Chip, Divider,
   Stack, Alert, List, ListItem, ListItemText, IconButton, Tooltip,
-  ListItemSecondaryAction,
+  ListItemSecondaryAction, Drawer, Menu, MenuItem, Checkbox,
+  FormControlLabel, Dialog, DialogTitle, DialogContent, DialogActions,
+  Table, TableBody, TableCell, TableHead, TableRow, Grid, Collapse,
+  Tabs, Tab, Paper,
 } from '@mui/material';
 import {
   Call, CallEnd, Mic, MicOff, Videocam, VideocamOff,
   ScreenShare, StopScreenShare, Chat as ChatIcon, Send,
   Fullscreen, FullscreenExit, VolumeOff, VolumeUp,
   Visibility, VisibilityOff, SignalCellularAlt,
+  ViewSidebar, ViewSidebarOutlined, Edit, Description, Info,
+  FiberManualRecord, RadioButtonChecked, Forward, Group, Email,
+  NavigateBefore, NavigateNext, ExpandMore, ExpandLess, Close,
+  ArrowDropDown, NoteAdd, EventAvailable,
 } from '@mui/icons-material';
 import {
   Room, RoomEvent, Track, ConnectionQuality,
@@ -52,6 +60,66 @@ export default function LivekitCallExp() {
   const [startedAt, setStartedAt] = useState(null);
   const [nowTick, setNowTick] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // ── workspace drawer (intercloud9-style Contact View) ─────────────────
+  const [searchParams] = useSearchParams();
+  const [workspaceOpen, setWorkspaceOpen] = useState(searchParams.get('workspace') === '1');
+  const [contact, setContact] = useState({
+    business: 'Unknown',
+    firstName: '', lastName: '', company: '',
+    address: '', city: '', state: '', zip: '',
+    other: '', email: '', leadId: '',
+    phone: '+1 (000) 000-0000',
+  });
+  const [contactCollapsed, setContactCollapsed] = useState(false);
+  const [popupScript, setPopupScript] = useState(false);
+  const [autoNext, setAutoNext] = useState(true);
+  const [dialMode, setDialMode] = useState('Manual'); // Manual | Campaign
+  const [contactLog, setContactLog] = useState([]); // [{ts, message, auto}]
+  const [noteDraft, setNoteDraft] = useState('');
+  const [scriptOpen, setScriptOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [callHistory] = useState([
+    { time: '16 Sep 11:25AM', phone: '+1 (877) 256-2100', duration: '02:14', mode: 'Direct' },
+    { time: '15 Sep 04:49PM', phone: '+1 (877) 256-2100', duration: '00:42', mode: 'Dialer' },
+  ]);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
+  const [dispMenu, setDispMenu] = useState({ anchor: null, bucket: null });
+
+  // ── matched CRM records for the current contact (Leads/Contacts/Opps) ─
+  const [matches, setMatches] = useState({ leads: [], contacts: [], opportunities: [] });
+  const [recordTab, setRecordTab] = useState(0);
+  const isUnknown = matches.leads.length === 0 && matches.contacts.length === 0 && matches.opportunities.length === 0;
+  const createRecord = (type) => {
+    const stub = {
+      id: `${type}-${Date.now()}`,
+      name: contact.firstName || contact.lastName ? `${contact.firstName} ${contact.lastName}`.trim() : 'New ' + type,
+      phone: contact.phone, email: contact.email,
+    };
+    setMatches((m) => ({ ...m, [type]: [...m[type], stub] }));
+    addLog(`created ${type.replace(/s$/, '')} record: ${stub.name}`, true);
+  };
+  const createAllThree = () => {
+    ['leads', 'contacts', 'opportunities'].forEach((t) => createRecord(t));
+  };
+
+  const addLog = (message, auto = false) => {
+    const ts = new Date().toLocaleString();
+    setContactLog((rows) => [{ ts, message, auto }, ...rows]);
+  };
+  const addNote = () => {
+    const t = noteDraft.trim();
+    if (!t) return;
+    addLog(t, false);
+    setNoteDraft('');
+  };
+  const applyDisposition = (bucket, value) => {
+    addLog(`disposition: ${bucket} → ${value}`, true);
+    setDispMenu({ anchor: null, bucket: null });
+    if (bucket === 'Schedule Callback') setScheduleOpen(true);
+  };
 
   // ── refs ──────────────────────────────────────────────────────────────
   const roomRef = useRef(null);
@@ -308,6 +376,14 @@ export default function LivekitCallExp() {
                     <ChatIcon />
                   </IconButton>
                 </Tooltip>
+                <Tooltip title={workspaceOpen ? 'Hide workspace' : 'Open workspace'}>
+                  <IconButton
+                    onClick={() => setWorkspaceOpen((v) => !v)}
+                    color={workspaceOpen ? 'primary' : 'default'}
+                  >
+                    {workspaceOpen ? <ViewSidebar /> : <ViewSidebarOutlined />}
+                  </IconButton>
+                </Tooltip>
                 <Box sx={{ flex: 1 }} />
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   <code>{identity}</code> @ <code>call-exp-{roomName}</code>
@@ -416,6 +492,72 @@ export default function LivekitCallExp() {
           </Box>
         </>
       )}
+
+      {/* Workspace drawer + dialogs — available even before joining a room
+          so the sidebar entry can land directly on the workspace view. */}
+      <Drawer
+        anchor="right"
+        open={workspaceOpen}
+        onClose={() => setWorkspaceOpen(false)}
+        variant="persistent"
+        PaperProps={{ sx: { width: 460, p: 0 } }}
+      >
+        <CallWorkspace
+          identity={identity}
+          roomName={roomName}
+          connected={connected}
+          dialMode={dialMode}
+          setDialMode={setDialMode}
+          contact={contact}
+          setContact={setContact}
+          contactCollapsed={contactCollapsed}
+          setContactCollapsed={setContactCollapsed}
+          matches={matches}
+          isUnknown={isUnknown}
+          recordTab={recordTab}
+          setRecordTab={setRecordTab}
+          createRecord={createRecord}
+          createAllThree={createAllThree}
+          popupScript={popupScript}
+          setPopupScript={setPopupScript}
+          autoNext={autoNext}
+          setAutoNext={setAutoNext}
+          contactLog={contactLog}
+          addLog={addLog}
+          noteDraft={noteDraft}
+          setNoteDraft={setNoteDraft}
+          addNote={addNote}
+          dispMenu={dispMenu}
+          setDispMenu={setDispMenu}
+          applyDisposition={applyDisposition}
+          onClose={() => setWorkspaceOpen(false)}
+          onHangup={leave}
+          onScript={() => setScriptOpen(true)}
+          onHistory={() => setHistoryOpen(true)}
+          onSchedule={() => setScheduleOpen(true)}
+        />
+      </Drawer>
+
+      <ScriptDialog
+        open={scriptOpen}
+        onClose={() => setScriptOpen(false)}
+        contact={contact}
+      />
+      <ScheduleDialog
+        open={scheduleOpen}
+        onClose={() => setScheduleOpen(false)}
+        date={scheduleDate} setDate={setScheduleDate}
+        time={scheduleTime} setTime={setScheduleTime}
+        onSchedule={() => {
+          addLog(`scheduled follow-up: ${scheduleDate} ${scheduleTime}`, true);
+          setScheduleOpen(false);
+        }}
+      />
+      <HistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        rows={callHistory}
+      />
     </Box>
   );
 }
@@ -546,4 +688,383 @@ function formatDuration(s) {
   const m = Math.floor(s / 60);
   const ss = String(s % 60).padStart(2, '0');
   return `${String(m).padStart(2, '0')}:${ss}`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Workspace drawer — intercloud9-style Contact View. Local state only;
+// nothing persists across reloads. See docs/dialer-wiki later when wiring
+// to a real CallSession/Disposition backend.
+// ──────────────────────────────────────────────────────────────────────────
+const DISPOSITIONS = {
+  'Custom':              ['Follow-up Needed', 'VIP', 'Escalate'],
+  'Schedule Callback':   ['Open scheduler…'],
+  'Made Contact':        ['Sale', 'Goal', 'Lead', 'Inbox', 'Direct Call'],
+  'Unable to Contact':   ['No Contact', 'Wrong Number', 'Machine Left Msg', 'Not Interested', 'Dead'],
+  'Assign to':           ['Closer', 'Specialist', 'Web Admin'],
+};
+
+function CallWorkspace({
+  identity, roomName, connected, dialMode, setDialMode,
+  contact, setContact, contactCollapsed, setContactCollapsed,
+  matches, isUnknown, recordTab, setRecordTab, createRecord, createAllThree,
+  popupScript, setPopupScript, autoNext, setAutoNext,
+  contactLog, addLog, noteDraft, setNoteDraft, addNote,
+  dispMenu, setDispMenu, applyDisposition,
+  onClose, onHangup, onScript, onHistory, onSchedule,
+}) {
+  const setField = (k) => (e) => setContact((c) => ({ ...c, [k]: e.target.value }));
+  const fields = [
+    ['firstName', 'First Name'], ['lastName', 'Last Name'],
+    ['company', 'Company'], ['address', 'Address'],
+    ['city', 'City'], ['state', 'State'],
+    ['zip', 'Zip'], ['other', 'Other'],
+    ['email', 'Email'], ['leadId', 'Lead ID'],
+  ];
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Header strip ─────────────────────────────────────────── */}
+      <Box sx={{ px: 2, py: 1.25, bgcolor: 'primary.main', color: 'primary.contrastText',
+                 display: 'flex', alignItems: 'center', gap: 1 }}>
+        <FiberManualRecord sx={{ fontSize: 12, color: connected ? 'success.light' : 'grey.500' }} />
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          {connected ? 'Connection Status' : 'Connection Status — not in a call'}
+        </Typography>
+        <Box sx={{ flex: 1 }} />
+        <IconButton size="small" onClick={onClose} sx={{ color: 'inherit' }}>
+          <Close fontSize="small" />
+        </IconButton>
+      </Box>
+
+      <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 0.5,
+                 borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Tooltip title="Edit contact"><IconButton size="small"><Edit fontSize="small" /></IconButton></Tooltip>
+        <Tooltip title="Read script"><IconButton size="small" onClick={onScript}><Description fontSize="small" /></IconButton></Tooltip>
+        <Tooltip title="Connected calls"><IconButton size="small" onClick={onHistory}><Info fontSize="small" /></IconButton></Tooltip>
+        <Button
+          size="small"
+          variant={dialMode === 'Manual' ? 'contained' : 'outlined'}
+          color="warning"
+          onClick={() => setDialMode('Manual')}
+          sx={{ ml: 0.5, minWidth: 0, px: 1 }}
+        >
+          Manual Dial
+        </Button>
+        <Button
+          size="small"
+          variant={dialMode === 'Campaign' ? 'contained' : 'text'}
+          endIcon={<ArrowDropDown />}
+          onClick={() => setDialMode('Campaign')}
+          sx={{ minWidth: 0, px: 1 }}
+        >
+          Campaign Dial
+        </Button>
+        <Box sx={{ flex: 1 }} />
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>{contact.phone}</Typography>
+      </Box>
+
+      {/* Action row ─────────────────────────────────────────── */}
+      <Box sx={{ px: 1, py: 1, display: 'flex', justifyContent: 'space-between',
+                 borderBottom: '1px solid', borderColor: 'divider' }}>
+        <ActionBtn icon={<Call sx={{ color: 'success.main' }} />} label="Get" onClick={() => addLog('[stub] Get next contact', true)} />
+        <ActionBtn icon={<CallEnd sx={{ color: connected ? 'error.main' : 'text.disabled' }} />} label="Hangup" onClick={onHangup} disabled={!connected} />
+        <ActionBtn icon={<VolumeUp />} label="Play Msg" onClick={() => addLog('[stub] Play message', true)} />
+        <ActionBtn icon={<RadioButtonChecked sx={{ color: 'error.main' }} />} label="Record" onClick={() => addLog('[stub] Recording started', true)} />
+        <ActionBtn icon={<Forward />} label="Transfer" onClick={() => addLog('[stub] Transfer', true)} />
+        <ActionBtn icon={<Group />} label="3-Way" onClick={() => addLog('[stub] 3-way conference', true)} />
+        <ActionBtn icon={<Email />} label="Email" onClick={() => addLog('[stub] Send email', true)} />
+        <ActionBtn icon={<NavigateBefore />} label="Prev" onClick={() => addLog('[stub] Previous contact', true)} />
+        <ActionBtn icon={<NavigateNext />} label="Next" onClick={() => addLog('[stub] Next contact', true)} />
+      </Box>
+
+      {/* Scrollable body ─────────────────────────────────────── */}
+      <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 1.5 }}>
+        {/* Unknown banner — emphasizes that no CRM record matched */}
+        {isUnknown ? (
+          <Paper variant="outlined" sx={{ p: 1.25, mb: 1.5,
+                 bgcolor: 'background.default',
+                 display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip label="UNKNOWN" color="error" size="small"
+                  sx={{ fontWeight: 700, letterSpacing: 0.5 }} />
+            <Typography variant="body2" sx={{ flex: 1, color: 'text.secondary' }}>
+              No matching Lead, Contact, or Opportunity for {contact.phone}
+            </Typography>
+            <Button size="small" variant="contained" color="primary" onClick={createAllThree}>
+              Create all 3
+            </Button>
+          </Paper>
+        ) : (
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+            <Chip label="MATCHED" color="success" size="small" sx={{ fontWeight: 700 }} />
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {matches.leads.length} lead · {matches.contacts.length} contact · {matches.opportunities.length} opportunity
+            </Typography>
+          </Stack>
+        )}
+
+        {/* Records tabs ─────────────────────────────────────── */}
+        <Paper variant="outlined" sx={{ mb: 2 }}>
+          <Tabs
+            value={recordTab}
+            onChange={(_, v) => setRecordTab(v)}
+            variant="fullWidth"
+            sx={{ borderBottom: '1px solid', borderColor: 'divider', minHeight: 36 }}
+          >
+            <Tab label={`Leads (${matches.leads.length})`} sx={{ minHeight: 36, py: 0 }} />
+            <Tab label={`Contacts (${matches.contacts.length})`} sx={{ minHeight: 36, py: 0 }} />
+            <Tab label={`Opportunities (${matches.opportunities.length})`} sx={{ minHeight: 36, py: 0 }} />
+          </Tabs>
+          <Box sx={{ p: 1.5 }}>
+            {recordTab === 0 && <RecordPanel kind="leads" rows={matches.leads} onCreate={() => createRecord('leads')} />}
+            {recordTab === 1 && <RecordPanel kind="contacts" rows={matches.contacts} onCreate={() => createRecord('contacts')} />}
+            {recordTab === 2 && <RecordPanel kind="opportunities" rows={matches.opportunities} onCreate={() => createRecord('opportunities')} />}
+          </Box>
+        </Paper>
+
+        {/* Contact form (collapsible) — kept below the tabs for editing */}
+        <Stack direction="row" alignItems="center" sx={{ mb: 0.5 }}>
+          <Typography variant="overline" sx={{ fontWeight: 600 }}>
+            Business:{' '}
+            {contact.business === 'Unknown' ? (
+              <Box component="span" sx={{ color: 'error.main', fontWeight: 800, letterSpacing: 0.5 }}>
+                UNKNOWN
+              </Box>
+            ) : contact.business}
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <IconButton size="small" onClick={() => setContactCollapsed((v) => !v)}>
+            {contactCollapsed ? <ExpandMore fontSize="small" /> : <ExpandLess fontSize="small" />}
+          </IconButton>
+        </Stack>
+        <Collapse in={!contactCollapsed}>
+          <Grid container spacing={1} sx={{ mb: 1.5 }}>
+            {fields.map(([k, label]) => (
+              <Grid item xs={6} key={k}>
+                <TextField
+                  size="small" fullWidth label={label}
+                  value={contact[k]} onChange={setField(k)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </Collapse>
+
+        {/* Disposition Bar */}
+        <Typography variant="overline" sx={{ fontWeight: 600 }}>Disposition Bar</Typography>
+        <Stack direction="row" spacing={2} sx={{ mb: 0.5 }}>
+          <FormControlLabel
+            control={<Checkbox size="small" checked={popupScript} onChange={(e) => setPopupScript(e.target.checked)} />}
+            label={<Typography variant="caption">Popup script on connect</Typography>}
+          />
+          <FormControlLabel
+            control={<Checkbox size="small" checked={autoNext} onChange={(e) => setAutoNext(e.target.checked)} />}
+            label={<Typography variant="caption">Upon disposition, load next call</Typography>}
+          />
+        </Stack>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
+          {Object.keys(DISPOSITIONS).map((bucket) => (
+            <Button
+              key={bucket} size="small" variant="outlined" endIcon={<ArrowDropDown />}
+              onClick={(e) => setDispMenu({ anchor: e.currentTarget, bucket })}
+            >
+              {bucket}
+            </Button>
+          ))}
+        </Box>
+        <Menu
+          anchorEl={dispMenu.anchor}
+          open={Boolean(dispMenu.anchor)}
+          onClose={() => setDispMenu({ anchor: null, bucket: null })}
+        >
+          {dispMenu.bucket && DISPOSITIONS[dispMenu.bucket].map((opt) => (
+            <MenuItem key={opt} onClick={() => applyDisposition(dispMenu.bucket, opt)}>
+              {opt}
+            </MenuItem>
+          ))}
+        </Menu>
+
+        {/* Contact Log */}
+        <Typography variant="overline" sx={{ fontWeight: 600 }}>Contact Log</Typography>
+        <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, mb: 2,
+                   maxHeight: 200, overflowY: 'auto' }}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: 140, fontWeight: 600 }}>Date</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Message</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {contactLog.length === 0 && (
+                <TableRow><TableCell colSpan={2} sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                  — no entries yet —
+                </TableCell></TableRow>
+              )}
+              {contactLog.map((row, i) => (
+                <TableRow key={i}>
+                  <TableCell sx={{ fontSize: 12 }}>{row.ts}</TableCell>
+                  <TableCell sx={{ fontSize: 12 }}>
+                    {row.auto && <Chip label="auto" size="small" sx={{ mr: 0.5, height: 18 }} />}
+                    {row.message}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
+
+        {/* Add Note */}
+        <Typography variant="overline" sx={{ fontWeight: 600 }}>Add Note</Typography>
+        <TextField
+          fullWidth multiline minRows={2} size="small"
+          value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)}
+          placeholder="Type a note…"
+        />
+        <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+          <Button size="small" variant="contained" startIcon={<NoteAdd />} onClick={addNote} disabled={!noteDraft.trim()}>
+            Add Note
+          </Button>
+          <Button size="small" variant="outlined" startIcon={<EventAvailable />} onClick={onSchedule}>
+            Schedule Callback
+          </Button>
+        </Stack>
+      </Box>
+
+      <Box sx={{ px: 2, py: 0.75, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          <code>{identity}</code> in <code>call-exp-{roomName}</code> — workspace state is local only (no backend yet).
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
+function RecordPanel({ kind, rows, onCreate }) {
+  const singular = { leads: 'Lead', contacts: 'Contact', opportunities: 'Opportunity' }[kind];
+  if (rows.length === 0) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 2 }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+          No matching {singular.toLowerCase()} for this number.
+        </Typography>
+        <Button size="small" variant="contained" onClick={onCreate}>
+          Create {singular}
+        </Button>
+      </Box>
+    );
+  }
+  return (
+    <List dense disablePadding>
+      {rows.map((r) => (
+        <ListItem key={r.id} disableGutters sx={{ borderBottom: '1px dashed', borderColor: 'divider' }}>
+          <ListItemText
+            primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{r.name}</Typography>}
+            secondary={<Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              {r.phone}{r.email ? ` · ${r.email}` : ''}
+            </Typography>}
+          />
+        </ListItem>
+      ))}
+    </List>
+  );
+}
+
+function ActionBtn({ icon, label, onClick, disabled }) {
+  return (
+    <Tooltip title={label}>
+      <Button onClick={onClick} disabled={disabled} sx={{ flexDirection: 'column', minWidth: 0, px: 0.5, lineHeight: 1 }}>
+        {icon}
+        <Typography variant="caption" sx={{ fontSize: 10, mt: 0.25, color: 'text.secondary' }}>
+          {label}
+        </Typography>
+      </Button>
+    </Tooltip>
+  );
+}
+
+function ScriptDialog({ open, onClose, contact }) {
+  const fullName = `${contact.firstName || '[First]'} ${contact.lastName || '[Last]'}`.trim();
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Read Script</DialogTitle>
+      <DialogContent dividers>
+        <Typography variant="body2" sx={{ mb: 1.5 }}>
+          Hello, can I speak with{' '}
+          <Chip label={fullName} size="small" color="warning" />{' '}please?
+        </Typography>
+        <Typography variant="body2" sx={{ mb: 1.5 }}>
+          Hi <Chip label={fullName} size="small" color="warning" />, this is the agent
+          calling about your recent enquiry. Do you have a minute to talk?
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+          (Script template — merge tags will pull from the Contact record once wired.)
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function ScheduleDialog({ open, onClose, date, setDate, time, setTime, onSchedule }) {
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Schedule Follow-up</DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          <TextField type="date" label="Date" InputLabelProps={{ shrink: true }} fullWidth
+            value={date} onChange={(e) => setDate(e.target.value)} />
+          <TextField type="time" label="Time" InputLabelProps={{ shrink: true }} fullWidth
+            value={time} onChange={(e) => setTime(e.target.value)} />
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Time is based on your timezone.
+          </Typography>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" color="warning" onClick={onSchedule} disabled={!date || !time}>
+          Schedule Callback
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function HistoryDialog({ open, onClose, rows }) {
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Connected Calls</DialogTitle>
+      <DialogContent dividers>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Time</TableCell>
+              <TableCell>Phone Number</TableCell>
+              <TableCell>Duration</TableCell>
+              <TableCell>Mode</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((r, i) => (
+              <TableRow key={i}>
+                <TableCell>{r.time}</TableCell>
+                <TableCell>{r.phone}</TableCell>
+                <TableCell>{r.duration}</TableCell>
+                <TableCell>{r.mode}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
+          Sample rows — wire to backend to show real call history.
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
 }
