@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ── Alternate form view (fluent_skin class) ──────────────────────── -->
+    <record id="product_template_form_view_fluent" model="ir.ui.view">
+        <field name="name">product.template.form.fluent</field>
+        <field name="model">product.template</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <form position="attributes">
+                <attribute name="class">fluent_skin</attribute>
+            </form>
+
+            <!-- inject oem_no + version into General Information right column,
+                 after categ_id (matching screenshot frame_0069 / frame_0765 layout:
+                 Part Number | Version on same row, OEM No. below) -->
+            <xpath expr="//group[@name='group_standard_price']/field[@name='categ_id']" position="after">
+                <!-- Part Number / Version row -->
+                <label for="x_product_default_code_row" string=""/>
+                <div class="o_row" name="x_product_default_code_row">
+                    <field name="default_code" string="Part Number"
+                           invisible="product_variant_count &gt; 1"
+                           placeholder="Part Number"
+                           class="oe_inline" style="flex:1"/>
+                    <span class="oe_inline ms-3 text-muted" style="white-space:nowrap">
+                        Version
+                    </span>
+                    <field name="version" class="oe_inline ms-1" style="width:60px"/>
+                </div>
+                <!-- OEM No. -->
+                <field name="oem_no" string="OEM No."/>
+                <!-- Barcode / UPC -->
+                <field name="barcode" string="UPC / EAN Code"
+                       invisible="product_variant_count &gt; 1"/>
+            </xpath>
+
+            <!-- hide the default_code / barcode that product_template_only_form_view
+                 injects after categ_id so we don't get duplicates -->
+            <xpath expr="//field[@name='default_code'][@invisible]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='barcode'][@invisible]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ── Alternate tree view (fluent_skin class) ──────────────────────── -->
+    <record id="product_template_tree_view_fluent" model="ir.ui.view">
+        <field name="name">product.template.tree.fluent</field>
+        <field name="model">product.template</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+            <tree position="attributes">
+                <attribute name="class">fluent_skin</attribute>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ── Alternate kanban view (fluent_skin class) ─────────────────────── -->
+    <record id="product_template_kanban_view_fluent" model="ir.ui.view">
+        <field name="name">product.template.kanban.fluent</field>
+        <field name="model">product.template</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="product.product_template_kanban_view"/>
+        <field name="arch" type="xml">
+            <kanban position="attributes">
+                <attribute name="class">fluent_skin</attribute>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- ── Window action ────────────────────────────────────────────────── -->
+    <record id="action_product_template_fluent" model="ir.actions.act_window">
+        <field name="name">Products (Extended)</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree',   'view_id': ref('product_template_tree_view_fluent')}),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('product_template_kanban_view_fluent')}),
+            (0, 0, {'view_mode': 'form',   'view_id': ref('product_template_form_view_fluent')})]"/>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- ── Menu entry under Sales > Products ────────────────────────────── -->
+    <menuitem id="menu_product_template_fluent"
+              name="Products (Extended)"
+              parent="sale.sale_order_menu"
+              action="action_product_template_fluent"
+              sequence="6"/>
+
+</odoo>

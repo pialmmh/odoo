@@ -1,0 +1,414 @@
+// product_fluent_view — extended product screen
+// Matches Odoo 17 visual language as seen in screenshots (frame_0069–0838).
+// Scoped to .fluent_skin so the standard product views are untouched.
+
+// ── Shared token overrides ──────────────────────────────────────────────
+.fluent_skin, .o_list_view.fluent_skin, .o_kanban_view.fluent_skin {
+    font-family: "Segoe UI Variable Display", "Segoe UI", system-ui,
+        -apple-system, sans-serif;
+    font-size: 14px;
+}
+
+// ── Control panel (toolbar) ─────────────────────────────────────────────
+// :has() scopes this only when a fluent_skin view is active in the pane.
+.o_action_manager:has(.fluent_skin) .o_control_panel,
+.o_form_view.fluent_skin ~ .o_control_panel,
+.o_action:has(.fluent_skin) .o_control_panel {
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+
+    // "New" button — keep Odoo's purple-burgundy (matches frame_0069/0806)
+    .o_list_button_add,
+    .o_cp_buttons .btn-primary {
+        border-radius: 4px !important;
+        font-weight: 600 !important;
+    }
+
+    // Secondary buttons (Replenish, Print Labels, Inventory at Date)
+    .o_cp_buttons .btn-secondary,
+    .o_statusbar_buttons .btn-secondary,
+    .o_statusbar_buttons .btn-primary {
+        border-radius: 4px !important;
+    }
+
+    // Action menus pushed to right
+    .o_cp_action_menus {
+        margin-left: auto;
+    }
+
+    // Search bar — thin border, no shadow
+    .o_searchview {
+        border: 1px solid #d0d0d0;
+        border-radius: 4px;
+        background: #fff;
+
+        &:focus-within {
+            border-color: #875a7b; // Odoo brand purple
+            box-shadow: 0 0 0 1px #875a7b;
+        }
+
+        input { border: none !important; box-shadow: none !important; }
+    }
+}
+
+// ── List view ───────────────────────────────────────────────────────────
+.o_list_view.fluent_skin {
+    background: #fff;
+
+    thead th {
+        background: #f8f8f8 !important;
+        color: #555 !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        border-bottom: 1px solid #ddd !important;
+        padding: 9px 12px !important;
+    }
+
+    tbody tr {
+        border-bottom: 1px solid #f2f2f2;
+        transition: background 0.07s;
+        cursor: pointer;
+
+        &:hover { background: #f9f4f7 !important; } // soft Odoo-purple tint
+        &.o_data_row.o_row_selected { background: #f3edf7 !important; }
+
+        td { padding: 8px 12px !important; color: #222; }
+    }
+
+    tfoot td {
+        border-top: 1px solid #ddd !important;
+        font-weight: 600;
+        background: #fafafa !important;
+    }
+}
+
+// ── Form view ───────────────────────────────────────────────────────────
+.o_form_view.fluent_skin {
+    background: #f5f5f5;
+
+    .o_form_sheet_bg { background: #f5f5f5; }
+
+    .o_form_sheet {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+        padding: 24px 28px;
+    }
+
+    // ── Smart-button row (Extra Prices · Documents · In/Out · Variants) ──
+    .oe_button_box {
+        .oe_stat_button {
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            color: #222;
+            font-size: 13px;
+
+            &:hover { background: #f9f4f7; }
+
+            .o_stat_value { font-weight: 600; color: #875a7b; }
+            .o_stat_text  { color: #555; }
+        }
+    }
+
+    // ── Status bar (Replenish / Print Labels row) ────────────────────────
+    .o_form_statusbar {
+        background: #fff;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 6px 16px;
+
+        .btn { border-radius: 4px; }
+    }
+
+    // ── Product Name (oe_title) ──────────────────────────────────────────
+    // frame_0069: "Product Name" caption (13px muted), then 28px bold title
+    // + yellow star left of name + EN badge right + image top-right
+    .oe_title {
+        label[for="name"] {
+            font-size: 13px;
+            color: #888;
+            font-weight: 400;
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1.2;
+            margin-bottom: 6px;
+        }
+    }
+
+    // Favorite star — yellow when active (priority widget)
+    .o_priority .o_priority_star {
+        font-size: 22px;
+        color: #ccc;
+        &.fa-star { color: #f5b700; }
+    }
+
+    // Scope checkboxes row (Can be Sold / Purchased / Expensed / Recurring / Rented)
+    // frame_0069: single horizontal row of checkbox+label pairs, 13px
+    .o_field_boolean .o_checkbox {
+        accent-color: #875a7b;
+    }
+
+    // ── Tabs (notebook) ──────────────────────────────────────────────────
+    // frame_0069: square flat tabs, active tab has no special underline —
+    // just bold text and the cell blends into the sheet (white bg).
+    .o_notebook > .o_notebook_headers {
+        border-bottom: 1px solid #ddd;
+        background: #fff;
+
+        .nav-tabs {
+            border-bottom: none;
+            gap: 0;
+
+            .nav-link {
+                border: none !important;
+                border-radius: 0 !important;
+                padding: 10px 18px;
+                font-size: 14px;
+                font-weight: 400;
+                color: #555;
+                background: transparent !important;
+                position: relative;
+
+                &:hover { color: #875a7b; background: #faf6fb !important; }
+
+                &.active {
+                    color: #222;
+                    font-weight: 600;
+                    background: #fff !important;
+
+                    // thin bottom accent matching Odoo teal/cyan seen in screenshots
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        left: 0; right: 0; bottom: -1px;
+                        height: 2px;
+                        background: #00a09d; // Odoo teal active-tab accent
+                    }
+                }
+            }
+        }
+    }
+
+    .o_notebook > .tab-content { padding-top: 20px; }
+
+    // ── Two-column General Information layout ────────────────────────────
+    // Left: Product Type, inline italic context help, UoM, Purchase UoM, Create Repair
+    // Right: Sales Price + incl-taxes suffix, Customer Taxes, Cost per UoM,
+    //        Product Category, Part Number | Version, OEM No., UPC/EAN, Tags, Brands, Company
+
+    // Italic context-help paragraph under Product Type (frame_0069)
+    .o_field_char.fst-italic, .fst-italic.text-muted {
+        font-style: italic !important;
+        color: #888 !important;
+        font-size: 13px;
+        line-height: 1.4;
+        margin-top: 2px;
+    }
+
+    // Field labels — match Odoo's own 13px left-aligned dark-grey
+    .o_form_label {
+        font-size: 13px;
+        font-weight: 400;
+        color: #555;
+    }
+
+    // Inputs
+    .o_field_widget input.o_input,
+    .o_field_widget textarea.o_input {
+        border: 1px solid #d0d0d0 !important;
+        border-radius: 3px !important;
+        padding: 5px 9px !important;
+        font-size: 14px !important;
+        color: #1a1a1a !important;
+        background: #fff !important;
+        transition: border-color .08s;
+
+        &:hover:not(:focus) { border-color: #aaa !important; }
+        &:focus {
+            border-color: #875a7b !important;
+            box-shadow: 0 0 0 1px #875a7b !important;
+            outline: none !important;
+        }
+    }
+
+    // Many2one dropdown
+    .o_field_many2one .o_input_dropdown input { border-radius: 3px !important; }
+
+    // Tax chips + category chips (frame_0069: "15% ×" pill)
+    .o_field_many2many_tags .badge,
+    .o_field_many2many_tags .o_tag {
+        background: #f0edf5 !important;
+        color: #555 !important;
+        border: 1px solid #d8d0e0 !important;
+        border-radius: 12px !important;
+        font-size: 12px !important;
+        padding: 2px 8px !important;
+    }
+
+    // Attribute-value chips (Attributes & Variants tab, frame_0422/0427/0447)
+    // Each chip uses html_color as its background — preserve that via the
+    // widget's inline style; we only fix the border-radius and text contrast.
+    .o_field_many2many_tags[name="value_ids"] .o_tag {
+        border-radius: 12px !important;
+        font-size: 12px !important;
+        padding: 2px 8px !important;
+        color: #fff !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,.25);
+        border: none !important;
+    }
+
+    // Sales Price "(= $X.YZ Incl. Taxes)" suffix — muted, same line (frame_0346)
+    .o_field_monetary + span, div[name="pricing"] + .oe_inline {
+        color: #888;
+        font-size: 13px;
+    }
+
+    // Cost "per Units" suffix
+    div[name="standard_price_uom"] span {
+        color: #888;
+        font-size: 13px;
+    }
+
+    // Version field — compact integer next to Part Number
+    .o_row [name="version"] input { width: 60px !important; text-align: right; }
+
+    // ── Attributes & Variants tab ────────────────────────────────────────
+    // frame_0422: plain table header "Attribute | Values", drag handle left,
+    // Configure button + trash far right. Warning text in small grey below.
+    .o_field_one2many[name="attribute_line_ids"] {
+        .o_list_renderer thead th {
+            font-weight: 600;
+            font-size: 13px;
+            background: transparent !important;
+            border-bottom: 1px solid #ddd !important;
+        }
+
+        tbody tr td { padding: 6px 8px !important; }
+    }
+
+    // Variants warning (frame_0427: "Warning: adding or deleting…")
+    .oe_grey {
+        color: #888 !important;
+        font-size: 13px;
+        strong { color: #555; }
+    }
+
+    // Sales Variant Selection radio section heading (frame_0422: "SALES VARIANT SELECTION")
+    .o_horizontal_separator {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #888;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 4px;
+        margin-bottom: 10px;
+    }
+
+    // ── Sales tab section headings (frame_0499/0594) ─────────────────────
+    // "UPSELL & CROSS-SELL", "POINT OF SALE", "ECOMMERCE SHOP" etc.
+    .o_group > .o_wrap_field > label.col-form-label,
+    group[string] > .o_group_label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #888;
+    }
+
+    // ── Purchase tab ─────────────────────────────────────────────────────
+    // Vendor table (frame_0609/0635): Vendor | Price | Currency | Delivery Lead Time
+    .o_field_one2many[name="seller_ids"] {
+        .o_list_renderer {
+            border: 1px solid #e8e8e8;
+            border-radius: 3px;
+            overflow: hidden;
+
+            thead th {
+                background: #f8f8f8 !important;
+                font-size: 13px;
+                font-weight: 600;
+                border-bottom: 1px solid #ddd !important;
+            }
+
+            tbody tr:hover { background: #f9f4f7 !important; }
+        }
+    }
+
+    // Control Policy radio (frame_0635: "On ordered quantities" / "On received quantities")
+    .o_field_radio .o_radio_item {
+        margin-right: 16px;
+        font-size: 14px;
+
+        input[type="radio"] { accent-color: #875a7b; }
+    }
+
+    // ── Inventory tab (frame_0668/0678) ──────────────────────────────────
+    // Routes multi-checkbox list
+    .o_field_many2many_checkboxes .o_checkbox {
+        accent-color: #875a7b;
+    }
+
+    // "→ View Diagram" link
+    .o_form_uri, a.oe_link { color: #00a09d; }
+
+    // Description textareas (receipts / delivery / internal)
+    textarea.o_input { min-height: 70px; }
+
+    // ── Chatter (frame_0635) ─────────────────────────────────────────────
+    // "Send message" purple-burgundy primary, Log note / WhatsApp secondary
+    .o-mail-Chatter {
+        border-top: 1px solid #e8e8e8;
+        background: #fff;
+        padding-top: 16px;
+
+        .o-mail-Composer-actions .btn-primary {
+            background: #875a7b !important;
+            border-color: #875a7b !important;
+            border-radius: 4px !important;
+            font-weight: 600 !important;
+
+            &:hover { background: #6d4863 !important; border-color: #6d4863 !important; }
+        }
+
+        .o-mail-Composer-actions .btn-secondary {
+            border-radius: 4px !important;
+        }
+
+        // Right cluster: search / attachment / followers / Following
+        .o-mail-Thread-helpers {
+            color: #555;
+            font-size: 13px;
+        }
+
+        // Activity timeline entries
+        .o-mail-Message {
+            font-size: 14px;
+            .o-mail-Message-author { font-weight: 600; color: #1a1a1a; }
+            .o-mail-Message-date   { color: #888; font-size: 12px; }
+        }
+    }
+}
+
+// ── Kanban view ──────────────────────────────────────────────────────────
+.o_kanban_view.fluent_skin {
+    .o_kanban_card {
+        border-radius: 4px;
+        border: 1px solid #e8e8e8;
+        box-shadow: 0 1px 3px rgba(0,0,0,.05);
+        transition: box-shadow .12s;
+
+        &:hover { box-shadow: 0 3px 8px rgba(0,0,0,.1); }
+    }
+
+    .o_kanban_record_title { font-weight: 600; color: #1a1a1a; }
+    .o_priority .fa-star    { color: #f5b700; }
+    .o_priority .fa-star-o  { color: #ccc; }
+}
