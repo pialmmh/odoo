@@ -46,6 +46,7 @@ import Permissions from './pages/party/Permissions';
 import SyncJobs from './pages/party/SyncJobs';
 import CallHost from './call/CallHost';
 import LivekitCallExp from './pages/experiments/LivekitCallExp';
+import OdooIframe from './pages/experiments/OdooIframe';
 import ErpWorkspace from './pages/erp/workspace/ErpWorkspace';
 import { FEATURES } from './config/platform';
 
@@ -95,6 +96,7 @@ function TenantRoutes() {
       <Route path="rbac" element={<RBACManagement />} />
       {FEATURES.crm && <Route path="crm/*" element={<CrmIndex />} />}
       <Route path="experiments/livekit-call" element={<LivekitCallExp />} />
+      <Route path="experiments/odoo-iframe" element={<OdooIframe />} />
       {isSuper && <Route path="tenants" element={<Tenants />} />}
 
       {/* Party — tenant-scoped */}

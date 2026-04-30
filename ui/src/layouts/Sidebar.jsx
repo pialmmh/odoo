@@ -10,7 +10,7 @@ import {
   MeetNow20Regular, CalendarMonth20Regular, Mail20Regular, Megaphone20Regular,
   Phone20Regular, ShieldCheckmark20Regular, Options20Regular, HeartPulse20Regular,
   Clock20Regular, Handshake20Regular, PeopleSettings20Regular,
-  PersonAvailable20Regular, BuildingFactory20Regular,
+  PersonAvailable20Regular, BuildingFactory20Regular, Window20Regular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -267,6 +267,7 @@ export default function Sidebar() {
     { text: 'Settings', icon: <Settings20Regular />, path: `${base}/settings` },
 
     { section: 'Experimental' },
+    { text: 'Odoo iframe (exp)', icon: <Window20Regular />, path: `${base}/experiments/odoo-iframe` },
     { text: 'LiveKit Call (exp)', icon: <Phone20Regular />, path: `${base}/experiments/livekit-call` },
     { text: 'Call Window (exp)', icon: <Headset20Regular />, path: `${base}/experiments/livekit-call?workspace=1` },
     { text: 'ERP Product (exp)', icon: <Box20Regular />, path: `${base}/erp/product` },
