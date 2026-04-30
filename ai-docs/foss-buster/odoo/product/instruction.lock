@@ -1,0 +1,11 @@
+# foss-buster resolved instruction (replay-safe).
+# Generated from prompt: "run and build product"
+
+prompt: "run and build product"
+target: odoo
+slug:   product
+phases: [P0, P1, P2, P3, P4, P5, P6]
+resume: true
+gate_failure_action: surface
+iteration_caps: { P2: 3, P3: 3, P4: 3 }
+captured_at: 2026-04-29T17:30:00+06:00

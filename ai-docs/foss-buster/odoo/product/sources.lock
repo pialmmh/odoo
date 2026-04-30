@@ -1,0 +1,40 @@
+# foss-buster sources lockfile — slug=product, target=odoo
+# Written by /foss-buster-odoo run on 2026-04-29.
+# Every input pinned at run time; subsequent calls verify these.
+
+target:                odoo
+slug:                  product
+
+# ── Source repos ────────────────────────────────────────────────────
+orchestrix-v2.sha:     8778af6def48d8b6c3b21a59fba85a5b103ff25a
+orchestrix-erp.sha:    66338c64b96bb17ae4596b298e8b110a56071294
+odoo-src.sha:          97d4bd73d6e5
+odoo.version:          17.0
+video-extractor.sha:   c67825b89e0585d0275632d9b0b63728f6f2ed5a
+idempiere.sha:         c67825b89e05
+idempiere.version:     12
+
+# ── Source code locations ───────────────────────────────────────────
+odoo.source_path:      /home/mustafa/telcobright-projects/orchestrix-v2/odoo-backend/odoo-src/
+idempiere.source_path: /home/mustafa/telcobright-projects/idempiere/idempiere-server/
+idempiere.base_bundle: /home/mustafa/telcobright-projects/idempiere/idempiere-server/org.adempiere.base/src/
+video.kb_folder:       /home/mustafa/telcobright-projects/video-extractor/odoo/product/
+video.wiki_glob:       /home/mustafa/telcobright-projects/video-extractor/wiki/odoo-product-*.md
+
+# ── Runtime endpoints ───────────────────────────────────────────────
+odoo.runtime_url:      http://localhost:7169
+odoo.runtime_db:       odoo_billing
+react.runtime_url:     http://localhost:5180
+bff.runtime_url:       http://localhost:8180
+apisix.gateway_url:    http://localhost:9081
+
+# ── MCP / discovery infra ───────────────────────────────────────────
+mcp.jcodemunch:        10.10.186.1:8901
+mcp.jcodemunch.status: deferred — using direct file reads + grep until the
+                       MCP is reachable; results are functionally equivalent
+                       for read-only discovery, just slower per row.
+
+# ── Output ──────────────────────────────────────────────────────────
+output_root:           /home/mustafa/telcobright-projects/orchestrix-v2/ai-docs/foss-buster/odoo/product/
+workbook:              workbook.xlsx
+captured_at:           2026-04-29T17:30:00+06:00
