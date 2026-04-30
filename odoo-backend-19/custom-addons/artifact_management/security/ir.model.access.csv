@@ -1,0 +1,15 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_artifact_project_admin,artifact.project admin,model_artifact_project,base.group_system,1,1,1,1
+access_artifact_project_user,artifact.project user,model_artifact_project,base.group_user,1,1,1,0
+access_artifact_version_admin,artifact.version admin,model_artifact_version,base.group_system,1,1,1,1
+access_artifact_version_user,artifact.version user,model_artifact_version,base.group_user,1,1,1,0
+access_artifact_deployment_admin,artifact.deployment admin,model_artifact_deployment,base.group_system,1,1,1,1
+access_artifact_deployment_user,artifact.deployment user,model_artifact_deployment,base.group_user,1,1,1,0
+access_artifact_deploy_template_admin,artifact.deploy.template admin,model_artifact_deploy_template,base.group_system,1,1,1,1
+access_artifact_deploy_template_user,artifact.deploy.template user,model_artifact_deploy_template,base.group_user,1,1,0,0
+access_artifact_deploy_template_step_admin,artifact.deploy.template.step admin,model_artifact_deploy_template_step,base.group_system,1,1,1,1
+access_artifact_deploy_template_step_user,artifact.deploy.template.step user,model_artifact_deploy_template_step,base.group_user,1,1,0,0
+access_artifact_deploy_pipeline_admin,artifact.deploy.pipeline admin,model_artifact_deploy_pipeline,base.group_system,1,1,1,1
+access_artifact_deploy_pipeline_user,artifact.deploy.pipeline user,model_artifact_deploy_pipeline,base.group_user,1,1,1,0
+access_artifact_deploy_step_admin,artifact.deploy.step admin,model_artifact_deploy_step,base.group_system,1,1,1,1
+access_artifact_deploy_step_user,artifact.deploy.step user,model_artifact_deploy_step,base.group_user,1,0,0,0

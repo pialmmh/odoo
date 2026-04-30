@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_artifact_root" name="Artifacts" sequence="96"/>
+    <menuitem id="menu_artifact_registry" name="Registry" parent="menu_artifact_root" sequence="10"/>
+    <menuitem id="menu_artifact_deploy" name="Deployment" parent="menu_artifact_root" sequence="20"/>
+    <menuitem id="menu_artifact_config" name="Configuration" parent="menu_artifact_root" sequence="30"/>
+</odoo>

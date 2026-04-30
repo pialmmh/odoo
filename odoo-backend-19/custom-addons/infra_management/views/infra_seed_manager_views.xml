@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_infra_seed_manager_form" model="ir.ui.view">
+        <field name="name">infra.seed.manager.form</field>
+        <field name="model">infra.seed.manager</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="action"/>
+                </group>
+                <footer>
+                    <button name="action_execute" string="Execute" type="object" class="btn-primary"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+                <group invisible="not result">
+                    <field name="result" widget="text" readonly="1"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_infra_seed_manager" model="ir.actions.act_window">
+        <field name="name">Seed Data Manager</field>
+        <field name="res_model">infra.seed.manager</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_infra_settings" name="Settings" parent="menu_infra_root" sequence="90"/>
+    <menuitem id="menu_infra_seed_manager" name="Seed Data" parent="menu_infra_settings" action="action_infra_seed_manager" sequence="10"/>
+</odoo>

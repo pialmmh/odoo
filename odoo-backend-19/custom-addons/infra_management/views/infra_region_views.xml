@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Region Tree -->
+    <record id="view_infra_region_tree" model="ir.ui.view">
+        <field name="name">infra.region.tree</field>
+        <field name="model">infra.region</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="geographic_area"/>
+                <field name="zone_count"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Region Form -->
+    <record id="view_infra_region_form" model="ir.ui.view">
+        <field name="name">infra.region.form</field>
+        <field name="model">infra.region</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Region Name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="geographic_area"/>
+                        </group>
+                        <group>
+                            <field name="status"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Description..."/>
+                    <notebook>
+                        <page string="Availability Zones">
+                            <field name="zone_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="zone_type"/>
+                                    <field name="is_default"/>
+                                    <field name="datacenter_count"/>
+                                    <field name="status"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Region Search -->
+    <record id="view_infra_region_search" model="ir.ui.view">
+        <field name="name">infra.region.search</field>
+        <field name="model">infra.region</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                
+                <filter name="active" string="Active" domain="[('status','=','active')]"/>
+                <group>
+                    <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Region Action -->
+    <record id="action_infra_region" model="ir.actions.act_window">
+        <field name="name">Regions</field>
+        <field name="res_model">infra.region</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_infra_region_search"/>
+        <field name="context">{'search_default_active': 1}</field>
+    </record>
+
+    <menuitem id="menu_infra_regions"
+              name="Regions"
+              parent="menu_infra_topology"
+              action="action_infra_region"
+              sequence="10"/>
+
+    <!-- Availability Zone Action -->
+    <record id="action_infra_availability_zone" model="ir.actions.act_window">
+        <field name="name">Availability Zones</field>
+        <field name="res_model">infra.availability.zone</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_infra_zones"
+              name="Availability Zones"
+              parent="menu_infra_topology"
+              action="action_infra_availability_zone"
+              sequence="20"/>
+</odoo>

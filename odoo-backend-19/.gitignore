@@ -1,0 +1,7 @@
+# Local-only — git out of these
+odoo-src/
+venv/
+data/
+odoo.log
+*.pyc
+__pycache__/

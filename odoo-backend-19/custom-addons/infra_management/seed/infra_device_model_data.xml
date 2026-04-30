@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="model_ccr1036_8g_2splus" model="infra.device.model">
+            <field name="name">CCR1036-8G-2S+</field>
+            <field name="vendor">MikroTik</field>
+            <field name="device_type">router</field>
+            <field name="default_attribute_ids" eval="[(6, 0, [ref('attr_core_router')])]"/>
+            <field name="port_count">8</field>
+            <field name="cpu_cores">36</field>
+            <field name="memory_mb">4096</field>
+            <field name="description">High-performance core router, 36-core Tilera, 8x GbE, 2x SFP+</field>
+        </record>
+        <record id="model_ccr2004_1g_12splus_2xs" model="infra.device.model">
+            <field name="name">CCR2004-1G-12S+2XS</field>
+            <field name="vendor">MikroTik</field>
+            <field name="device_type">router</field>
+            <field name="default_attribute_ids" eval="[(6, 0, [ref('attr_core_router')])]"/>
+            <field name="port_count">15</field>
+            <field name="cpu_cores">4</field>
+            <field name="memory_mb">4096</field>
+            <field name="description">Compact core router, 4-core ARM, 1x GbE, 12x SFP+, 2x 25G SFP28</field>
+        </record>
+        <record id="model_ccr2116_12g_4splus" model="infra.device.model">
+            <field name="name">CCR2116-12G-4S+</field>
+            <field name="vendor">MikroTik</field>
+            <field name="device_type">router</field>
+            <field name="default_attribute_ids" eval="[(6, 0, [ref('attr_core_router')])]"/>
+            <field name="port_count">16</field>
+            <field name="cpu_cores">16</field>
+            <field name="memory_mb">16384</field>
+            <field name="description">Enterprise core router, 16-core ARM, 12x GbE, 4x SFP+</field>
+        </record>
+        <record id="model_rb4011" model="infra.device.model">
+            <field name="name">RB4011iGS+5HacQ2HnD</field>
+            <field name="vendor">MikroTik</field>
+            <field name="device_type">router</field>
+            <field name="default_attribute_ids" eval="[(6, 0, [ref('attr_access_gateway_pppoe')])]"/>
+            <field name="port_count">11</field>
+            <field name="cpu_cores">4</field>
+            <field name="memory_mb">1024</field>
+            <field name="description">Mid-range access gateway, 4-core ARM, 10x GbE, 1x SFP+, dual-band Wi-Fi</field>
+        </record>
+        <record id="model_hap_ac3" model="infra.device.model">
+            <field name="name">hAP ac3</field>
+            <field name="vendor">MikroTik</field>
+            <field name="device_type">router</field>
+            <field name="default_attribute_ids" eval="[(6, 0, [ref('attr_access_gateway_pppoe')])]"/>
+            <field name="port_count">5</field>
+            <field name="cpu_cores">4</field>
+            <field name="memory_mb">256</field>
+            <field name="description">Small access gateway, 4-core ARM, 5x GbE, dual-band Wi-Fi</field>
+        </record>
+        <record id="model_rb5009" model="infra.device.model">
+            <field name="name">RB5009UG+S+IN</field>
+            <field name="vendor">MikroTik</field>
+            <field name="device_type">router</field>
+            <field name="default_attribute_ids" eval="[(6, 0, [ref('attr_edge_router')])]"/>
+            <field name="port_count">9</field>
+            <field name="cpu_cores">4</field>
+            <field name="memory_mb">1024</field>
+            <field name="description">Edge router, 4-core ARM, 7x GbE, 1x 2.5GbE, 1x SFP+</field>
+        </record>
+        <record id="model_crs326_24g" model="infra.device.model">
+            <field name="name">CRS326-24G-2S+RM</field>
+            <field name="vendor">MikroTik</field>
+            <field name="device_type">switch</field>
+            <field name="default_attribute_ids" eval="[(6, 0, [ref('attr_distribution_switch')])]"/>
+            <field name="port_count">26</field>
+            <field name="cpu_cores">1</field>
+            <field name="memory_mb">512</field>
+            <field name="description">24-port distribution switch, 24x GbE, 2x SFP+, rackmount</field>
+        </record>
+        <record id="model_crs354_48g" model="infra.device.model">
+            <field name="name">CRS354-48G-4S+2Q+RM</field>
+            <field name="vendor">MikroTik</field>
+            <field name="device_type">switch</field>
+            <field name="default_attribute_ids" eval="[(6, 0, [ref('attr_distribution_switch')])]"/>
+            <field name="port_count">54</field>
+            <field name="cpu_cores">1</field>
+            <field name="memory_mb">512</field>
+            <field name="description">48-port distribution switch, 48x GbE, 4x SFP+, 2x QSFP+, rackmount</field>
+        </record>
+        <record id="model_css610_8g" model="infra.device.model">
+            <field name="name">CSS610-8G-2S+IN</field>
+            <field name="vendor">MikroTik</field>
+            <field name="device_type">switch</field>
+            <field name="default_attribute_ids" eval="[(6, 0, [ref('attr_access_switch')])]"/>
+            <field name="port_count">10</field>
+            <field name="cpu_cores">1</field>
+            <field name="memory_mb">256</field>
+            <field name="description">Compact access switch, 8x GbE, 2x SFP+</field>
+        </record>
+    </data>
+</odoo>

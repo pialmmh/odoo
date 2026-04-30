@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Device Model Tree -->
+    <record id="view_infra_device_model_tree" model="ir.ui.view">
+        <field name="name">infra.device.model.tree</field>
+        <field name="model">infra.device.model</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="vendor"/>
+                <field name="device_type"/>
+                <field name="default_attribute_ids" widget="many2many_tags"/>
+                <field name="port_count"/>
+                <field name="cpu_cores"/>
+                <field name="memory_mb"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Device Model Form -->
+    <record id="view_infra_device_model_form" model="ir.ui.view">
+        <field name="name">infra.device.model.form</field>
+        <field name="model">infra.device.model</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Model Name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="vendor"/>
+                            <field name="device_type"/>
+                            <field name="default_attribute_ids" widget="many2many_tags"/>
+                            <field name="product_url" widget="url"/>
+                        </group>
+                        <group string="Specifications">
+                            <field name="port_count"/>
+                            <field name="cpu_cores"/>
+                            <field name="memory_mb"/>
+                            <field name="storage_gb"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Description..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Device Model Search -->
+    <record id="view_infra_device_model_search" model="ir.ui.view">
+        <field name="name">infra.device.model.search</field>
+        <field name="model">infra.device.model</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="vendor"/>
+                <group>
+                    <filter name="group_vendor" string="Vendor" context="{'group_by': 'vendor'}"/>
+                    <filter name="group_type" string="Type" context="{'group_by': 'device_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Device Model Action -->
+    <record id="action_infra_device_model" model="ir.actions.act_window">
+        <field name="name">Device Models</field>
+        <field name="res_model">infra.device.model</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_infra_device_model_search"/>
+    </record>
+
+    <menuitem id="menu_infra_device_models"
+              name="Device Models"
+              parent="menu_infra_catalog"
+              action="action_infra_device_model"
+              sequence="10"/>
+
+    <!-- Device Attribute Action -->
+    <record id="action_infra_device_attribute" model="ir.actions.act_window">
+        <field name="name">Device Attributes</field>
+        <field name="res_model">infra.device.attribute</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_infra_device_attributes"
+              name="Device Attributes"
+              parent="menu_infra_catalog"
+              action="action_infra_device_attribute"
+              sequence="20"/>
+</odoo>

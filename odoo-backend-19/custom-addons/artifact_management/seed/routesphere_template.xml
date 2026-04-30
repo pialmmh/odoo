@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- RouteSphere JAR Deploy Template -->
+        <record id="template_routesphere_jar" model="artifact.deploy.template">
+            <field name="name">RouteSphere JAR Deploy</field>
+            <field name="project_type">jar</field>
+            <field name="variable_names">tenant,profile,deploy_path,artifact_path,git_tag,git_commit,git_branch,deploy_user</field>
+            <field name="description">Standard deployment for RouteSphere Quarkus JAR. Stops service, backs up, uploads, installs, writes version file, starts service.</field>
+        </record>
+
+        <record id="step_stop_service" model="artifact.deploy.template.step">
+            <field name="template_id" ref="template_routesphere_jar"/>
+            <field name="sequence">10</field>
+            <field name="name">Stop service</field>
+            <field name="step_type">ssh</field>
+            <field name="command">sudo systemctl stop routesphere 2>/dev/null || true</field>
+            <field name="timeout">30</field>
+            <field name="continue_on_error" eval="True"/>
+        </record>
+
+        <record id="step_kill_remaining" model="artifact.deploy.template.step">
+            <field name="template_id" ref="template_routesphere_jar"/>
+            <field name="sequence">20</field>
+            <field name="name">Kill remaining processes</field>
+            <field name="step_type">ssh</field>
+            <field name="command">PIDS=$(pgrep -f '[r]outesphere-core-runner.jar' || true); if [ -n "$PIDS" ]; then sudo kill $PIDS 2>/dev/null || true; sleep 2; STILL=$(pgrep -f '[r]outesphere-core-runner.jar' || true); if [ -n "$STILL" ]; then sudo kill -9 $STILL 2>/dev/null || true; sleep 1; fi; fi; echo "Processes cleared"</field>
+            <field name="timeout">30</field>
+            <field name="continue_on_error" eval="True"/>
+        </record>
+
+        <record id="step_backup_jar" model="artifact.deploy.template.step">
+            <field name="template_id" ref="template_routesphere_jar"/>
+            <field name="sequence">30</field>
+            <field name="name">Backup current JAR</field>
+            <field name="step_type">ssh</field>
+            <field name="command">TIMESTAMP=$(date +%Y%m%d-%H%M); if [ -f {deploy_path}/routesphere-core-runner.jar ]; then sudo cp {deploy_path}/routesphere-core-runner.jar {deploy_path}/routesphere-core-runner.jar.bak-$TIMESTAMP; echo "Backup: routesphere-core-runner.jar.bak-$TIMESTAMP"; ls -1t {deploy_path}/routesphere-core-runner.jar.bak-* 2>/dev/null | tail -n +4 | xargs -r sudo rm -f; else echo "No existing JAR to backup"; fi</field>
+            <field name="timeout">30</field>
+            <field name="continue_on_error" eval="False"/>
+        </record>
+
+        <record id="step_upload_jar" model="artifact.deploy.template.step">
+            <field name="template_id" ref="template_routesphere_jar"/>
+            <field name="sequence">40</field>
+            <field name="name">Upload JAR</field>
+            <field name="step_type">sftp</field>
+            <field name="command">{artifact_path} -> /tmp/routesphere-core-runner.jar</field>
+            <field name="timeout">300</field>
+            <field name="continue_on_error" eval="False"/>
+        </record>
+
+        <record id="step_install_jar" model="artifact.deploy.template.step">
+            <field name="template_id" ref="template_routesphere_jar"/>
+            <field name="sequence">50</field>
+            <field name="name">Install JAR</field>
+            <field name="step_type">ssh</field>
+            <field name="command">sudo mkdir -p {deploy_path} &amp;&amp; id -u routesphere >/dev/null 2>&amp;1 || sudo useradd -r -s /bin/false routesphere; sudo mv /tmp/routesphere-core-runner.jar {deploy_path}/routesphere-core-runner.jar &amp;&amp; sudo chown routesphere:routesphere {deploy_path}/routesphere-core-runner.jar &amp;&amp; echo "JAR installed to {deploy_path}"</field>
+            <field name="timeout">30</field>
+            <field name="continue_on_error" eval="False"/>
+        </record>
+
+        <record id="step_write_version" model="artifact.deploy.template.step">
+            <field name="template_id" ref="template_routesphere_jar"/>
+            <field name="sequence">60</field>
+            <field name="name">Write version file</field>
+            <field name="step_type">ssh</field>
+            <field name="command">sudo tee {deploy_path}/version.txt > /dev/null &lt;&lt;VEOF
+project=routesphere-core
+tag={git_tag}
+commit={git_commit}
+branch={git_branch}
+tenant={tenant}
+profile={profile}
+deployed_at=$(date '+%Y-%m-%d %H:%M:%S %z')
+deployed_by={deploy_user}
+VEOF
+sudo chown routesphere:routesphere {deploy_path}/version.txt &amp;&amp; echo "Version file written"</field>
+            <field name="timeout">10</field>
+            <field name="continue_on_error" eval="False"/>
+        </record>
+
+        <record id="step_append_history" model="artifact.deploy.template.step">
+            <field name="template_id" ref="template_routesphere_jar"/>
+            <field name="sequence">70</field>
+            <field name="name">Append deploy history</field>
+            <field name="step_type">ssh</field>
+            <field name="command">echo "$(date '+%Y-%m-%d %H:%M:%S %z') | tag={git_tag} commit={git_commit} branch={git_branch} | tenant={tenant} profile={profile} | by={deploy_user}" | sudo tee -a {deploy_path}/deploy-history.log > /dev/null &amp;&amp; sudo chown routesphere:routesphere {deploy_path}/deploy-history.log &amp;&amp; echo "History updated"</field>
+            <field name="timeout">10</field>
+            <field name="continue_on_error" eval="True"/>
+        </record>
+
+        <record id="step_start_service" model="artifact.deploy.template.step">
+            <field name="template_id" ref="template_routesphere_jar"/>
+            <field name="sequence">80</field>
+            <field name="name">Start service</field>
+            <field name="step_type">ssh</field>
+            <field name="command">sudo systemctl start routesphere &amp;&amp; echo "Service started"</field>
+            <field name="timeout">30</field>
+            <field name="continue_on_error" eval="False"/>
+        </record>
+
+        <record id="step_verify_service" model="artifact.deploy.template.step">
+            <field name="template_id" ref="template_routesphere_jar"/>
+            <field name="sequence">90</field>
+            <field name="name">Verify service</field>
+            <field name="step_type">ssh</field>
+            <field name="command">sleep 3 &amp;&amp; sudo systemctl is-active routesphere &amp;&amp; echo "Service is running" || (echo "Service failed to start"; sudo journalctl -u routesphere --no-pager -n 20; exit 1)</field>
+            <field name="timeout">30</field>
+            <field name="continue_on_error" eval="False"/>
+        </record>
+    </data>
+</odoo>

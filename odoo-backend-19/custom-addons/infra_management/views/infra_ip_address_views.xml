@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- IP Address Tree -->
+    <record id="view_infra_ip_address_tree" model="ir.ui.view">
+        <field name="name">infra.ip.address.tree</field>
+        <field name="model">infra.ip.address</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="is_active == False">
+                <field name="ip_address"/>
+                <field name="subnet_mask"/>
+                <field name="ip_type"/>
+                <field name="assignment_method"/>
+                <field name="assigned_to_display"/>
+                <field name="vlan_id"/>
+                <field name="is_primary"/>
+                <field name="is_active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- IP Address Form -->
+    <record id="view_infra_ip_address_form" model="ir.ui.view">
+        <field name="name">infra.ip.address.form</field>
+        <field name="model">infra.ip.address</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="IP Configuration">
+                            <field name="ip_address"/>
+                            <field name="subnet_mask"/>
+                            <field name="ip_type"/>
+                            <field name="assignment_method"/>
+                            <field name="is_primary"/>
+                            <field name="is_active"/>
+                        </group>
+                        <group string="Assignment">
+                            <field name="compute_id"/>
+                            <field name="network_device_id"/>
+                            <field name="container_id"/>
+                            <field name="vlan_id"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- IP Address Search -->
+    <record id="view_infra_ip_address_search" model="ir.ui.view">
+        <field name="name">infra.ip.address.search</field>
+        <field name="model">infra.ip.address</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="ip_address"/>
+                
+                <filter name="active_ips" string="Active" domain="[('is_active','=',True)]"/>
+                <filter name="primary" string="Primary" domain="[('is_primary','=',True)]"/>
+                <group>
+                    <filter name="group_type" string="IP Type" context="{'group_by': 'ip_type'}"/>
+                    <filter name="group_method" string="Assignment" context="{'group_by': 'assignment_method'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- IP Address Action -->
+    <record id="action_infra_ip_address" model="ir.actions.act_window">
+        <field name="name">IP Addresses</field>
+        <field name="res_model">infra.ip.address</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_infra_ip_address_search"/>
+        <field name="context">{'search_default_active_ips': 1}</field>
+    </record>
+
+    <menuitem id="menu_infra_ip_addresses"
+              name="IP Addresses"
+              parent="menu_infra_network"
+              action="action_infra_ip_address"
+              sequence="10"/>
+
+    <!-- Networking Action -->
+    <record id="action_infra_networking" model="ir.actions.act_window">
+        <field name="name">Networks (VLAN/Bridge)</field>
+        <field name="res_model">infra.networking</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_infra_networking"
+              name="Networks"
+              parent="menu_infra_network"
+              action="action_infra_networking"
+              sequence="20"/>
+</odoo>

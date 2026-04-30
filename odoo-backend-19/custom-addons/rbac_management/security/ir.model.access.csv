@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_rbac_permission_admin,rbac.permission admin,model_rbac_permission,base.group_system,1,1,1,1
+access_rbac_permission_user,rbac.permission user,model_rbac_permission,base.group_user,1,0,0,0
+access_rbac_role_admin,rbac.role admin,model_rbac_role,base.group_system,1,1,1,1
+access_rbac_role_user,rbac.role user,model_rbac_role,base.group_user,1,0,0,0
+access_rbac_url_pattern_admin,rbac.url.pattern admin,model_rbac_url_pattern,base.group_system,1,1,1,1
+access_rbac_url_pattern_user,rbac.url.pattern user,model_rbac_url_pattern,base.group_user,1,0,0,0

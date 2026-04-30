@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- ═══ Linux: Debian ═══ -->
+        <record id="os_debian" model="infra.os.family">
+            <field name="name">Debian</field><field name="code">debian</field><field name="os_category">linux</field><field name="vendor">Debian Project</field><field name="sequence">1</field>
+        </record>
+        <record id="os_debian_12" model="infra.os.version">
+            <field name="name">12</field><field name="family_id" ref="os_debian"/><field name="version_number">12</field><field name="codename">Bookworm</field><field name="release_date">2023-06-10</field><field name="lts" eval="True"/>
+        </record>
+        <record id="os_debian_11" model="infra.os.version">
+            <field name="name">11</field><field name="family_id" ref="os_debian"/><field name="version_number">11</field><field name="codename">Bullseye</field><field name="release_date">2021-08-14</field><field name="eol_date">2026-06-01</field><field name="lts" eval="True"/>
+        </record>
+        <record id="os_debian_10" model="infra.os.version">
+            <field name="name">10</field><field name="family_id" ref="os_debian"/><field name="version_number">10</field><field name="codename">Buster</field><field name="release_date">2019-07-06</field><field name="eol_date">2024-06-01</field><field name="is_active" eval="False"/>
+        </record>
+
+        <!-- ═══ Linux: Ubuntu ═══ -->
+        <record id="os_ubuntu" model="infra.os.family">
+            <field name="name">Ubuntu</field><field name="code">ubuntu</field><field name="os_category">linux</field><field name="vendor">Canonical</field><field name="sequence">2</field>
+        </record>
+        <record id="os_ubuntu_2404" model="infra.os.version">
+            <field name="name">24.04</field><field name="family_id" ref="os_ubuntu"/><field name="version_number">24.04</field><field name="codename">Noble Numbat</field><field name="release_date">2024-04-25</field><field name="lts" eval="True"/>
+        </record>
+        <record id="os_ubuntu_2204" model="infra.os.version">
+            <field name="name">22.04</field><field name="family_id" ref="os_ubuntu"/><field name="version_number">22.04</field><field name="codename">Jammy Jellyfish</field><field name="release_date">2022-04-21</field><field name="lts" eval="True"/>
+        </record>
+        <record id="os_ubuntu_2004" model="infra.os.version">
+            <field name="name">20.04</field><field name="family_id" ref="os_ubuntu"/><field name="version_number">20.04</field><field name="codename">Focal Fossa</field><field name="release_date">2020-04-23</field><field name="eol_date">2025-04-01</field><field name="lts" eval="True"/>
+        </record>
+        <record id="os_ubuntu_2410" model="infra.os.version">
+            <field name="name">24.10</field><field name="family_id" ref="os_ubuntu"/><field name="version_number">24.10</field><field name="codename">Oracular Oriole</field><field name="release_date">2024-10-10</field>
+        </record>
+
+        <!-- ═══ Linux: RHEL ═══ -->
+        <record id="os_rhel" model="infra.os.family">
+            <field name="name">RHEL</field><field name="code">rhel</field><field name="os_category">linux</field><field name="vendor">Red Hat</field><field name="sequence">3</field>
+        </record>
+        <record id="os_rhel_9" model="infra.os.version">
+            <field name="name">9</field><field name="family_id" ref="os_rhel"/><field name="version_number">9</field><field name="codename">Plow</field><field name="release_date">2022-05-17</field><field name="lts" eval="True"/>
+        </record>
+        <record id="os_rhel_8" model="infra.os.version">
+            <field name="name">8</field><field name="family_id" ref="os_rhel"/><field name="version_number">8</field><field name="release_date">2019-05-07</field><field name="eol_date">2029-05-01</field><field name="lts" eval="True"/>
+        </record>
+
+        <!-- ═══ Linux: Rocky ═══ -->
+        <record id="os_rocky" model="infra.os.family">
+            <field name="name">Rocky Linux</field><field name="code">rocky</field><field name="os_category">linux</field><field name="vendor">Rocky Enterprise Software Foundation</field><field name="sequence">4</field>
+        </record>
+        <record id="os_rocky_9" model="infra.os.version">
+            <field name="name">9</field><field name="family_id" ref="os_rocky"/><field name="version_number">9</field><field name="release_date">2022-07-14</field><field name="lts" eval="True"/>
+        </record>
+        <record id="os_rocky_8" model="infra.os.version">
+            <field name="name">8</field><field name="family_id" ref="os_rocky"/><field name="version_number">8</field><field name="release_date">2021-06-21</field><field name="lts" eval="True"/>
+        </record>
+
+        <!-- ═══ Linux: AlmaLinux ═══ -->
+        <record id="os_alma" model="infra.os.family">
+            <field name="name">AlmaLinux</field><field name="code">almalinux</field><field name="os_category">linux</field><field name="vendor">AlmaLinux OS Foundation</field><field name="sequence">5</field>
+        </record>
+        <record id="os_alma_9" model="infra.os.version">
+            <field name="name">9</field><field name="family_id" ref="os_alma"/><field name="version_number">9</field><field name="release_date">2022-05-26</field><field name="lts" eval="True"/>
+        </record>
+
+        <!-- ═══ Linux: CentOS Stream ═══ -->
+        <record id="os_centos_stream" model="infra.os.family">
+            <field name="name">CentOS Stream</field><field name="code">centos-stream</field><field name="os_category">linux</field><field name="vendor">Red Hat</field><field name="sequence">6</field>
+        </record>
+        <record id="os_centos_stream_9" model="infra.os.version">
+            <field name="name">9</field><field name="family_id" ref="os_centos_stream"/><field name="version_number">9</field><field name="release_date">2021-12-03</field>
+        </record>
+
+        <!-- ═══ Linux: Fedora ═══ -->
+        <record id="os_fedora" model="infra.os.family">
+            <field name="name">Fedora</field><field name="code">fedora</field><field name="os_category">linux</field><field name="vendor">Fedora Project</field><field name="sequence">7</field>
+        </record>
+        <record id="os_fedora_40" model="infra.os.version">
+            <field name="name">40</field><field name="family_id" ref="os_fedora"/><field name="version_number">40</field><field name="release_date">2024-04-23</field>
+        </record>
+        <record id="os_fedora_39" model="infra.os.version">
+            <field name="name">39</field><field name="family_id" ref="os_fedora"/><field name="version_number">39</field><field name="release_date">2023-11-07</field>
+        </record>
+
+        <!-- ═══ Linux: openSUSE ═══ -->
+        <record id="os_opensuse" model="infra.os.family">
+            <field name="name">openSUSE Leap</field><field name="code">opensuse</field><field name="os_category">linux</field><field name="vendor">SUSE</field><field name="sequence">8</field>
+        </record>
+        <record id="os_opensuse_155" model="infra.os.version">
+            <field name="name">15.5</field><field name="family_id" ref="os_opensuse"/><field name="version_number">15.5</field><field name="release_date">2023-06-07</field>
+        </record>
+
+        <!-- ═══ Linux: Alpine ═══ -->
+        <record id="os_alpine" model="infra.os.family">
+            <field name="name">Alpine Linux</field><field name="code">alpine</field><field name="os_category">linux</field><field name="vendor">Alpine Linux</field><field name="sequence">9</field>
+        </record>
+        <record id="os_alpine_319" model="infra.os.version">
+            <field name="name">3.19</field><field name="family_id" ref="os_alpine"/><field name="version_number">3.19</field><field name="release_date">2023-12-07</field>
+        </record>
+        <record id="os_alpine_320" model="infra.os.version">
+            <field name="name">3.20</field><field name="family_id" ref="os_alpine"/><field name="version_number">3.20</field><field name="release_date">2024-05-22</field>
+        </record>
+
+        <!-- ═══ Linux: Arch ═══ -->
+        <record id="os_arch" model="infra.os.family">
+            <field name="name">Arch Linux</field><field name="code">arch</field><field name="os_category">linux</field><field name="vendor">Arch Linux</field><field name="sequence">10</field>
+        </record>
+        <record id="os_arch_rolling" model="infra.os.version">
+            <field name="name">Rolling</field><field name="family_id" ref="os_arch"/><field name="version_number">rolling</field>
+        </record>
+
+        <!-- ═══ Windows ═══ -->
+        <record id="os_windows_server" model="infra.os.family">
+            <field name="name">Windows Server</field><field name="code">windows-server</field><field name="os_category">windows</field><field name="vendor">Microsoft</field><field name="sequence">20</field>
+        </record>
+        <record id="os_win_2022" model="infra.os.version">
+            <field name="name">2022</field><field name="family_id" ref="os_windows_server"/><field name="version_number">2022</field><field name="release_date">2021-08-18</field><field name="lts" eval="True"/>
+        </record>
+        <record id="os_win_2019" model="infra.os.version">
+            <field name="name">2019</field><field name="family_id" ref="os_windows_server"/><field name="version_number">2019</field><field name="release_date">2018-10-02</field><field name="lts" eval="True"/>
+        </record>
+
+        <!-- ═══ Hypervisors ═══ -->
+        <record id="os_esxi" model="infra.os.family">
+            <field name="name">VMware ESXi</field><field name="code">esxi</field><field name="os_category">hypervisor</field><field name="vendor">Broadcom/VMware</field><field name="sequence">30</field>
+        </record>
+        <record id="os_esxi_8" model="infra.os.version">
+            <field name="name">8.0</field><field name="family_id" ref="os_esxi"/><field name="version_number">8.0</field><field name="release_date">2022-10-11</field>
+        </record>
+        <record id="os_esxi_7" model="infra.os.version">
+            <field name="name">7.0</field><field name="family_id" ref="os_esxi"/><field name="version_number">7.0</field><field name="release_date">2020-04-02</field>
+        </record>
+
+        <record id="os_proxmox" model="infra.os.family">
+            <field name="name">Proxmox VE</field><field name="code">proxmox</field><field name="os_category">hypervisor</field><field name="vendor">Proxmox</field><field name="sequence">31</field>
+        </record>
+        <record id="os_proxmox_8" model="infra.os.version">
+            <field name="name">8</field><field name="family_id" ref="os_proxmox"/><field name="version_number">8</field><field name="release_date">2023-06-22</field>
+        </record>
+
+        <!-- ═══ Network OS ═══ -->
+        <record id="os_routeros" model="infra.os.family">
+            <field name="name">MikroTik RouterOS</field><field name="code">routeros</field><field name="os_category">network</field><field name="vendor">MikroTik</field><field name="sequence">40</field>
+        </record>
+        <record id="os_routeros_7" model="infra.os.version">
+            <field name="name">7</field><field name="family_id" ref="os_routeros"/><field name="version_number">7</field><field name="release_date">2021-09-13</field>
+        </record>
+        <record id="os_routeros_6" model="infra.os.version">
+            <field name="name">6</field><field name="family_id" ref="os_routeros"/><field name="version_number">6</field><field name="is_active" eval="False"/>
+        </record>
+
+        <!-- ═══ BSD ═══ -->
+        <record id="os_freebsd" model="infra.os.family">
+            <field name="name">FreeBSD</field><field name="code">freebsd</field><field name="os_category">bsd</field><field name="vendor">FreeBSD Project</field><field name="sequence">50</field>
+        </record>
+        <record id="os_freebsd_14" model="infra.os.version">
+            <field name="name">14.0</field><field name="family_id" ref="os_freebsd"/><field name="version_number">14.0</field><field name="release_date">2023-11-20</field>
+        </record>
+    </data>
+</odoo>

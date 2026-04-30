@@ -1,0 +1,242 @@
+// ════════════════════════════════════════════════════════════════
+//  tb_fluent_theme
+//  Global Fluent skin for the Odoo backend.
+//  Edit the CONFIG block below; rules below it should never use
+//  hex/rgb literals — only the variables defined here.
+// ════════════════════════════════════════════════════════════════
+
+
+// ── CONFIG ───────────────────────────────────────────────────────
+//   BRAND PRESET — uncomment ONE
+// ── ─────────────────────────────────────────────────────────────
+
+// $tb-brand: #0F6CBD;  // Fluent Default Blue (webLightTheme.colorBrandBackground)
+$tb-brand:    #198540;  // BTCL Green
+// $tb-brand: #C8102E;  // Telcobright Red
+
+//   DERIVED BRAND RAMP — auto-shaded from $tb-brand
+$tb-brand-hover:    darken($tb-brand, 6%);
+$tb-brand-pressed:  darken($tb-brand, 14%);
+$tb-brand-selected: darken($tb-brand, 10%);
+$tb-brand-fg:       #FFFFFF;
+$tb-brand-soft-08:  rgba($tb-brand, 0.08);
+$tb-brand-soft-12:  rgba($tb-brand, 0.12);
+$tb-brand-soft-35:  rgba($tb-brand, 0.35);
+
+//   HEADER (top app bar)
+//   Set $tb-header-bg to $tb-brand if you want a brand-colored bar.
+$tb-header-bg:       #FFFFFF;   // colorNeutralBackground1
+$tb-header-fg:       #242424;   // colorNeutralForeground1
+$tb-header-fg-muted: #616161;   // colorNeutralForeground2
+$tb-header-border:   #D1D1D1;   // colorNeutralStroke1
+$tb-header-accent:   $tb-brand;
+
+//   FONT — sizes intentionally NOT touched.
+$tb-font-family: "Segoe UI Variable", "Segoe UI", -apple-system,
+    BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+
+// ── END CONFIG ───────────────────────────────────────────────────
+
+// ── Font (global) ─────────────────────────────────────────────────
+// Font sizes are NOT overridden — Odoo's existing ramp is preserved.
+.o_web_client,
+.o_web_client input,
+.o_web_client select,
+.o_web_client textarea,
+.o_web_client button,
+.modal,
+.o_dialog,
+.o_notification {
+    font-family: $tb-font-family;
+}
+
+// ── Top app bar (.o_main_navbar) ──────────────────────────────────
+// Odoo themes the navbar through CSS custom properties declared in
+// addons/web/static/src/webclient/navbar/navbar.{scss,variables.scss}.
+// Overriding the variables is the supported theming path — no !important
+// arms-race required.
+.o_main_navbar {
+    // Bar itself
+    background: $tb-header-bg !important;
+    background-image: none !important;
+    border-bottom: 1px solid $tb-header-border;
+    box-shadow: none;
+
+    // Section/dropdown entries (Operations, Products, Reporting, ...)
+    --NavBar-entry-backgroundColor:         #{$tb-header-bg};
+    --NavBar-entry-backgroundColor--hover:  #{$tb-brand-soft-08};
+    --NavBar-entry-backgroundColor--focus:  #{$tb-brand-soft-08};
+    --NavBar-entry-backgroundColor--active: #{$tb-brand-soft-12};
+
+    --NavBar-entry-color:         #{$tb-header-fg};
+    --NavBar-entry-color--hover:  #{$tb-header-accent};
+    --NavBar-entry-color--active: #{$tb-header-accent};
+
+    --NavBar-entry-borderColor-active: #{$tb-header-accent};
+
+    --NavBar-brand-color: #{$tb-header-fg};
+
+    // Brand label (the "Inventory" / "Sales" / etc. word at the left)
+    .o_menu_brand { font-weight: 600; }
+
+    // Systray icons (chat, clock, user avatar)
+    .o_menu_systray .fa,
+    .o_menu_systray svg { color: $tb-header-fg-muted; }
+}
+
+// ── Buttons (primary / brand) ─────────────────────────────────────
+// Brand color comes from $tb-brand in _config.scss. The descendant
+// `* { color: inherit }` is required because Odoo's New / Create
+// button wraps its label in spans/icons that ship with their own
+// hard-coded colors — without inherit they render invisible on the
+// new background.
+.btn-primary,
+.o_list_button_add,
+.o_form_button_create,
+.o_cp_buttons .btn-primary {
+    background-color: $tb-brand !important;
+    background-image: none !important;
+    border-color: $tb-brand !important;
+    color: $tb-brand-fg !important;
+
+    // Force every descendant text/icon to inherit the white foreground
+    // so the button label is actually visible.
+    *, span, i, .fa, svg { color: inherit !important; fill: currentColor; }
+
+    &:hover,
+    &:focus {
+        background-color: $tb-brand-hover !important;
+        border-color: $tb-brand-hover !important;
+        color: $tb-brand-fg !important;
+    }
+
+    &:active,
+    &.active,
+    &:not(:disabled):not(.disabled):active {
+        background-color: $tb-brand-pressed !important;
+        border-color: $tb-brand-pressed !important;
+        color: $tb-brand-fg !important;
+    }
+
+    &:focus,
+    &:focus-visible {
+        box-shadow: 0 0 0 2px $tb-brand-soft-35 !important;
+        outline: none;
+    }
+}
+
+// ── Spacing between control-panel action buttons ──────────────────
+// Odoo renders New + Discard + Save (or New + the next dropdown)
+// flush against each other. Add a small gap so they don't visually
+// merge into one big block.
+.o_cp_buttons,
+.o_control_panel_breadcrumbs_actions,
+.o_control_panel_actions {
+    .btn + .btn,
+    .o_list_button_add + .btn,
+    .o_form_button_create + .btn,
+    .o_list_button_save + .btn,
+    .o_form_button_save + .btn,
+    .btn + .o_dropdown,
+    .btn + .dropdown {
+        margin-left: 8px !important;
+    }
+}
+
+// Outline / secondary / link variants — brand text + border at rest,
+// fill with brand on hover/active. Applies everywhere — list view,
+// form view, modals, wizards, kanban quick-actions.
+.btn-outline-primary,
+.btn-secondary,
+.btn-link,
+.o_form_button_save,                 // Save (form)
+.o_list_button_save {                // Save (list)
+    background-color: transparent !important;
+    background-image: none !important;
+    color: $tb-brand !important;
+    border-color: $tb-brand !important;
+    *, span, i, .fa, svg { color: inherit !important; fill: currentColor; }
+
+    &:hover,
+    &:focus {
+        background-color: $tb-brand !important;
+        color: $tb-brand-fg !important;
+        border-color: $tb-brand !important;
+    }
+
+    &:active,
+    &.active,
+    &:not(:disabled):not(.disabled):active {
+        background-color: $tb-brand-pressed !important;
+        border-color: $tb-brand-pressed !important;
+        color: $tb-brand-fg !important;
+    }
+
+    &:focus,
+    &:focus-visible {
+        box-shadow: 0 0 0 2px $tb-brand-soft-35 !important;
+        outline: none;
+    }
+}
+
+// Status bar action buttons (form view top action row) — same brand
+// rules as .btn-primary above already cover .o_statusbar_buttons
+// .btn-primary via the cascade. Add coverage for the chevron-style
+// status steps (Draft → Posted → Done) in case of stray inline color.
+.o_statusbar_buttons .btn-primary { /* covered by .btn-primary block */ }
+
+// ── Form / input focus accent ─────────────────────────────────────
+.o_form_view .o_field_widget input:focus,
+.o_form_view .o_field_widget textarea:focus,
+.o_searchview:focus-within {
+    border-color: $tb-brand !important;
+    box-shadow: 0 0 0 1px $tb-brand !important;
+    outline: none;
+}
+
+// ── Active/selected list-row + kanban accents ─────────────────────
+.o_list_view tbody tr.o_data_row.o_data_row_selected,
+.o_list_view tbody tr.o_data_row.table-info {
+    background-color: $tb-brand-soft-08 !important;
+}
+
+.o_kanban_view .o_kanban_record:focus,
+.o_kanban_view .o_kanban_record.o_focus {
+    box-shadow: 0 0 0 2px $tb-brand !important;
+}
+
+// ── Breadcrumb separator + active link ────────────────────────────
+.o_breadcrumb .breadcrumb-item.active,
+.o_breadcrumb .o_last_breadcrumb_item {
+    color: $tb-brand !important;
+    font-weight: 600;
+}
+
+// ── Eradicate Odoo's community purple ($o-community-color #71639E
+//    + its auto-darkened cousins like #66598F) wherever it leaks
+//    through. Replaces with our brand blue.
+//
+// These selectors cover what we've actually observed leaking — extend
+// when new screens reveal more.
+// IMPORTANT: exclude .btn / .btn-* from this list — kanban "buttons"
+// often carry .oe_kanban_action *and* .btn-primary, and we don't want
+// to paint button text the same color as the button background.
+.oe_kanban_action:not(.btn),
+.oe_kanban_action_a:not(.btn),
+.o_kanban_card_header_title a:not(.btn),
+.o_kanban_record_title a:not(.btn),
+a.o_form_uri:not(.btn),
+.o_field_widget.o_field_many2one a:not(.btn),
+.o_field_widget.o_field_one2many .o_form_uri:not(.btn),
+.o_form_view a:not(.btn) {
+    color: $tb-brand !important;
+
+    &:hover { color: $tb-brand-hover !important; }
+}
+
+// Status / pill widgets that ship with the community purple as default
+.o_field_badge,
+.o_widget_badge { &.text-bg-primary { background-color: $tb-brand !important; } }
+
+// Any spinner / loading indicator that uses the brand color
+.o_spinner, .fa-spinner { color: $tb-brand !important; }

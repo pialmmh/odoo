@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree view -->
+    <record id="view_product_tax_rate_tree" model="ir.ui.view">
+        <field name="name">product.tax.rate.tree</field>
+        <field name="model">product.tax.rate</field>
+        <field name="arch" type="xml">
+            <list decoration-success="is_active == True"
+                  decoration-muted="is_active == False">
+                <field name="tax_type"/>
+                <field name="rate" string="Rate (%)"/>
+                <field name="is_deduction"/>
+                <field name="categ_id"/>
+                <field name="product_tmpl_id" optional="show"/>
+                <field name="effective_date"/>
+                <field name="end_date"/>
+                <field name="is_active"/>
+                <field name="gazette_ref" optional="show"/>
+                <field name="reason" optional="show"/>
+                <field name="odoo_tax_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form view -->
+    <record id="view_product_tax_rate_form" model="ir.ui.view">
+        <field name="name">product.tax.rate.form</field>
+        <field name="model">product.tax.rate</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Tax Definition">
+                            <field name="tax_type"/>
+                            <field name="rate"/>
+                            <field name="is_deduction"/>
+                            <field name="odoo_tax_id"/>
+                        </group>
+                        <group string="Applies To">
+                            <field name="categ_id"/>
+                            <field name="product_tmpl_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Effective Period">
+                            <field name="effective_date"/>
+                            <field name="end_date"/>
+                            <field name="is_active"/>
+                        </group>
+                        <group string="Audit">
+                            <field name="gazette_ref"/>
+                            <field name="reason"/>
+                            <field name="changed_by"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Documents">
+                            <field name="document_count" invisible="1"/>
+                            <field name="document_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="filename"/>
+                                    <field name="doc_type"/>
+                                    <field name="file_size_display" string="Size"/>
+                                    <field name="upload_date"/>
+                                </list>
+                            </field>
+                            <p class="text-muted">
+                                To attach documents, go to Kill Bill &gt; Documents, upload the file,
+                                then link it to this tax rate record.
+                            </p>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes" placeholder="Additional notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search view -->
+    <record id="view_product_tax_rate_search" model="ir.ui.view">
+        <field name="name">product.tax.rate.search</field>
+        <field name="model">product.tax.rate</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="categ_id"/>
+                <field name="product_tmpl_id"/>
+                <field name="gazette_ref"/>
+                
+                <filter name="active_rates" string="Active" domain="[('is_active', '=', True)]"/>
+                <filter name="expired" string="Expired" domain="[('is_active', '=', False)]"/>
+                
+                <filter name="vat" string="VAT" domain="[('tax_type', '=', 'vat')]"/>
+                <filter name="ait" string="AIT" domain="[('tax_type', '=', 'ait')]"/>
+                
+                <group>
+                    <filter name="group_type" string="Tax Type" context="{'group_by': 'tax_type'}"/>
+                    <filter name="group_category" string="Category" context="{'group_by': 'categ_id'}"/>
+                    <filter name="group_effective" string="Effective Date" context="{'group_by': 'effective_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_product_tax_rate" model="ir.actions.act_window">
+        <field name="name">Tax Rates</field>
+        <field name="res_model">product.tax.rate</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_product_tax_rate_search"/>
+        <field name="context">{'search_default_active_rates': 1}</field>
+    </record>
+
+    <!-- Menu under Kill Bill -->
+    <menuitem id="menu_kb_tax_rates"
+              name="Tax Rates"
+              parent="menu_kb_root"
+              action="action_product_tax_rate"
+              sequence="25"/>
+</odoo>
