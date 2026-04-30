@@ -240,3 +240,82 @@ a.o_form_uri:not(.btn),
 
 // Any spinner / loading indicator that uses the brand color
 .o_spinner, .fa-spinner { color: $tb-brand !important; }
+
+// ── Status bar steps: rectangles + slim "→", no chevrons ──────────
+// Odoo 17 fakes a chevron with triangular ::before/::after borders;
+// Odoo 19 uses a clip-path polygon. Same selectors in both — we kill
+// the geometry, paint plain rounded rectangles, and insert a "→"
+// between adjacent buttons.
+//
+// Odoo keeps `flex-flow: row-reverse`, so DOM .o_first is the
+// rightmost rectangle visually and .o_last the leftmost. The arrow
+// is rendered on every button except .o_last (which has no left
+// neighbor visually).
+.o_field_statusbar > .o_statusbar_status {
+    > .o_arrow_button:not(.d-none) {
+        position: relative;
+        overflow: visible !important;
+        clip-path: none !important;
+        margin: 0 !important;
+        padding: 4px 12px !important;
+        border: 1px solid #D1D1D1 !important;
+        border-radius: 4px !important;
+        background-color: #FFFFFF;
+        background-image: none !important;
+        color: #242424 !important;
+
+        &::before, &::after {
+            content: none !important;
+            background: none !important;
+            border: none !important;
+            clip-path: none !important;
+        }
+
+        &.o_first, &.o_last {
+            border-radius: 4px !important;
+            padding: 4px 12px !important;
+            margin-left: 0 !important;
+        }
+
+        &:hover, &:focus {
+            background-color: $tb-brand-soft-08 !important;
+            border-color: $tb-brand !important;
+            color: $tb-brand !important;
+        }
+
+        &.o_arrow_button_current,
+        &.o_arrow_button_current:disabled,
+        &.o_arrow_button_current:disabled:hover,
+        &.o_arrow_button_current:hover {
+            background-color: $tb-brand !important;
+            border-color: $tb-brand !important;
+            color: $tb-brand-fg !important;
+        }
+    }
+
+    > .o_arrow_button:not(.d-none):not(.o_last) {
+        margin-left: 24px !important;
+
+        &::before {
+            content: "\2192" !important;
+            display: inline-block !important;
+            position: absolute !important;
+            inset: auto !important;
+            left: -18px !important;
+            top: 50% !important;
+            right: auto !important;
+            bottom: auto !important;
+            transform: translateY(-50%) !important;
+            color: #888 !important;
+            background: none !important;
+            border: none !important;
+            clip-path: none !important;
+            font-size: 14px !important;
+            line-height: 1 !important;
+            pointer-events: none;
+            width: auto !important;
+            height: auto !important;
+            padding: 0 !important;
+        }
+    }
+}
