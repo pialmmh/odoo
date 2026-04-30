@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  makeStyles, tokens, Text, Spinner, Subtitle1, Button, Tooltip, Badge, Input,
+  makeStyles, tokens, Text, Spinner, Subtitle1, Button, Tooltip, Badge, Input, Switch,
   Table, TableHeader, TableHeaderCell, TableRow, TableCell, TableBody,
 } from '@fluentui/react-components';
 import {
-  ArrowClockwise20Regular, Box20Regular, Search20Regular,
+  ArrowClockwise20Regular, Box20Regular, Search20Regular, Add20Regular,
   ChevronLeft20Regular, ChevronRight20Regular,
 } from '@fluentui/react-icons';
 import { listProducts } from '../../services/erpV2';
@@ -64,19 +64,24 @@ export default function ErpV2ProductList() {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
   const debounceRef = useRef();
 
   const reload = useCallback((opts = {}) => {
-    const { qVal = q, pageVal = page } = opts;
+    const { qVal = q, pageVal = page, archivedVal = showArchived } = opts;
     setLoading(true);
     listProducts({ q: qVal || undefined, page: pageVal, pageSize: PAGE_SIZE })
       .then((p) => {
-        setItems(p?.items || []);
+        const all = p?.items || [];
+        // Server returns active rows only by default. The archived toggle
+        // is informational here — slice 4 will add a real `includeArchived`
+        // query param. For now we just dim the inactive rows that come back.
+        setItems(archivedVal ? all : all.filter((x) => x.isActive));
         setTotal(p?.total || 0);
       })
       .catch((e) => notifyError('Failed to load products', e?.response?.data?.message || e.message))
       .finally(() => setLoading(false));
-  }, [q, page, notifyError]);
+  }, [q, page, showArchived, notifyError]);
 
   // Initial load + page change.
   useEffect(() => { reload({ pageVal: page }); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [page]);
@@ -100,9 +105,15 @@ export default function ErpV2ProductList() {
           <Box20Regular />
           <Subtitle1>Products</Subtitle1>
         </div>
-        <Tooltip content="Refresh" relationship="label">
-          <Button appearance="subtle" icon={<ArrowClockwise20Regular />} onClick={() => reload({})} />
-        </Tooltip>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button appearance="primary" icon={<Add20Regular />}
+            onClick={() => navigate(`/${tenant}/erp-v2/products/new`)}>
+            New
+          </Button>
+          <Tooltip content="Refresh" relationship="label">
+            <Button appearance="subtle" icon={<ArrowClockwise20Regular />} onClick={() => reload({})} />
+          </Tooltip>
+        </div>
       </div>
 
       <div className={styles.filterRow}>
@@ -113,8 +124,10 @@ export default function ErpV2ProductList() {
           value={q}
           onChange={(_, data) => onSearchChange(data.value)}
         />
+        <Switch label="Show archived" checked={showArchived}
+          onChange={(_, d) => { setShowArchived(!!d.checked); reload({ archivedVal: !!d.checked }); }} />
         <Text className={styles.count}>
-          {loading ? '' : `${total.toLocaleString()} item${total === 1 ? '' : 's'}`}
+          {loading ? '' : `${items.length.toLocaleString()} of ${total.toLocaleString()}`}
         </Text>
       </div>
 

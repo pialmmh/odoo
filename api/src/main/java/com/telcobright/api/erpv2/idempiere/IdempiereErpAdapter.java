@@ -60,4 +60,54 @@ public class IdempiereErpAdapter implements ErpAdapter {
         Map<String, Object> row = products.getById(id);
         return mapper.toProductDto(row);
     }
+
+    @Override
+    public ProductDto updateProduct(long id, Map<String, Object> patch, Long ifMatchUpdatedMs) {
+        try {
+            products.update(id, patch, ifMatchUpdatedMs);
+        } catch (IdempiereProductService.StaleTokenException stale) {
+            ProductDto current = mapper.toProductDto(products.getById(id));
+            throw new ConcurrencyException(current, stale.getMessage());
+        }
+        Map<String, Object> row = products.getById(id);
+        return mapper.toProductDto(row);
+    }
+
+    @Override
+    public ProductDto createProduct(Map<String, Object> values) {
+        try {
+            long id = products.create(values);
+            return mapper.toProductDto(products.getById(id));
+        } catch (IdempiereProductService.ValidationException ve) {
+            throw new ValidationException(ve.getMessage());
+        }
+    }
+
+    @Override
+    public ProductDto archiveProduct(long id, Long ifMatchUpdatedMs) {
+        try {
+            products.archive(id, ifMatchUpdatedMs);
+        } catch (IdempiereProductService.StaleTokenException stale) {
+            ProductDto current = mapper.toProductDto(products.getById(id));
+            throw new ConcurrencyException(current, stale.getMessage());
+        }
+        return mapper.toProductDto(products.getById(id));
+    }
+
+    @Override public java.util.List<NamedRef> listCategories()    { return products.listLookup("M_Product_Category"); }
+    @Override public java.util.List<NamedRef> listUoms()          { return products.listLookup("C_UOM"); }
+    @Override public java.util.List<NamedRef> listTaxCategories() { return products.listLookup("C_TaxCategory"); }
+    @Override public java.util.List<NamedRef> listProductTypes()  { return products.listProductTypes(); }
+
+    @Override
+    public PricePoint readPrice(long productId) {
+        var p = products.readPrice(productId);
+        return p == null ? null : new PricePoint(p.listPrice(), p.standardPrice(), p.priceListVersionId());
+    }
+
+    @Override
+    public PricePoint writePrice(long productId, java.math.BigDecimal listPrice, java.math.BigDecimal standardPrice) {
+        var p = products.writePrice(productId, listPrice, standardPrice);
+        return new PricePoint(p.listPrice(), p.standardPrice(), p.priceListVersionId());
+    }
 }

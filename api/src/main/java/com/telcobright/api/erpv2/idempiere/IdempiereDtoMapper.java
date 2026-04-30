@@ -57,8 +57,25 @@ public class IdempiereDtoMapper {
                 // Attributes — set membership only in slice 3 stub;
                 // detailed values + combinations come in a later slice.
                 asLong(row.get("attributeSetId"), row.get("mAttributesetId")),
-                asString(row.get("attributeSetName"))
+                asString(row.get("attributeSetName")),
+
+                // Concurrency token: iDempiere `Updated` (timestamp string from
+                // the read service, normalised to ISO-8601). Convert to epoch
+                // millis so the client can echo it back unchanged on PATCH.
+                asUpdatedMs(row.get("updated"))
         );
+    }
+
+    private static Long asUpdatedMs(Object v) {
+        if (v == null) return null;
+        try {
+            if (v instanceof Number n) return n.longValue();
+            String s = v.toString();
+            // Read service normalises to Instant.toString() — ISO-8601 with Z.
+            return java.time.Instant.parse(s).toEpochMilli();
+        } catch (Exception ignore) {
+            return null;
+        }
     }
 
     // ── helpers ─────────────────────────────────────────────────────

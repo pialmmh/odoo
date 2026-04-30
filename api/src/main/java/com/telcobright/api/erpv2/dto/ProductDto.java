@@ -56,6 +56,12 @@ public record ProductDto(
         // ── Attributes & Variants (Slice 3 — read-only stub) ────────
         // Detail values + per-line combinations land in a future slice.
         Long attributeSetId,
-        String attributeSetName
+        String attributeSetName,
+
+        // ── Concurrency token (slice 2a) ────────────────────────────
+        // iDempiere `Updated` column as epoch millis. Echoed back on
+        // PATCH; if the server-side value has advanced, the PATCH is
+        // rejected with 409 and the client must reload.
+        Long updatedMs
 ) {}
 

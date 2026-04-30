@@ -49,6 +49,7 @@ import LivekitCallExp from './pages/experiments/LivekitCallExp';
 import ErpWorkspace from './pages/erp/workspace/ErpWorkspace';
 import ErpV2ProductList from './pages/erp-v2/ErpV2ProductList';
 import ErpV2ProductDetail from './pages/erp-v2/ErpV2ProductDetail';
+import ErpV2ProductNew from './pages/erp-v2/ErpV2ProductNew';
 import { FEATURES } from './config/platform';
 
 /** Block access to tenant URLs the user is not authorized for */
@@ -95,6 +96,7 @@ function TenantRoutes() {
       <Route path="purchase" element={<Purchase />} />
       <Route path="erp/*" element={<ErpWorkspace />} />
       <Route path="erp-v2/products" element={<ErpV2ProductList />} />
+      <Route path="erp-v2/products/new" element={<ErpV2ProductNew />} />
       <Route path="erp-v2/products/:id" element={<ErpV2ProductDetail />} />
       <Route path="rbac" element={<RBACManagement />} />
       {FEATURES.crm && <Route path="crm/*" element={<CrmIndex />} />}

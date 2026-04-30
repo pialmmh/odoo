@@ -56,7 +56,7 @@ echo "  ✓ Route: /api/erp/* (Keycloak JWT)"
 
 # Protected: ERP v2 (vendor-neutral adapter pattern under com.telcobright.api.erpv2)
 curl -s -X PUT "$ADMIN/routes/10" -H "X-API-KEY: $KEY" -H "Content-Type: application/json" \
-  -d "{\"name\":\"api-erp-v2\",\"uri\":\"/api/erp-v2/*\",\"methods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\",\"OPTIONS\"],\"upstream_id\":\"1\",\"priority\":0,\"plugins\":{\"cors\":$CORS,\"openid-connect\":$OIDC}}" > /dev/null
+  -d "{\"name\":\"api-erp-v2\",\"uri\":\"/api/erp-v2/*\",\"methods\":[\"GET\",\"POST\",\"PUT\",\"PATCH\",\"DELETE\",\"OPTIONS\"],\"upstream_id\":\"1\",\"priority\":0,\"plugins\":{\"cors\":$CORS,\"openid-connect\":$OIDC}}" > /dev/null
 echo "  ✓ Route: /api/erp-v2/* (Keycloak JWT)"
 
 # Public: CRM health
