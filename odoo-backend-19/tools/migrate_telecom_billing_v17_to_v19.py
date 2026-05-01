@@ -155,6 +155,10 @@ def main():
                 (name, amount, type_tax_use, amount_type, price_include_override, include_base_amount,
                  description, active, company_id, sequence, create_uid, write_uid, create_date, write_date,
                  country_id, tax_group_id)
+              -- NOTE: after this insert we MUST also create 4
+              -- account_tax_repartition_line rows per tax (base+tax × invoice+refund),
+              -- otherwise compute_all() throws IndexError on every form view.
+              -- See _post_create_repartition_lines() at the bottom of the script.
               VALUES (%s, %s, %s, COALESCE(%s,'percent'), %s, COALESCE(%s, FALSE),
                       %s, COALESCE(%s, TRUE), 1, 1, 1, 1, NOW(), NOW(),
                       %s, %s)
@@ -167,6 +171,19 @@ def main():
             new_id = dst.fetchone()['id']
             tax_map[t['id']] = new_id
             log.info(f'  + account_tax[{t["id"]}] "{nm_en}" → v19 id={new_id}')
+
+            # Each newly-created tax needs 4 repartition lines or
+            # compute_all() throws IndexError on every form view.
+            # 2 documents (invoice/refund) × 2 types (base/tax). Both
+            # get factor_percent=100 so the full amount lands on the
+            # single line — Odoo's default single-account split.
+            for doc in ('invoice', 'refund'):
+                for rtype, factor in (('base', 100), ('tax', 100)):
+                    dst.execute("""INSERT INTO account_tax_repartition_line
+                        (tax_id, document_type, repartition_type, factor_percent, sequence,
+                         create_uid, write_uid, create_date, write_date)
+                      VALUES (%s, %s, %s, %s, %s, 1, 1, NOW(), NOW())""",
+                      (new_id, doc, rtype, factor, 1 if rtype == 'base' else 100))
 
         # ------------------------------------------------------------------
         # 3) product_template — the 9 telecom services

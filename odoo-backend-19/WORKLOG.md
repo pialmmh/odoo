@@ -168,6 +168,24 @@ Spring runs from:
 cd orchestrix-v2 && nohup java -jar api/target/platform-api-1.0-SNAPSHOT.jar &
 ```
 
+## Round 3 — product detail "Oops" (tax repartition lines)
+
+User clicked a product → "Oops!" dialog. Real error in the trace:
+`IndexError: list index out of range` at
+`account_tax._distribute_delta_amount_smoothly`. Cause: each migrated
+`account_tax` row needs 4 `account_tax_repartition_line` rows
+(base+tax × invoice+refund). The migration script only inserted the
+tax record itself; the related repartition lines were never created.
+Without them, `compute_all()` walks an empty `factors` list and
+crashes on `factors[i][0]`.
+
+**Fix:** added repartition-line creation inline in
+`migrate_telecom_billing_v17_to_v19.py` right after each tax INSERT,
+and back-filled the 24 missing rows on the live DB (6 taxes × 4).
+Verified: `/odoo/products/13` (Bulk SMS) renders cleanly with VAT 5%
++ AIT 5% tax pills. No console errors. Screenshot at
+`.playwright-mcp/product-detail-after-tax-fix.png`.
+
 ## Round 2 (after user spotted the still-broken page)
 
 User reported `localhost:7170/odoo/products` was rendering completely
