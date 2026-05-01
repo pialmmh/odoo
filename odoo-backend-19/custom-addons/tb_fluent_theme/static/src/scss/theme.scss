@@ -640,23 +640,36 @@ $fluent-bg-canvas:   #fafafa;
     }
 }
 
-// ── Notebook tabs — Fluent Tab style ─────────────────────────────
-// Replace Bootstrap's tab-pill look with Fluent's quieter underline:
-// muted text at rest, brand text + 2 px brand underline when active.
-// Active tab loses its background "shelf" entirely.
+// ── Notebook tabs — Fluent UI v9 Tab look ────────────────────────
+// Reference: @fluentui/react-components TabList. Default appearance:
+//   - 14 px medium label, brand color when selected, neutral2 muted at rest
+//   - subtle bg tint on hover (colorSubtleBackgroundHover)
+//   - selected indicator = 3 px pill with 99 px (full) border-radius,
+//     positioned at the bottom of the tab, inset ~10 px on each side
+//   - NO bottom border on the TabList itself — the indicator alone
+//     differentiates the active tab
+//
+// To make the FIRST tab's text flush with form-content left edge
+// (the user spotted "General Information" sitting indented vs the
+// labels below), we pull the whole .nav-tabs strip left by the
+// nav-link's left padding. The other tabs spaces stay symmetric.
 .o_form_view .o_notebook .nav-tabs {
-    border-bottom: 1px solid $fluent-stroke-1 !important;
-    column-gap: 4px;
+    border: 0 !important;
+    column-gap: 2px;
     margin-bottom: 0 !important;
+    margin-left: -10px;            // pull strip flush with form labels
+    padding-bottom: 3px;            // leave space for the pill indicator
 
     .nav-link, .nav-item .nav-link {
         border: 0 !important;
-        border-radius: 0 !important;
+        border-radius: $fluent-radius-md !important;
         background-color: transparent !important;
         background-image: none !important;
         color: $tb-header-fg-muted !important;
-        padding: 10px 14px !important;
-        font-weight: 500;
+        padding: 6px 10px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        line-height: 1.4 !important;
         position: relative;
         transition: color 0.12s ease, background-color 0.12s ease;
 
@@ -671,24 +684,51 @@ $fluent-bg-canvas:   #fafafa;
             color: $tb-brand !important;
             background-color: transparent !important;
             font-weight: 600 !important;
-            box-shadow: inset 0 -2px 0 $tb-brand !important;
+            box-shadow: none !important;     // override any inherited
+
+            // Fluent v9 selected indicator: 3 px brand pill with full
+            // border-radius, ~10 px inset from each edge, sits in the
+            // 3 px gap padded below the label.
+            &::after {
+                content: "";
+                position: absolute;
+                left: 10px;
+                right: 10px;
+                bottom: -3px;
+                height: 3px;
+                background-color: $tb-brand;
+                border-radius: 99px;
+            }
         }
     }
 }
 
 // ── Form inputs — Fluent Input style ─────────────────────────────
 // Fluent Input: subtle 4-side border at rest, brand-coloured focus
-// ring (border + 1px boxed shadow). Applies to all fields, selects,
-// textareas, and the inline many2one picker box.
+// ring. Applies to all fields, selects, textareas, and the inline
+// many2one picker box.
 //
-// Already-defined `.o_form_view .o_field_widget input:focus` (line
-// ~206) handles the focus shadow; we extend the rest-state look here.
+// IMPORTANT: Odoo applies inline `border-top-width: 0.8px;
+// border-bottom-width: 0.8px;` styles on its `.o_input` elements
+// via the form widget JS. That inline style wins specificity-wise
+// against `border: 1px solid …` (which is shorthand and gets split
+// after parsing). The result is a sub-pixel "ghost" line stacked on
+// top of our intended 1 px border — visible as a faint double stroke,
+// most obvious on textareas.
+//
+// Fix: declare each side's width explicitly with !important so the
+// longhand wins over the inline shorthand assignment. Bootstrap's
+// `.o_input` underline rule is also clobbered for the same reason.
+//
+// `.o_form_view .o_field_widget input:focus` (line ~206) handles the
+// focus accent; we leave that intact.
 .o_form_view .o_field_widget {
     .o_input,
     > input.o_input,
     > textarea.o_input,
     > select.o_input,
     > div > input.o_input,
+    > div > textarea.o_input,
     .o_input_dropdown > input,
     .o_field_char input,
     .o_field_text textarea,
@@ -698,15 +738,27 @@ $fluent-bg-canvas:   #fafafa;
     .o_field_email input,
     .o_field_phone input,
     .o_field_url input {
-        border: 1px solid $fluent-stroke-1 !important;
-        border-radius: $fluent-radius-md !important;
-        padding: 5px 10px !important;
-        background-color: #ffffff !important;
-        transition: border-color 0.12s ease, box-shadow 0.12s ease;
+        border-top-width:    1px !important;
+        border-right-width:  1px !important;
+        border-bottom-width: 1px !important;
+        border-left-width:   1px !important;
+        border-style:        solid !important;
+        border-color:        $fluent-stroke-1 !important;
+        border-radius:       $fluent-radius-md !important;
+        padding:             5px 10px !important;
+        background-color:    #ffffff !important;
+        box-shadow:          none !important;
+        transition:          border-color 0.12s ease, box-shadow 0.12s ease;
 
         &:hover:not(:focus):not([readonly]):not([disabled]) {
             border-color: #adadad !important;
         }
+    }
+    // Empty sibling div Odoo injects after some textareas — it has no
+    // content but Bootstrap can still draw a 1 px hairline on it,
+    // producing the second line under the textarea.
+    .o_field_input_buttons:empty {
+        display: none !important;
     }
 }
 
@@ -900,16 +952,24 @@ $fluent-bg-canvas:   #fafafa;
         margin: 0 !important;
 
         // The big text input that holds the record name should look
-        // like a heading at rest, not a chunky textarea.
+        // like a heading at rest, not a chunky textarea. Per-side
+        // border widths are explicit (not shorthand) to defeat
+        // Odoo's inline `border-top-width: 0.8px` ghost line.
         textarea.o_input,
         input.o_input {
-            font-size: 24px !important;
+            font-size:   24px !important;
             font-weight: 600 !important;
             line-height: 1.25 !important;
-            border: 1px solid transparent !important;
-            background-color: transparent !important;
-            padding: 4px 8px !important;
-            color: $tb-header-fg !important;
+            border-top-width:    1px !important;
+            border-right-width:  1px !important;
+            border-bottom-width: 1px !important;
+            border-left-width:   1px !important;
+            border-style:        solid !important;
+            border-color:        transparent !important;
+            background-color:    transparent !important;
+            padding:             4px 8px !important;
+            color:               $tb-header-fg !important;
+            box-shadow:          none !important;
 
             &:hover { border-color: $fluent-stroke-1 !important; }
             &:focus {
