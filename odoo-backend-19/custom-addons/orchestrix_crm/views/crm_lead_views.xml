@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Surface the contact-center channel on the lead form, list, and search filters. -->
+    <record id="view_crm_lead_form_inherit_orchestrix" model="ir.ui.view">
+        <field name="name">crm.lead.form.orchestrix</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='source_id']" position="after">
+                <field name="source_channel"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_crm_lead_tree_inherit_orchestrix" model="ir.ui.view">
+        <field name="name">crm.lead.list.orchestrix</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_leads"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='email_from']" position="after">
+                <field name="source_channel" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_crm_lead_search_inherit_orchestrix" model="ir.ui.view">
+        <field name="name">crm.lead.search.orchestrix</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.view_crm_case_leads_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='source_id']" position="after">
+                <field name="source_channel"/>
+            </xpath>
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter string="By Channel" name="group_source_channel"
+                        context="{'group_by': 'source_channel'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

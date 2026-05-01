@@ -8,10 +8,20 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Inject JWT token on every request — wait briefly if token not ready
+// Tenant slug taken from the first URL path segment (`/btcl/...` → "btcl").
+// Backend routes the call to that tenant's Odoo DB; missing/empty falls back
+// to the default DB on the gateway side.
+function tenantSlug() {
+  const seg = (window.location?.pathname || '').split('/').filter(Boolean)[0];
+  if (!seg) return null;
+  // Avoid sending obviously non-tenant top-level segments.
+  if (seg === 'login' || seg === 'callback' || seg === '404') return null;
+  return seg;
+}
+
+// Inject JWT token + tenant header on every request.
 api.interceptors.request.use(async (config) => {
   let token = getToken();
-  // If no token yet, wait up to 3s for Keycloak to be ready
   if (!token) {
     for (let i = 0; i < 6; i++) {
       await new Promise(r => setTimeout(r, 500));
@@ -19,9 +29,9 @@ api.interceptors.request.use(async (config) => {
       if (token) break;
     }
   }
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  const slug = tenantSlug();
+  if (slug) config.headers['X-Tenant-Slug'] = slug;
   return config;
 });
 

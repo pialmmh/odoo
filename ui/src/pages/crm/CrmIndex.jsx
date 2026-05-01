@@ -2,6 +2,15 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Leads       from './Leads';
 import LeadDetail  from './LeadDetail';
 import LeadEdit    from './LeadEdit';
+import LeadsOdoo            from '../crm-odoo/Leads';
+import LeadDetailOdoo       from '../crm-odoo/LeadDetail';
+import ContactsOdoo         from '../crm-odoo/Contacts';
+import ContactDetailOdoo    from '../crm-odoo/ContactDetail';
+import AccountsOdoo         from '../crm-odoo/Accounts';
+import AccountDetailOdoo    from '../crm-odoo/AccountDetail';
+import OpportunitiesOdoo    from '../crm-odoo/Opportunities';
+import OpportunityDetailOdoo from '../crm-odoo/OpportunityDetail';
+import CasesOdoo            from '../crm-odoo/Cases';
 import Contacts    from './Contacts';
 import ContactDetail from './ContactDetail';
 import ContactEdit from './ContactEdit';
@@ -64,6 +73,17 @@ export default function CrmIndex() {
       <Route path="leads/new"      element={<LeadEdit />} />
       <Route path="leads/:id"      element={<LeadDetail />} />
       <Route path="leads/:id/edit" element={<LeadEdit />} />
+
+      {/* Odoo-backed clone — Fluent UI v9, Odoo persistence. */}
+      <Route path="leads-odoo"             element={<LeadsOdoo />} />
+      <Route path="leads-odoo/:id"         element={<LeadDetailOdoo />} />
+      <Route path="contacts-odoo"          element={<ContactsOdoo />} />
+      <Route path="contacts-odoo/:id"      element={<ContactDetailOdoo />} />
+      <Route path="accounts-odoo"          element={<AccountsOdoo />} />
+      <Route path="accounts-odoo/:id"      element={<AccountDetailOdoo />} />
+      <Route path="opportunities-odoo"     element={<OpportunitiesOdoo />} />
+      <Route path="opportunities-odoo/:id" element={<OpportunityDetailOdoo />} />
+      <Route path="cases-odoo"             element={<CasesOdoo />} />
 
       <Route path="contacts"          element={<Contacts />} />
       <Route path="contacts/new"      element={<ContactEdit />} />

@@ -60,7 +60,7 @@ const config = {
 
   // ── Services (for launch-all.sh / status page) ──
   services: {
-    odoo: { port: 7169 },
+    odoo: { port: 7170 },
     keycloak: { port: 7104 },
     springBoot: { port: 8180 },
     gateway: { port: 8001 },

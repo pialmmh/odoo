@@ -47,7 +47,11 @@ import SyncJobs from './pages/party/SyncJobs';
 import CallHost from './call/CallHost';
 import LivekitCallExp from './pages/experiments/LivekitCallExp';
 import OdooIframe from './pages/experiments/OdooIframe';
+import OdooEmbedPage from './pages/odoo-embed/OdooEmbedPage';
+import LeadsOdoo from './pages/experiments/LeadsOdoo';
+import LeadEditOdoo from './pages/experiments/LeadEditOdoo';
 import ErpWorkspace from './pages/erp/workspace/ErpWorkspace';
+import WorkPackages from './pages/pm/WorkPackages';
 import { FEATURES } from './config/platform';
 
 /** Block access to tenant URLs the user is not authorized for */
@@ -92,11 +96,17 @@ function TenantRoutes() {
       <Route path="nms/temporal/new" element={<NmsTemporalClusterEdit />} />
       <Route path="nms/temporal/:id/edit" element={<NmsTemporalClusterEdit />} />
       <Route path="purchase" element={<Purchase />} />
-      <Route path="erp/*" element={<ErpWorkspace />} />
+      <Route path="idempiere/*" element={<ErpWorkspace />} />
+      <Route path="erp" element={<OdooEmbedPage />} />
+      <Route path="erp/*" element={<OdooEmbedPage />} />
+      <Route path="pm/work-packages" element={<WorkPackages />} />
       <Route path="rbac" element={<RBACManagement />} />
       {FEATURES.crm && <Route path="crm/*" element={<CrmIndex />} />}
       <Route path="experiments/livekit-call" element={<LivekitCallExp />} />
       <Route path="experiments/odoo-iframe" element={<OdooIframe />} />
+      <Route path="experiments/leads-odoo" element={<LeadsOdoo />} />
+      <Route path="experiments/leads-odoo/new" element={<LeadEditOdoo />} />
+      <Route path="experiments/leads-odoo/:id/edit" element={<LeadEditOdoo />} />
       {isSuper && <Route path="tenants" element={<Tenants />} />}
 
       {/* Party — tenant-scoped */}

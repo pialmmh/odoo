@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add a "Contact Center" page to the user form for our PBX/SIP/XMPP fields. -->
+    <record id="view_users_form_inherit_orchestrix" model="ir.ui.view">
+        <field name="name">res.users.form.orchestrix</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Contact Center" name="contact_center">
+                    <group>
+                        <group string="Telephony Identity">
+                            <field name="pbx_domain"/>
+                            <field name="pbx_uuid"/>
+                            <field name="domain_uuid"/>
+                            <field name="agent_uuid"/>
+                            <field name="extension_uuid"/>
+                        </group>
+                        <group string="SIP Credentials">
+                            <field name="sip_username"/>
+                            <field name="sip_password" password="True"/>
+                        </group>
+                        <group string="XMPP (legacy)">
+                            <field name="xmpp_user_c"/>
+                            <field name="xmpp_pass_c" password="True"/>
+                        </group>
+                        <group string="Productivity">
+                            <field name="daily_call_target"/>
+                            <field name="agent_limit"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

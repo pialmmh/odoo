@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_orchestrix_root"
+              name="Contact Center"
+              sequence="55"/>
+    <menuitem id="menu_orchestrix_pbx_extensions"
+              name="PBX Extensions"
+              parent="menu_orchestrix_root"
+              action="action_pbx_extension"
+              sequence="10"/>
+</odoo>

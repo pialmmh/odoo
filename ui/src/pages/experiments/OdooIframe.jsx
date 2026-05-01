@@ -1,20 +1,22 @@
-import { useState, useEffect, useRef } from 'react';
-import { makeStyles, tokens, Text, Button, Divider } from '@fluentui/react-components';
-import {
-  Open20Regular, ArrowClockwise20Regular, Eye20Regular,
-} from '@fluentui/react-icons';
+import { useRef } from 'react';
+import { makeStyles, tokens } from '@fluentui/react-components';
 
 // Experimental: embed the Odoo backend full-window inside our shell.
 //
-// The iframe targets `/web` (proxied to localhost:7169 by Vite) so the
+// The iframe targets `/web` (proxied to localhost:7170 by Vite) so the
 // browser sees same-origin. That sidesteps Odoo's X-Frame-Options
 // (stripped on the proxy edge) AND lets the parent window introspect
 // the iframe — used by the "live context" rail on the right.
 //
 // The rail demonstrates the supported low-coupling path for building
 // CRM / activity-feed features alongside Odoo: parse `iframe.contentWindow
-// .location.hash` on every `hashchange` event to learn what the user
-// is currently looking at (model, res_id, action, view_type, menu_id).
+// .location.{pathname,search,hash}` on every router change to learn what
+// the user is currently looking at (model, res_id, action, menu_id, cids).
+//
+// Odoo 19 changed the router from hash-based (#action=...&model=...) to
+// path-based (/odoo/<action-or-model>/<resId?>?cids=...&menu_id=...). We
+// parse both so this page also works against v17 backends if you swap
+// the Vite proxy back.
 //
 // Page is scaled to 95% (per request) using transform + compensating
 // width/height so the inner content still fills the viewport.
@@ -117,8 +119,13 @@ const useStyles = makeStyles({
   },
 });
 
-const TRACKED_KEYS = ['model', 'res_id', 'action', 'view_type', 'menu_id', 'cids'];
+const TRACKED_KEYS = ['model', 'res_id', 'action', 'menu_id', 'cids', 'active_id'];
 
+function isNumeric(s) {
+  return typeof s === 'string' && s !== '' && !isNaN(Number(s));
+}
+
+// v17 hash: #action=123&model=res.partner&res_id=44&menu_id=5&cids=1
 function parseHash(hash) {
   if (!hash || hash === '#') return null;
   const out = {};
@@ -132,144 +139,77 @@ function parseHash(hash) {
   return out;
 }
 
+// v19 URL: /odoo/<segment>(/<resId-or-active>)*?cids=…&menu_id=…
+//   segment forms:
+//     "contacts"             → action='contacts'
+//     "action-123"           → action='123' (numeric)
+//     "action-base.action_x" → action='base.action_x' (xml id)
+//     "m-sale.order"         → model='sale.order' (model with no dot needs m- prefix)
+//     "res.partner"          → model='res.partner'
+//   numeric segments are resId (or active_id when followed by another action).
+function parsePath(pathname, search) {
+  if (!pathname) return null;
+  const parts = pathname.split('/').filter(Boolean);
+  const [prefix, ...rest] = parts;
+  if (!['odoo', 'scoped_app'].includes(prefix)) return null;
+  const out = {};
+  // Last action segment wins for display; track the last numeric as res_id.
+  for (let i = 0; i < rest.length; i++) {
+    const seg = rest[i];
+    if (isNumeric(seg)) {
+      // numeric → either active_id (preceding ctx) or res_id (current record)
+      // If the next segment is another action, we're an active_id; otherwise res_id.
+      const next = rest[i + 1];
+      if (next && !isNumeric(next) && next !== 'new') {
+        out.active_id = seg;
+      } else {
+        out.res_id = seg;
+      }
+    } else if (seg === 'new') {
+      out.res_id = 'new';
+    } else if (seg.startsWith('action-')) {
+      out.action = seg.slice(7);
+    } else if (seg.startsWith('m-')) {
+      out.model = seg.slice(2);
+    } else if (seg.includes('.')) {
+      out.model = seg;
+    } else {
+      out.action = seg;
+    }
+  }
+  // Merge search params (cids, menu_id, etc.)
+  if (search) {
+    const sp = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+    for (const [k, v] of sp) {
+      // Only set if not already set from the path
+      if (!(k in out)) out[k] = v;
+    }
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+function parseLocation(loc) {
+  // Prefer v19 path-based form; fall back to v17 hash.
+  const fromPath = parsePath(loc.pathname, loc.search);
+  if (fromPath) return fromPath;
+  return parseHash(loc.hash);
+}
+
 export default function OdooIframe() {
   const styles = useStyles();
-  const [reloadKey, setReloadKey] = useState(0);
-  const [ctx, setCtx] = useState(null);
-  const [eventCount, setEventCount] = useState(0);
   const iframeRef = useRef(null);
-
-  // Wire same-origin introspection: mirror the iframe's location.hash
-  // into React state. We need three signals because Odoo's Owl router
-  // mutates history with `pushState` — that DOES change the hash but
-  // does NOT fire `hashchange`. Order of preference:
-  //   1. `hashchange`  — fires on `location.hash = '#...'` assignments
-  //   2. `popstate`    — fires on browser back/forward
-  //   3. polling (250ms diff) — fallback that catches `pushState`
-  // Polling is cheap (one string read) and only runs while the page
-  // is mounted; it could be replaced by monkey-patching `pushState` /
-  // `replaceState` if we ever need event-exact timing.
-  useEffect(() => {
-    const f = iframeRef.current;
-    if (!f) return undefined;
-    let teardown = null;
-
-    const sync = (cw, reason) => {
-      try {
-        const next = cw.location.hash;
-        // Only count when something actually changed
-        setCtx((prev) => {
-          const parsed = parseHash(next);
-          const prevHash = prev?.__raw;
-          if (prevHash === next) return prev; // no change
-          if (parsed) parsed.__raw = next;
-          setEventCount((n) => n + 1);
-          return parsed;
-        });
-      } catch {
-        // Cross-origin (shouldn't happen with our same-origin proxy).
-      }
-    };
-
-    const onLoad = () => {
-      try {
-        const cw = f.contentWindow;
-        if (!cw) return;
-        const onHash = () => sync(cw, 'hash');
-        const onPop = () => sync(cw, 'pop');
-        cw.addEventListener('hashchange', onHash);
-        cw.addEventListener('popstate', onPop);
-        const poll = setInterval(() => sync(cw, 'poll'), 250);
-        teardown?.();
-        teardown = () => {
-          cw.removeEventListener('hashchange', onHash);
-          cw.removeEventListener('popstate', onPop);
-          clearInterval(poll);
-        };
-        sync(cw, 'load');
-      } catch {
-        /* ignore */
-      }
-    };
-
-    f.addEventListener('load', onLoad);
-    if (f.contentDocument && f.contentDocument.readyState === 'complete') {
-      onLoad();
-    }
-
-    return () => {
-      f.removeEventListener('load', onLoad);
-      teardown?.();
-    };
-  }, [reloadKey]);
 
   return (
     <div className={styles.root}>
-      <div className={styles.toolbar}>
-        <Text size={300} weight="semibold">Odoo (embed)</Text>
-        <Text size={200} className={styles.toolbarMuted}>
-          experimental — proxied via /web
-        </Text>
-        <div className={styles.toolbarSpacer} />
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<ArrowClockwise20Regular />}
-          onClick={() => setReloadKey((k) => k + 1)}
-        >
-          Reload
-        </Button>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<Open20Regular />}
-          onClick={() => window.open('/web', '_blank', 'noopener')}
-        >
-          Open in new tab
-        </Button>
-      </div>
-
       <div className={styles.body}>
         <div className={styles.frameWrap}>
           <iframe
             ref={iframeRef}
-            key={reloadKey}
             className={styles.frame}
-            src="/web"
+            src="/web?embed=1"
             title="Odoo embed"
           />
         </div>
-
-        <aside className={styles.rail}>
-          <div className={styles.railHeader}>
-            <Eye20Regular />
-            <Text size={300} weight="semibold">Live iframe context</Text>
-          </div>
-          <Text size={200} className={styles.railCaption}>
-            Reads <code>iframe.contentWindow.location.hash</code> on every{' '}
-            <code>hashchange</code>. Foundation for CRM panels, activity feeds,
-            anything that needs to react to what the user is looking at.
-          </Text>
-          <Divider />
-          {ctx ? (
-            <>
-              {TRACKED_KEYS.map((k) => (
-                <div key={k} className={styles.field}>
-                  <Text className={styles.fieldLabel}>{k}</Text>
-                  <Text className={styles.fieldValue}>{ctx[k] || '—'}</Text>
-                </div>
-              ))}
-              <Divider />
-              <Text size={200} className={styles.railCaption}>
-                hashchange events: {eventCount}
-              </Text>
-            </>
-          ) : (
-            <Text size={200} className={styles.empty}>
-              Waiting for backend to navigate (sign in or click any menu)…
-            </Text>
-          )}
-        </aside>
       </div>
     </div>
   );

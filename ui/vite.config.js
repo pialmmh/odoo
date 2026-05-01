@@ -26,7 +26,7 @@ export default defineConfig({
       // iframe). The paths below are all under Odoo's namespace and
       // do NOT collide with any React route.
       '/web': {
-        target: 'http://127.0.0.1:7169',
+        target: 'http://127.0.0.1:7170',
         changeOrigin: true,
         // Odoo hard-sets X-Frame-Options: DENY on the authenticated
         // backend pages (clickjacking protection). For our same-origin
@@ -43,8 +43,20 @@ export default defineConfig({
           });
         },
       },
-      '/longpolling': { target: 'http://127.0.0.1:7169', changeOrigin: true, ws: true },
-      '/websocket':   { target: 'http://127.0.0.1:7169', changeOrigin: true, ws: true },
+      '/longpolling': { target: 'http://127.0.0.1:7170', changeOrigin: true, ws: true },
+      '/websocket':   { target: 'http://127.0.0.1:7170', changeOrigin: true, ws: true },
+      // OpenProject HAL+JSON API — proxied so React dev server avoids CORS.
+      // Apache's ServerName is 'localhost' so we must force the Host header.
+      '/op-api': {
+        target: 'http://127.0.0.1:6543',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/op-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('host', 'localhost');
+          });
+        },
+      },
     },
     fs: {
       // node_modules/@telcobright/crm-call-* are `file:` links to a sibling

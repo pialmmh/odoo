@@ -31,14 +31,27 @@ $tb-header-fg-muted: #616161;   // colorNeutralForeground2
 $tb-header-border:   #D1D1D1;   // colorNeutralStroke1
 $tb-header-accent:   $tb-brand;
 
-//   FONT — sizes intentionally NOT touched.
-$tb-font-family: "Segoe UI Variable", "Segoe UI", -apple-system,
+//   FONT — must match the orchestrix-v2 React shell, which loads
+//   Inter from Google Fonts and applies it globally (see ui/index.html
+//   and ui/src/index.css). Keep these in sync — if the shell font
+//   changes, mirror it here.
+$tb-font-family: "Inter", "Segoe UI", -apple-system,
     BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
 
 // ── END CONFIG ───────────────────────────────────────────────────
 
 // ── Font (global) ─────────────────────────────────────────────────
+// Pull Inter from the same Google Fonts CDN the React shell uses.
+// @import must be the first non-comment statement in the compiled
+// CSS, but Odoo concatenates SCSS files so we use the CSS url() form
+// inside an @import at the top of the rule cascade — Odoo's bundler
+// hoists it correctly.
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 // Font sizes are NOT overridden — Odoo's existing ramp is preserved.
+// Apply on body so it cascades into iframes/portals that render
+// outside .o_web_client (kanban tooltips, owl popovers, etc.).
+body,
 .o_web_client,
 .o_web_client input,
 .o_web_client select,
@@ -46,8 +59,10 @@ $tb-font-family: "Segoe UI Variable", "Segoe UI", -apple-system,
 .o_web_client button,
 .modal,
 .o_dialog,
-.o_notification {
-    font-family: $tb-font-family;
+.o_notification,
+.o_popover,
+.o-overlay-container {
+    font-family: $tb-font-family !important;
 }
 
 // ── Top app bar (.o_main_navbar) ──────────────────────────────────
@@ -200,9 +215,53 @@ $tb-font-family: "Segoe UI Variable", "Segoe UI", -apple-system,
     background-color: $tb-brand-soft-08 !important;
 }
 
+// ── Kanban cards — Fluent UI Card style ───────────────────────────
+// Fluent UI Card: subtle shadow instead of border, 6px radius,
+// hover elevates the shadow.
+.o_kanban_view .o_kanban_record {
+    border: none !important;
+    border-radius: 6px !important;
+    box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.14) !important;
+    background-color: #ffffff !important;
+    transition: box-shadow 0.12s ease !important;
+    padding: 12px 14px !important;
+
+    &:hover {
+        box-shadow: 0 0 4px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.18) !important;
+    }
+
+    // Product name / title
+    .o_kanban_record_title,
+    .oe_kanban_details strong,
+    .o_kanban_record_body strong {
+        font-weight: 600;
+        font-size: 13.5px;
+        color: #201F1E;
+    }
+
+    // Sub-text (price, variants, etc.)
+    .oe_kanban_details ul,
+    .o_kanban_record_body {
+        font-size: 12.5px;
+        color: #616161;
+    }
+}
+
+// Focus ring stays brand-colored (override box-shadow with higher specificity)
 .o_kanban_view .o_kanban_record:focus,
 .o_kanban_view .o_kanban_record.o_focus {
-    box-shadow: 0 0 0 2px $tb-brand !important;
+    box-shadow: 0 0 0 2px $tb-brand, 0 0 2px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.14) !important;
+}
+
+// Kanban column ghost / wrapper — remove double-border from column
+.o_kanban_group {
+    border: none !important;
+    background: transparent !important;
+}
+
+// Remove gap border between cards
+.o_kanban_record + .o_kanban_record {
+    border-top: none !important;
 }
 
 // ── Breadcrumb separator + active link ────────────────────────────
@@ -319,3 +378,220 @@ a.o_form_uri:not(.btn),
         }
     }
 }
+
+// ── Hide row-drag handles globally ────────────────────────────────────
+// The 6-dot ⋮⋮ icon Odoo renders to the left of every sortable list row
+// (Order Lines, BoM components, etc.). The user finds it visually noisy
+// — but collapsing the cell would shift row content flush-left and
+// destroy the table's natural row inset. So we keep the cell as a
+// ghost spacer (full original width preserved by `visibility: hidden`)
+// and only kill its borders/background so it reads as empty space
+// rather than an empty cell.
+.o_row_handle,
+.oi-draggable,
+.o_handle_cell .fa-arrows-v,
+.o_handle_cell .o_row_handle {
+    visibility: hidden !important;
+}
+.o_handle_cell, th.o_handle_cell {
+    border: 0 !important;
+    background: transparent !important;
+}
+
+// ── Tab body padding ──────────────────────────────────────────────────
+// Odoo's notebook system uses two CSS custom properties to PULL tab
+// content out to the sheet edges:
+//   --Notebook-margin-x: calc(var(--formView-sheet-padding-x) * -1)
+//   --ListRenderer-margin-x: var(--Notebook-margin-x)   // also negative
+// This makes x2many tables (Order Lines, Attributes & Variants, BoM
+// components, etc.) span flush to the sheet edge — visually edge-to-edge
+// with no left/right inset.
+//
+// To restore breathing room we zero out those variables inside the form
+// view scope. The parent sheet padding then provides the natural inset.
+.o_form_view .o_notebook,
+.o_form_view .o_notebook .tab-pane {
+    --Notebook-margin-x: 0px !important;
+    --ListRenderer-margin-x: 0px !important;
+}
+
+// And add a small top/horizontal inset on the tab-pane itself so the
+// first row of content isn't kissing the tab-strip border. Kept tight
+// (8px) so the right-most column (e.g. Amount) doesn't get truncated.
+.o_form_view .o_notebook > .tab-content > .tab-pane {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    padding-top: 8px !important;
+}
+
+// ── Form Save / Discard / New buttons — consistent modern pill style ───
+// Two surfaces render these in Odoo:
+//   1. web.FormStatusIndicator → small icon-only buttons in the breadcrumb
+//      row (cloud-upload + undo). Default Bootstrap btn-light, no padding,
+//      no labels. They look like loose floating icons next to the breadcrumb.
+//   2. web.FormView.Buttons    → main CTA bar with full-text Save/Discard/New
+//      buttons (btn-primary / btn-secondary).
+//
+// We style both into a single coherent look matching our React app:
+//   - Save     → filled brand button, leading icon + "Save" label
+//   - Discard  → outlined neutral button, leading icon + "Discard" label
+//   - New      → outlined brand button, "+ New" label
+//
+// The status-indicator icons get text labels appended via ::after (the
+// markup is `<button><i class="fa fa-cloud-upload"/></button>` — there's
+// no other text to compete with, so the pseudo-label always lands cleanly).
+
+// Replace the cloud-upload Save glyph with a save/check glyph that doesn't
+// confuse users into thinking this uploads a file.
+.o_form_status_indicator_buttons .o_form_button_save .fa-cloud-upload::before {
+    content: "\f00c" !important;  // fa-check
+}
+
+// Status-indicator Save button (small, in breadcrumb row)
+.o_form_status_indicator_buttons .o_form_button_save {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background-color: $tb-brand !important;
+    color: $tb-brand-fg !important;
+    border: 1px solid $tb-brand !important;
+    border-radius: 4px !important;
+    padding: 4px 12px !important;
+    margin: 0 4px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+
+    .fa { color: $tb-brand-fg !important; font-size: 12px !important; }
+
+    &::after {
+        content: "Save";
+    }
+
+    &:hover, &:focus {
+        background-color: $tb-brand-hover !important;
+        border-color: $tb-brand-hover !important;
+        color: $tb-brand-fg !important;
+    }
+    &:active {
+        background-color: $tb-brand-pressed !important;
+        border-color: $tb-brand-pressed !important;
+    }
+}
+
+// Status-indicator Discard button (small, in breadcrumb row)
+.o_form_status_indicator_buttons .o_form_button_cancel {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background-color: transparent !important;
+    color: #424242 !important;
+    border: 1px solid #d1d1d1 !important;
+    border-radius: 4px !important;
+    padding: 4px 12px !important;
+    margin: 0 4px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+
+    .fa { color: #616161 !important; font-size: 12px !important; }
+
+    &::after {
+        content: "Discard";
+    }
+
+    &:hover, &:focus {
+        background-color: #f5f5f5 !important;
+        border-color: #c0c0c0 !important;
+        color: #242424 !important;
+    }
+}
+
+// Status-indicator wrapper — give it breathing room from the breadcrumb
+// and align it consistently with the row.
+.o_form_status_indicator_buttons {
+    gap: 4px !important;
+    margin-left: 12px !important;
+}
+
+// Main CTA Save (FormView.Buttons) — already labeled, just upgrade the look
+// to match our brand and add the leading icon.
+.o_form_buttons_edit .o_form_button_save {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background-color: $tb-brand !important;
+    border-color: $tb-brand !important;
+    color: $tb-brand-fg !important;
+    border-radius: 4px !important;
+    padding: 6px 16px !important;
+    font-weight: 500 !important;
+
+    &::before {
+        font-family: "FontAwesome";
+        content: "\f00c";  // fa-check
+        font-size: 12px;
+    }
+
+    &:hover, &:focus {
+        background-color: $tb-brand-hover !important;
+        border-color: $tb-brand-hover !important;
+        color: $tb-brand-fg !important;
+    }
+}
+
+// Main CTA Discard (FormView.Buttons)
+.o_form_buttons_edit .o_form_button_cancel {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background-color: transparent !important;
+    border-color: #d1d1d1 !important;
+    color: #424242 !important;
+    border-radius: 4px !important;
+    padding: 6px 16px !important;
+    font-weight: 500 !important;
+
+    &::before {
+        font-family: "FontAwesome";
+        content: "\f0e2";  // fa-undo
+        font-size: 12px;
+        color: #616161;
+    }
+
+    &:hover, &:focus {
+        background-color: #f5f5f5 !important;
+        border-color: #c0c0c0 !important;
+        color: #242424 !important;
+    }
+}
+
+// "+ New" CTA — both the main-bar variant and the breadcrumb-area variant.
+.o_form_buttons_view .o_form_button_create,
+.o_breadcrumb .o_form_button_create,
+.o_form_button_create {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background-color: transparent !important;
+    border: 1px solid $tb-brand !important;
+    color: $tb-brand !important;
+    border-radius: 4px !important;
+    padding: 6px 14px !important;
+    font-weight: 500 !important;
+
+    &::before {
+        content: "+";
+        font-size: 16px;
+        line-height: 1;
+        font-weight: 600;
+    }
+
+    &:hover, &:focus {
+        background-color: $tb-brand-soft-08 !important;
+        color: $tb-brand-pressed !important;
+        border-color: $tb-brand-pressed !important;
+    }
+}
+
+

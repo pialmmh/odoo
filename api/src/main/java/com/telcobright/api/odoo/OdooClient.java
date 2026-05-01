@@ -10,10 +10,15 @@ import org.springframework.stereotype.Component;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Generic Odoo XML-RPC client.
- * Authenticates once, then proxies any model/method call.
+ * Generic Odoo XML-RPC client with per-DB uid cache.
+ *
+ * Each tenant lives in its own Postgres database. We authenticate once per DB
+ * and keep the uid in {@link #uidByDb}. Callers pass the DB name explicitly;
+ * the no-DB overload uses {@link OdooProperties#getDb()} (default DB) for
+ * back-compat with non-tenanted routes.
  */
 @Component
 public class OdooClient {
@@ -21,8 +26,9 @@ public class OdooClient {
     private static final Logger log = LoggerFactory.getLogger(OdooClient.class);
 
     private final OdooProperties props;
+    private XmlRpcClient commonClient;
     private XmlRpcClient objectClient;
-    private int uid = -1;
+    private final Map<String, Integer> uidByDb = new ConcurrentHashMap<>();
 
     public OdooClient(OdooProperties props) {
         this.props = props;
@@ -31,30 +37,20 @@ public class OdooClient {
     @PostConstruct
     public void init() {
         try {
-            authenticate();
-            log.info("Odoo XML-RPC connected: {} (db={}, uid={})", props.getUrl(), props.getDb(), uid);
+            initRpcClients();
+            int uid = authenticate(props.getDb());
+            log.info("Odoo XML-RPC connected: {} (defaultDb={}, uid={})", props.getUrl(), props.getDb(), uid);
         } catch (Exception e) {
             log.warn("Odoo not reachable at startup ({}). Will retry on first call.", e.getMessage());
         }
     }
 
-    private synchronized void authenticate() throws Exception {
+    private synchronized void initRpcClients() throws Exception {
+        if (commonClient != null && objectClient != null) return;
         XmlRpcClientConfigImpl commonConfig = new XmlRpcClientConfigImpl();
         commonConfig.setServerURL(new URL(props.getUrl() + "/xmlrpc/2/common"));
-        XmlRpcClient commonClient = new XmlRpcClient();
+        commonClient = new XmlRpcClient();
         commonClient.setConfig(commonConfig);
-
-        Object result = commonClient.execute("authenticate", new Object[]{
-                props.getDb(), props.getUsername(), props.getPassword(), Collections.emptyMap()
-        });
-
-        if (result instanceof Integer) {
-            uid = (Integer) result;
-        } else if (result instanceof Boolean && !(Boolean) result) {
-            throw new RuntimeException("Odoo authentication failed: invalid credentials");
-        } else {
-            uid = ((Number) result).intValue();
-        }
 
         XmlRpcClientConfigImpl objectConfig = new XmlRpcClientConfigImpl();
         objectConfig.setServerURL(new URL(props.getUrl() + "/xmlrpc/2/object"));
@@ -62,44 +58,75 @@ public class OdooClient {
         objectClient.setConfig(objectConfig);
     }
 
+    private int authenticate(String db) throws Exception {
+        initRpcClients();
+        Object result = commonClient.execute("authenticate", new Object[]{
+                db, props.getUsername(), props.getPassword(), Collections.emptyMap()
+        });
+        if (result instanceof Boolean && !(Boolean) result) {
+            throw new RuntimeException("Odoo authentication failed for db=" + db + " (invalid credentials or DB missing)");
+        }
+        int uid = ((Number) result).intValue();
+        uidByDb.put(db, uid);
+        log.info("Odoo authenticated: db={}, uid={}", db, uid);
+        return uid;
+    }
+
+    private int uidFor(String db) throws Exception {
+        Integer uid = uidByDb.get(db);
+        if (uid == null) uid = authenticate(db);
+        return uid;
+    }
+
     /**
-     * Call any Odoo model method.
+     * Call any Odoo model method against a specific DB.
      * Equivalent to: models.execute_kw(db, uid, password, model, method, args, kwargs)
      */
-    public Object call(String model, String method, Object[] args, Map<String, Object> kwargs) throws Exception {
-        if (uid < 0 || objectClient == null) {
-            authenticate();
-        }
+    public Object call(String db, String model, String method, Object[] args, Map<String, Object> kwargs) throws Exception {
+        if (db == null || db.isBlank()) db = props.getDb();
+        int uid = uidFor(db);
 
         Object[] rpcArgs;
         if (kwargs != null && !kwargs.isEmpty()) {
             rpcArgs = new Object[]{
-                    props.getDb(), uid, props.getPassword(),
+                    db, uid, props.getPassword(),
                     model, method, args != null ? args : new Object[]{},
                     kwargs
             };
         } else {
             rpcArgs = new Object[]{
-                    props.getDb(), uid, props.getPassword(),
+                    db, uid, props.getPassword(),
                     model, method, args != null ? args : new Object[]{}
             };
         }
-
         return objectClient.execute("execute_kw", rpcArgs);
     }
 
-    /**
-     * Convenience: call with args only, no kwargs.
-     */
+    /** Default-DB convenience overload (back-compat for callers without tenant context). */
+    public Object call(String model, String method, Object[] args, Map<String, Object> kwargs) throws Exception {
+        return call(props.getDb(), model, method, args, kwargs);
+    }
+
     public Object call(String model, String method, Object[] args) throws Exception {
-        return call(model, method, args, null);
+        return call(props.getDb(), model, method, args, null);
     }
 
     public int getUid() {
-        return uid;
+        Integer uid = uidByDb.get(props.getDb());
+        return uid != null ? uid : -1;
+    }
+
+    public int getUid(String db) {
+        Integer uid = uidByDb.get(db);
+        return uid != null ? uid : -1;
     }
 
     public boolean isConnected() {
-        return uid > 0 && objectClient != null;
+        return getUid() > 0 && objectClient != null;
+    }
+
+    /** Drop cached uid for a DB; next call re-authenticates. Useful after admin password change. */
+    public void invalidate(String db) {
+        uidByDb.remove(db);
     }
 }

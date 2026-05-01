@@ -11,6 +11,7 @@ import {
   Phone20Regular, ShieldCheckmark20Regular, Options20Regular, HeartPulse20Regular,
   Clock20Regular, Handshake20Regular, PeopleSettings20Regular,
   PersonAvailable20Regular, BuildingFactory20Regular, Window20Regular,
+  Briefcase20Regular, CheckboxChecked20Regular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
@@ -230,6 +231,11 @@ export default function Sidebar() {
     ...(FEATURES.crm ? [
       { section: 'CRM' },
       { text: 'Leads',         icon: <PersonAdd20Regular />,         path: `${base}/crm/leads`,         iconColor: SIDEBAR_ICON_COLORS.pink },
+      { text: 'Leads (Odoo)',         icon: <PersonAdd20Regular />,      path: `${base}/crm/leads-odoo`,         iconColor: SIDEBAR_ICON_COLORS.pink },
+      { text: 'Contacts (Odoo)',      icon: <Person20Regular />,         path: `${base}/crm/contacts-odoo`,      iconColor: SIDEBAR_ICON_COLORS.blue },
+      { text: 'Accounts (Odoo)',      icon: <Building20Regular />,       path: `${base}/crm/accounts-odoo`,      iconColor: SIDEBAR_ICON_COLORS.amber },
+      { text: 'Opportunities (Odoo)', icon: <ArrowTrending20Regular />,  path: `${base}/crm/opportunities-odoo`, iconColor: SIDEBAR_ICON_COLORS.green },
+      { text: 'Cases (Odoo)',         icon: <Headset20Regular />,        path: `${base}/crm/cases-odoo` },
       { text: 'Contacts',      icon: <Person20Regular />,            path: `${base}/crm/contacts`,      iconColor: SIDEBAR_ICON_COLORS.blue },
       { text: 'Accounts',      icon: <Building20Regular />,          path: `${base}/crm/accounts`,      iconColor: SIDEBAR_ICON_COLORS.amber },
       { text: 'Opportunities', icon: <ArrowTrending20Regular />,     path: `${base}/crm/opportunities`, iconColor: SIDEBAR_ICON_COLORS.green },
@@ -249,6 +255,9 @@ export default function Sidebar() {
       { text: 'Policies',  icon: <ShieldCheckmark20Regular />,       path: `${base}/crm/campaigns/policies` },
     ] : []),
 
+    { section: 'Project Management' },
+    { text: 'Work Packages', icon: <CheckboxChecked20Regular />, path: `${base}/pm/work-packages`, iconColor: SIDEBAR_ICON_COLORS.blue },
+
     { section: 'Party' },
     { text: 'Partners',    icon: <Handshake20Regular />,             path: `${base}/party/partners` },
     { text: 'Party Users', icon: <PeopleSettings20Regular />,        path: `${base}/party/users` },
@@ -266,14 +275,24 @@ export default function Sidebar() {
     ] : []),
     { text: 'Settings', icon: <Settings20Regular />, path: `${base}/settings` },
 
+    { section: 'ERP (Odoo)' },
+    { text: 'Products',     icon: <Box20Regular />,        path: `${base}/erp/products` },
+    { text: 'Quotations',   icon: <Receipt20Regular />,    path: `${base}/erp/quotations` },
+    { text: 'Orders',       icon: <Cart20Regular />,       path: `${base}/erp/orders` },
+    { text: 'Invoices',     icon: <Receipt20Regular />,    path: `${base}/erp/invoices` },
+    { text: 'Payments',     icon: <Money20Regular />,      path: `${base}/erp/payments` },
+    { text: 'Contacts',     icon: <Person20Regular />,     path: `${base}/erp/contacts` },
+    { text: 'Open full ERP ↗', icon: <Window20Regular />, external: 'http://localhost:7170/odoo' },
+
     { section: 'Experimental' },
     { text: 'Odoo iframe (exp)', icon: <Window20Regular />, path: `${base}/experiments/odoo-iframe` },
     { text: 'LiveKit Call (exp)', icon: <Phone20Regular />, path: `${base}/experiments/livekit-call` },
     { text: 'Call Window (exp)', icon: <Headset20Regular />, path: `${base}/experiments/livekit-call?workspace=1` },
-    { text: 'ERP Product (exp)', icon: <Box20Regular />, path: `${base}/erp/product` },
-    { text: 'ERP Product Simple (exp)', icon: <Box20Regular />, path: `${base}/erp/product-simple` },
-    { text: 'ERP Business Partner (exp)', icon: <People20Regular />, path: `${base}/erp/bpartner` },
-    { text: 'ERP Warehouses (exp)', icon: <Building20Regular />, path: `${base}/erp/warehouse` },
+    { text: 'Leads (Odoo, exp)', icon: <PersonAdd20Regular />, path: `${base}/experiments/leads-odoo` },
+    { text: 'iDempiere Product (exp)', icon: <Box20Regular />, path: `${base}/idempiere/product` },
+    { text: 'iDempiere Product Simple (exp)', icon: <Box20Regular />, path: `${base}/idempiere/product-simple` },
+    { text: 'iDempiere Business Partner (exp)', icon: <People20Regular />, path: `${base}/idempiere/bpartner` },
+    { text: 'iDempiere Warehouses (exp)', icon: <Building20Regular />, path: `${base}/idempiere/warehouse` },
   ];
 
   const isActive = (path) => {
@@ -285,9 +304,12 @@ export default function Sidebar() {
       return loc.startsWith(path) && !loc.startsWith(`${path}/policies`);
     if (path === `${base}/crm/admin`)
       return loc.startsWith(path) && !loc.startsWith(`${path}/pbxExtensions`);
-    // /erp/product is a prefix of /erp/product-simple — keep them disjoint.
-    if (path === `${base}/erp/product`)
-      return loc.startsWith(path) && !loc.startsWith(`${base}/erp/product-simple`);
+    // /idempiere/product is a prefix of /idempiere/product-simple — keep them disjoint.
+    if (path === `${base}/idempiere/product`)
+      return loc.startsWith(path) && !loc.startsWith(`${base}/idempiere/product-simple`);
+    // /erp/products is the iframe page; mark it active for any /erp/products/* drill-in.
+    if (path === `${base}/erp/products`)
+      return loc.startsWith(path);
     return loc.startsWith(path);
   };
 
@@ -344,13 +366,17 @@ export default function Sidebar() {
               </div>
             );
           }
-          const active = isActive(item.path);
+          const active = item.external ? false : isActive(item.path);
           return (
             <button
               key={item.text}
               type="button"
               className={mergeClasses(styles.item, active && styles.itemActive)}
               onClick={() => {
+                if (item.external) {
+                  window.open(item.external, '_blank', 'noopener');
+                  return;
+                }
                 const loc = location.pathname;
                 const onSubPath = loc !== item.path && loc.startsWith(item.path + '/');
                 navigate(item.path, onSubPath ? { replace: true } : undefined);
