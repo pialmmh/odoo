@@ -19,8 +19,8 @@ killbill:
 
 # Catalog backend (Odoo) scope for this tenant
 catalog:
-  url: http://127.0.0.1:7169
-  db: odoo_billing
+  url: http://127.0.0.1:7170
+  db: odoo_billing_19
   partner-id: 1
 
 # Product mapping — UI-visible plan name → Odoo product variant

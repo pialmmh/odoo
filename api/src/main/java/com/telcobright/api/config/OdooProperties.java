@@ -6,11 +6,23 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "odoo")
 public class OdooProperties {
-    private String url = "http://127.0.0.1:7169";
+    private String url = "http://127.0.0.1:7170";
     /** Default DB used when no tenant context is supplied (back-compat for non-tenant routes). */
-    private String db = "odoo_billing";
-    /** Prefix applied to the tenant slug to derive a per-tenant DB name. */
+    private String db = "odoo_billing_19";
+    /** Prefix applied to the tenant slug to derive a per-tenant DB name (only used in PER_DB mode). */
     private String dbPrefix = "odoo_";
+    /**
+     * Tenant resolution strategy:
+     *   SINGLE — every tenant resolves to {@link #db}. Tenant separation lives at the app layer
+     *            via Odoo's company_id (multi-company). This is the default for v19 because the
+     *            v17→v19 in-place migration of per-tenant DBs is fragile (totp_last_counter
+     *            schema drift, json-column issues). To restore the per-tenant-DB topology, flip
+     *            this to PER_DB and use the SQL template at
+     *            odoo-backend-19/db-templates/pristine-tenant-v19.sql to spawn fresh DBs.
+     *   PER_DB — per-tenant DB; dbFor(slug) returns dbPrefix + slug. Each DB must already exist.
+     */
+    public enum TenantMode { SINGLE, PER_DB }
+    private TenantMode tenantMode = TenantMode.SINGLE;
     /** When true, accept tenant DB names that don't yet exist by failing through (controller maps to 502). */
     private boolean strictTenant = false;
     private String username = "admin";
@@ -42,6 +54,8 @@ public class OdooProperties {
     public void setDb(String db) { this.db = db; }
     public String getDbPrefix() { return dbPrefix; }
     public void setDbPrefix(String dbPrefix) { this.dbPrefix = dbPrefix; }
+    public TenantMode getTenantMode() { return tenantMode; }
+    public void setTenantMode(TenantMode tenantMode) { this.tenantMode = tenantMode; }
     public boolean isStrictTenant() { return strictTenant; }
     public void setStrictTenant(boolean strictTenant) { this.strictTenant = strictTenant; }
     public String getUsername() { return username; }
@@ -53,8 +67,18 @@ public class OdooProperties {
         this.platformModelPrefixes = platformModelPrefixes;
     }
 
+    /**
+     * Resolve the Odoo DB name to use for the given tenant slug.
+     *
+     * In SINGLE mode (the default), every request — including tenant-scoped ones — lands on
+     * {@link #db}. Tenant data isolation is the app's responsibility via Odoo's company_id.
+     *
+     * In PER_DB mode, the slug is suffixed onto {@link #dbPrefix}. Empty/null slugs always
+     * fall back to {@link #db} regardless of mode.
+     */
     public String dbFor(String tenantSlug) {
         if (tenantSlug == null || tenantSlug.isBlank()) return db;
+        if (tenantMode == TenantMode.SINGLE) return db;
         return dbPrefix + tenantSlug;
     }
 

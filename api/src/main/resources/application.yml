@@ -2,10 +2,13 @@ server:
   port: 8180
 
 odoo:
-  url: http://127.0.0.1:7169
-  db: odoo_billing
+  url: http://127.0.0.1:7170
+  db: odoo_billing_19
   username: admin
   password: admin
+  # SINGLE = all tenant slugs resolve to `db` (multi-company at app layer).
+  # PER_DB = legacy per-tenant DBs (`odoo_<slug>`); see odoo-backend-19/db-templates/.
+  tenant-mode: SINGLE
 
 erp:
   # iDempiere connection — Postgres access used only by the grandfathered

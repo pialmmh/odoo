@@ -184,11 +184,11 @@ def main():
             new_categ = cat_map.get(t['categ_id']) or 1
             new_uom = t['uom_id'] or 1   # 'Units' (id=1) by default
             dst.execute("""INSERT INTO product_template
-                (name, list_price, type, service_tracking, categ_id, uom_id,
+                (name, list_price, type, service_tracking, tracking, categ_id, uom_id,
                  sale_ok, purchase_ok, active, description, description_sale, default_code,
                  x_kb_product_name, x_kb_category,
                  create_uid, write_uid, create_date, write_date)
-              VALUES (%s, %s, COALESCE(%s,'service'), 'no', %s, %s,
+              VALUES (%s, %s, COALESCE(%s,'service'), 'no', 'none', %s, %s,
                       %s, %s, %s, %s, %s, %s,
                       %s, %s,
                       1, 1, NOW(), NOW())
@@ -326,10 +326,12 @@ def main():
                             (p['x_kb_account_id'], existing['id']))
                 log.info(f'  ~ res_partner[{p["id"]}] "{p["name"]}" — already on v19 (id={existing["id"]}); set x_kb_account_id')
                 continue
-            # Insert: copy only columns that exist on both sides; force NOT NULL defaults
+            # Insert: copy only columns that exist on both sides; force NOT NULL defaults.
+            # Defer self-referencing FKs (commercial_partner_id, parent_id) — fix up after.
             shared = cols_intersect(src, dst, 'res_partner')
             shared.remove('id')
-            shared = [c for c in shared if c not in ('parent_path',)]
+            shared = [c for c in shared if c not in
+                      ('parent_path', 'commercial_partner_id', 'parent_id')]
             # v19 has NOT NULL `autopost_bills` (no default) — provide it
             extra = {'autopost_bills': 'never'}
             cols = shared + list(extra.keys())
@@ -344,6 +346,9 @@ def main():
             dst.execute(sql, vals)
             new_id = dst.fetchone()['id']
             partner_map[p['id']] = new_id
+            # commercial partner self-ref now that we have new_id
+            dst.execute("UPDATE res_partner SET commercial_partner_id=%s WHERE id=%s",
+                        (new_id, new_id))
             log.info(f'  + res_partner[{p["id"]}] "{p["name"]}" → v19 id={new_id}')
 
         # ------------------------------------------------------------------
