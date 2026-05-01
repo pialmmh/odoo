@@ -168,6 +168,82 @@ Spring runs from:
 cd orchestrix-v2 && nohup java -jar api/target/platform-api-1.0-SNAPSHOT.jar &
 ```
 
+## Round 2 (after user spotted the still-broken page)
+
+User reported `localhost:7170/odoo/products` was rendering completely
+unstyled with an "Oops!" dialog — even on direct access (no iframe).
+Asked for a clean reinstall + Playwright MCP verification before
+touching the iframe.
+
+**Plan was: drop+reinstall+bisect addons.**
+**What it actually was: a single CSS bundle bug, no reinstall needed.**
+
+### Diagnosis (via Playwright MCP browser at localhost:7170/odoo/products)
+
+- Page title set correctly → Owl mounted, JS bundle fine.
+- 9 telecom products visible in the unstyled DOM → data layer fine.
+- Zero console errors → no JS exceptions.
+- `document.styleSheets[*].cssRules.length === 0` for **both** CSS
+  bundles (`web.assets_web.min.css`, `web.assets_web_print.min.css`)
+  even though the responses were 200 OK and ~1 MB each.
+
+### Root cause
+
+`tb_fluent_theme/static/src/scss/theme.scss` line 49:
+
+```scss
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+```
+
+Odoo's SCSS bundler tokenises `;` as a statement terminator even
+inside a CSS `url(...)` literal. The first `;` (the one separating
+weight values in `wght@300;400;…`) cut the URL off mid-string. The
+compiled CSS started with:
+
+```
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;
+```
+
+— an unclosed `(`. CSS parser sees that, throws away every rule
+that follows. **All 7,400+ rules silently discarded.** The page
+renders as raw HTML — exactly what the user kept seeing.
+
+### Fix (one line)
+
+Switched to the older Google Fonts CSS1 URL (no `;` separators):
+
+```scss
+@import url('https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700&display=swap');
+```
+
+After Odoo restart + `DELETE FROM ir_attachment WHERE url LIKE '/web/assets/%'`
+to evict the broken cached bundle, the new CSS bundle compiled with
+**7,408 rules** and the page rendered correctly. Playwright MCP
+screenshot at `.playwright-mcp/odoo-direct-after-css-fix.png`.
+
+### Iframe-side gap also fixed
+
+Once direct Odoo worked, the iframe at
+`http://localhost:5180/btcl/erp/products` showed an "Oops!" because
+Vite wasn't proxying `/mail`, `/bus`, or `/odoo` to port 7170.
+Discuss tries to GET `/mail/data` from the page origin (5180), got
+a 404, and the chatter client treats that as a connection-lost
+error. Added all three to `vite.config.js`. After a Vite restart,
+`/btcl/erp/products` shows Discuss with channels, OdooBot, etc. —
+no error dialog. Screenshot: `.playwright-mcp/iframe-after-mail-proxy-fix.png`.
+
+### Tests
+
+All 4 specs in `ui/tests/odoo-iframe.spec.js` still pass after
+both fixes (1.9 min total).
+
+### Tasks not done (deliberately)
+
+- Drop+reinstall: not needed, single-line fix.
+- Custom-addon bisect: not needed, only `tb_fluent_theme` was at
+  fault; other 7 are clean.
+- Re-import data: data is intact, never lost.
+
 ## Known issues / things to verify in the morning
 
 1. **Visual check:** confirm the products at `/btcl/erp/products`

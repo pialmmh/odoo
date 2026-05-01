@@ -42,11 +42,13 @@ $tb-font-family: "Inter", "Segoe UI", -apple-system,
 
 // ── Font (global) ─────────────────────────────────────────────────
 // Pull Inter from the same Google Fonts CDN the React shell uses.
-// @import must be the first non-comment statement in the compiled
-// CSS, but Odoo concatenates SCSS files so we use the CSS url() form
-// inside an @import at the top of the rule cascade — Odoo's bundler
-// hoists it correctly.
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+// SCSS compilers treat `;` as a statement terminator even inside CSS
+// `url(...)` — Google Fonts' `wght@300;400;500;…` URL form gets
+// truncated at the first `;`, leaving an unclosed @import that
+// kills every subsequent rule in the bundle (cssRules: 0). Use the
+// older `&family=Inter:300,400,500,600,700` syntax which has no `;`,
+// or URL-encode them as `%3B`. We use comma form — cleaner.
+@import url('https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700&display=swap');
 
 // Font sizes are NOT overridden — Odoo's existing ramp is preserved.
 // Apply on body so it cascades into iframes/portals that render

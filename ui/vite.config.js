@@ -45,6 +45,14 @@ export default defineConfig({
       },
       '/longpolling': { target: 'http://127.0.0.1:7170', changeOrigin: true, ws: true },
       '/websocket':   { target: 'http://127.0.0.1:7170', changeOrigin: true, ws: true },
+      // Odoo Discuss + chatter long-poll endpoints. Without these the
+      // embedded iframe shows an "Oops!" because /mail/data 404s on
+      // the Vite origin and the Discuss client treats it as a lost
+      // connection. /mail/, /bus/, /im_livechat/, /odoo/ all live in
+      // Odoo's namespace and don't collide with React routes.
+      '/mail':        { target: 'http://127.0.0.1:7170', changeOrigin: true },
+      '/bus':         { target: 'http://127.0.0.1:7170', changeOrigin: true },
+      '/odoo':        { target: 'http://127.0.0.1:7170', changeOrigin: true },
       // OpenProject HAL+JSON API — proxied so React dev server avoids CORS.
       // Apache's ServerName is 'localhost' so we must force the Host header.
       '/op-api': {
