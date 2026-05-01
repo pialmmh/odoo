@@ -820,3 +820,208 @@ $fluent-bg-canvas:   #fafafa;
     border-radius: $fluent-radius-md !important;
 }
 
+// ════════════════════════════════════════════════════════════════
+//  Fluent v9 — refinement pass (round 2)
+// ════════════════════════════════════════════════════════════════
+//  - Move favourite star from left of title to right edge (its
+//    outline-star icon is too prominent as the leading element of
+//    the form's biggest typography slot).
+//  - Title typography: "Product" eyebrow → small uppercase muted,
+//    H1 → 24 px Fluent display, less weight than Bootstrap default.
+//  - Notebook tab font: tighter 8/14 padding, 14 px medium label,
+//    3 px brand underline on active.
+//  - Form body font: every field/input/label inherits Fluent body1
+//    (14 px, 1.4 line-height) so the form reads as one consistent
+//    surface, not Bootstrap defaults.
+//  - Buttons: 32 px Fluent target height; .btn-secondary becomes a
+//    neutral default (was unfortunately the same as .btn-outline-
+//    primary), preserves brand intent for primary/save buttons.
+
+// ── Title row — flip star to the right ───────────────────────────
+//
+//   .oe_title
+//     ├─ <label> "Product"
+//     └─ <h1>
+//          └─ .d-flex
+//                ├─ .o_field_boolean_favorite     ← we push this last
+//                └─ .o_field_widget[name="name"]   ← name input
+//
+// The wrapping .d-flex doesn't get .justify-content-* in stock Odoo,
+// so we make the name field grow and the star sticky-right via
+// margin-left: auto. order=999 ensures the star is the LAST flex
+// child regardless of DOM position.
+.o_form_view .oe_title h1 > .d-flex {
+    align-items: flex-start;
+    width: 100%;
+
+    .o_field_widget[name="name"] {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .o_field_boolean_favorite {
+        order: 999 !important;
+        margin-left: auto !important;
+        margin-right: 0 !important;
+        align-self: flex-start;
+        font-size: 16px;
+        opacity: 0.55;
+        transition: opacity 0.12s ease;
+
+        a, .o_favorite a {
+            color: $tb-header-fg-muted !important;
+            text-decoration: none;
+        }
+        .fa-star { color: $tb-brand !important; opacity: 1; }
+        &:hover, &:focus-within { opacity: 1 !important; }
+    }
+}
+
+// ── Title eyebrow + display pair ─────────────────────────────────
+// Make the small "Product" label a Fluent eyebrow, and the H1 a
+// proper display heading (lighter weight than Bootstrap's default).
+.o_form_view .oe_title {
+    margin-bottom: 16px;
+
+    > label,
+    > .o_form_label:first-child {
+        display: block;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.06em !important;
+        text-transform: uppercase !important;
+        color: $tb-header-fg-muted !important;
+        margin-bottom: 4px !important;
+    }
+    h1 {
+        font-size: 24px !important;
+        font-weight: 600 !important;
+        line-height: 1.25 !important;
+        color: $tb-header-fg !important;
+        margin: 0 !important;
+
+        // The big text input that holds the record name should look
+        // like a heading at rest, not a chunky textarea.
+        textarea.o_input,
+        input.o_input {
+            font-size: 24px !important;
+            font-weight: 600 !important;
+            line-height: 1.25 !important;
+            border: 1px solid transparent !important;
+            background-color: transparent !important;
+            padding: 4px 8px !important;
+            color: $tb-header-fg !important;
+
+            &:hover { border-color: $fluent-stroke-1 !important; }
+            &:focus {
+                border-color: $tb-brand !important;
+                background-color: #ffffff !important;
+            }
+        }
+    }
+}
+
+// ── Notebook tabs — tighter Fluent dimensions ────────────────────
+.o_form_view .o_notebook .nav-tabs .nav-link,
+.o_form_view .o_notebook .nav-tabs .nav-item .nav-link {
+    padding: 8px 14px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+
+    &.active {
+        font-weight: 600 !important;
+        // Slightly thicker indicator (3 px) for clearer Fluent active state.
+        box-shadow: inset 0 -3px 0 $tb-brand !important;
+    }
+}
+
+// ── Form body font — Fluent body1 (14 px / 1.4) globally ─────────
+.o_form_view {
+    font-size: 14px;
+
+    .o_inner_group,
+    .o_group,
+    .o_field_widget,
+    .o_field_widget input,
+    .o_field_widget select,
+    .o_field_widget textarea {
+        font-size: 14px;
+    }
+
+    .o_form_label {
+        font-size: 13px !important;
+        line-height: 1.4 !important;
+    }
+
+    // Tighten vertical rhythm of stacked fields
+    .o_inner_group > .o_cell + .o_cell { padding-top: 4px; }
+    .o_inner_group { row-gap: 4px; }
+}
+
+// ── Buttons — Fluent v9 sizing + neutral default for secondary ───
+// Default Fluent v9 button = 32 px height, 14 px medium label,
+// 4-12 px horizontal padding, 4 px radius. We don't override .btn
+// font-size globally (the breadcrumb has tiny icon-only buttons that
+// would inherit), but we do set min-height + padding-y so visible
+// labels land on the same baseline.
+.btn:not(.lh-sm):not(.border-0):not(.o_pager_previous):not(.o_pager_next):not(.oe_stat_button) {
+    min-height: 32px;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.4;
+    border-radius: $fluent-radius-md !important;
+    transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+// .btn-secondary should NOT look like .btn-outline-primary. Override
+// the earlier brand-coloured rule with a true neutral default.
+//
+// Caveat: this re-claims .btn-secondary from the brand cascade — only
+// the no-icon plain buttons (e.g. "Cancel", "Discard") show this.
+// Pager prev/next buttons explicitly opt out via .o_pager_* class.
+.btn-secondary,
+.btn-outline-secondary:not(.oe_stat_button) {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    border: 1px solid $fluent-stroke-1 !important;
+    color: $tb-header-fg !important;
+
+    *, span, i, .fa, svg { color: inherit !important; fill: currentColor; }
+
+    &:hover, &:focus {
+        background-color: $tb-brand-soft-08 !important;
+        border-color: $tb-brand !important;
+        color: $tb-brand !important;
+    }
+    &:active, &.active,
+    &:not(:disabled):not(.disabled):active {
+        background-color: $tb-brand-soft-12 !important;
+        border-color: $tb-brand-pressed !important;
+        color: $tb-brand-pressed !important;
+    }
+    &:focus, &:focus-visible {
+        box-shadow: 0 0 0 2px $tb-brand-soft-35 !important;
+        outline: none;
+    }
+}
+
+// Stat buttons (Documents / Sold) — Fluent surface card look,
+// preserve oe_stat_button visual but with our tokens.
+.btn.oe_stat_button {
+    border: 1px solid $fluent-stroke-1 !important;
+    border-radius: $fluent-radius-md !important;
+    background-color: #ffffff !important;
+    color: $tb-header-fg !important;
+
+    &:hover, &:focus {
+        background-color: $tb-brand-soft-08 !important;
+        border-color: $tb-brand !important;
+        color: $tb-brand !important;
+    }
+}
+
+
