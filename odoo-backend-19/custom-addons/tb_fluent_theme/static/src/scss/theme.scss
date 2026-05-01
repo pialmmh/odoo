@@ -596,4 +596,227 @@ a.o_form_uri:not(.btn),
     }
 }
 
+// ════════════════════════════════════════════════════════════════
+//  Fluent UI v9 — global surface / typography pass
+// ════════════════════════════════════════════════════════════════
+//  Below rules apply Fluent v9 design tokens across every Odoo form,
+//  list, modal, and popover. Because Odoo reuses the same `.o_*`
+//  classes for every model, one set of selectors covers products,
+//  partners, sales orders, invoices, settings — everything.
+//
+//  Token map (matches @fluentui/react-components webLightTheme):
+//    shadow-4    → ambient lift on cards/inputs at rest
+//    shadow-8    → elevated dialogs/popovers
+//    radius-md   → 4px (inputs, buttons)
+//    radius-lg   → 6px (cards, dialogs, popovers)
+//    stroke-1    → #d1d1d1 (default border)
+//    stroke-soft → #e0e0e0 (separator)
+//    bg-2        → #fafafa (subtle page background)
+
+$fluent-shadow-4: 0 0 2px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.14);
+$fluent-shadow-8: 0 0 2px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.14);
+$fluent-shadow-16: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14);
+$fluent-radius-md: 4px;
+$fluent-radius-lg: 6px;
+$fluent-stroke-1:    #d1d1d1;
+$fluent-stroke-soft: #e0e0e0;
+$fluent-bg-canvas:   #fafafa;
+
+// ── Form sheet — Fluent Card surface ─────────────────────────────
+// .o_form_sheet is the white "paper" container that wraps every form
+// view (product, partner, sale order, etc.). Lift it onto a soft
+// canvas with a subtle shadow + 6 px radius — that's the Fluent Card.
+.o_form_view {
+    .o_form_sheet_bg {
+        background-color: $fluent-bg-canvas !important;
+    }
+    .o_form_sheet {
+        background-color: #ffffff !important;
+        border: 1px solid $fluent-stroke-1 !important;
+        border-radius: $fluent-radius-lg !important;
+        box-shadow: $fluent-shadow-4 !important;
+        padding: 24px !important;
+        max-width: 1240px;
+    }
+}
+
+// ── Notebook tabs — Fluent Tab style ─────────────────────────────
+// Replace Bootstrap's tab-pill look with Fluent's quieter underline:
+// muted text at rest, brand text + 2 px brand underline when active.
+// Active tab loses its background "shelf" entirely.
+.o_form_view .o_notebook .nav-tabs {
+    border-bottom: 1px solid $fluent-stroke-1 !important;
+    column-gap: 4px;
+    margin-bottom: 0 !important;
+
+    .nav-link, .nav-item .nav-link {
+        border: 0 !important;
+        border-radius: 0 !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        color: $tb-header-fg-muted !important;
+        padding: 10px 14px !important;
+        font-weight: 500;
+        position: relative;
+        transition: color 0.12s ease, background-color 0.12s ease;
+
+        &:hover, &:focus, &:focus-visible {
+            background-color: $tb-brand-soft-08 !important;
+            color: $tb-brand !important;
+            outline: none;
+            box-shadow: none !important;
+        }
+
+        &.active {
+            color: $tb-brand !important;
+            background-color: transparent !important;
+            font-weight: 600 !important;
+            box-shadow: inset 0 -2px 0 $tb-brand !important;
+        }
+    }
+}
+
+// ── Form inputs — Fluent Input style ─────────────────────────────
+// Fluent Input: subtle 4-side border at rest, brand-coloured focus
+// ring (border + 1px boxed shadow). Applies to all fields, selects,
+// textareas, and the inline many2one picker box.
+//
+// Already-defined `.o_form_view .o_field_widget input:focus` (line
+// ~206) handles the focus shadow; we extend the rest-state look here.
+.o_form_view .o_field_widget {
+    .o_input,
+    > input.o_input,
+    > textarea.o_input,
+    > select.o_input,
+    > div > input.o_input,
+    .o_input_dropdown > input,
+    .o_field_char input,
+    .o_field_text textarea,
+    .o_field_integer input,
+    .o_field_float input,
+    .o_field_monetary input,
+    .o_field_email input,
+    .o_field_phone input,
+    .o_field_url input {
+        border: 1px solid $fluent-stroke-1 !important;
+        border-radius: $fluent-radius-md !important;
+        padding: 5px 10px !important;
+        background-color: #ffffff !important;
+        transition: border-color 0.12s ease, box-shadow 0.12s ease;
+
+        &:hover:not(:focus):not([readonly]):not([disabled]) {
+            border-color: #adadad !important;
+        }
+    }
+}
+
+// ── Field labels — Fluent body-strong ────────────────────────────
+.o_form_view .o_form_label,
+.o_form_view label.o_form_label {
+    font-weight: 600 !important;
+    color: $tb-header-fg !important;
+}
+
+// ── Section / group headers — uppercase Fluent-eyebrow ───────────
+// .o_horizontal_separator is the bold uppercase strip Odoo puts above
+// each <group> (e.g. "UPSELL & CROSS-SELL", "QUOTATION DESCRIPTION").
+.o_form_view .o_horizontal_separator,
+.o_form_view h3.o_horizontal_separator {
+    color: $tb-header-fg !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    border-bottom: 1px solid $fluent-stroke-soft !important;
+    padding-bottom: 6px !important;
+    margin-top: 16px !important;
+    margin-bottom: 12px !important;
+}
+
+// ── List view — Fluent Table look ────────────────────────────────
+.o_list_view {
+    .o_list_table {
+        border: 1px solid $fluent-stroke-1 !important;
+        border-radius: $fluent-radius-lg !important;
+        overflow: hidden;
+        background-color: #ffffff !important;
+    }
+    thead th {
+        background-color: #f5f5f5 !important;
+        border-bottom: 1px solid $fluent-stroke-1 !important;
+        font-weight: 600 !important;
+        color: $tb-header-fg !important;
+        text-transform: none !important;
+    }
+    tbody tr.o_data_row {
+        transition: background-color 0.08s ease;
+        &:hover {
+            background-color: $tb-brand-soft-08 !important;
+        }
+    }
+}
+
+// ── Modals / dialogs — Fluent Dialog ─────────────────────────────
+.modal-content {
+    border-radius: $fluent-radius-lg !important;
+    border: 1px solid $fluent-stroke-1 !important;
+    box-shadow: $fluent-shadow-16 !important;
+}
+.modal-header {
+    border-bottom: 1px solid $fluent-stroke-soft !important;
+    padding: 16px 20px !important;
+    .modal-title {
+        font-weight: 600 !important;
+        font-size: 16px !important;
+    }
+}
+.modal-body { padding: 20px !important; }
+.modal-footer {
+    border-top: 1px solid $fluent-stroke-soft !important;
+    padding: 12px 20px !important;
+}
+
+// ── Popovers / dropdowns — Fluent Popover ────────────────────────
+.dropdown-menu,
+.o_popover,
+.o-overlay-item .o_popover,
+.o-overlay-item .dropdown-menu {
+    border-radius: $fluent-radius-lg !important;
+    border: 1px solid $fluent-stroke-1 !important;
+    box-shadow: $fluent-shadow-8 !important;
+    padding: 4px !important;
+
+    .dropdown-item {
+        border-radius: $fluent-radius-md !important;
+        padding: 6px 10px !important;
+
+        &:hover, &:focus {
+            background-color: $tb-brand-soft-08 !important;
+            color: $tb-brand !important;
+        }
+        &.active, &:active {
+            background-color: $tb-brand !important;
+            color: $tb-brand-fg !important;
+        }
+    }
+}
+
+// ── oe_chatter / mail_thread side panel — Fluent Card ────────────
+// The chatter panel ("Send message / Log note / Activity" + thread)
+// sits to the right of every form view that uses mail.thread. Wrap it
+// in the same Fluent surface so it reads as one card not floating UI.
+.o_form_view .o-mail-Form-chatter,
+.o_form_view .o-mail-Chatter,
+.o_form_view .oe_chatter {
+    background-color: #ffffff !important;
+    border: 1px solid $fluent-stroke-1 !important;
+    border-radius: $fluent-radius-lg !important;
+    box-shadow: $fluent-shadow-4 !important;
+    padding: 16px !important;
+}
+
+// ── Search view chip — match Fluent pill input ───────────────────
+.o_searchview {
+    border-radius: $fluent-radius-md !important;
+}
 
