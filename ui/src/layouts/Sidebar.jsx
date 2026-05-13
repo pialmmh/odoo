@@ -369,7 +369,7 @@ export default function Sidebar() {
           const active = item.external ? false : isActive(item.path);
           return (
             <button
-              key={item.text}
+              key={item.path || item.external || item.text}
               type="button"
               className={mergeClasses(styles.item, active && styles.itemActive)}
               onClick={() => {

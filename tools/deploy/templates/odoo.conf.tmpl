@@ -1,0 +1,24 @@
+[options]
+addons_path = {{odoo_addons_path}}
+data_dir = {{odoo_data_dir}}
+http_port = {{odoo_http_port}}
+proxy_mode = {{odoo_proxy_mode}}
+
+# ── DB connection (rendered from operators/{{operator}}.conf [{{profile}}]) ──
+db_host = {{pg_host}}
+db_port = {{pg_port}}
+db_user = {{pg_user}}
+db_password = {{pg_password}}
+db_name = {{odoo_db_name}}
+dbfilter = ^{{odoo_db_name}}$
+list_db = False
+
+# Master password for DB management UI.
+admin_passwd = {{odoo_admin_passwd}}
+
+# ── Logging ──
+logfile = {{odoo_logfile}}
+log_level = {{odoo_log_level}}
+
+# ── Workers ──
+workers = {{odoo_workers}}

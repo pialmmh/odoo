@@ -641,63 +641,79 @@ $fluent-bg-canvas:   #fafafa;
 }
 
 // ── Notebook tabs — Fluent UI v9 Tab look ────────────────────────
-// Reference: @fluentui/react-components TabList. Default appearance:
-//   - 14 px medium label, brand color when selected, neutral2 muted at rest
-//   - subtle bg tint on hover (colorSubtleBackgroundHover)
-//   - selected indicator = 3 px pill with 99 px (full) border-radius,
-//     positioned at the bottom of the tab, inset ~10 px on each side
-//   - NO bottom border on the TabList itself — the indicator alone
-//     differentiates the active tab
-//
-// To make the FIRST tab's text flush with form-content left edge
-// (the user spotted "General Information" sitting indented vs the
-// labels below), we pull the whole .nav-tabs strip left by the
-// nav-link's left padding. The other tabs spaces stay symmetric.
-.o_form_view .o_notebook .nav-tabs {
-    border: 0 !important;
-    column-gap: 2px;
-    margin-bottom: 0 !important;
-    margin-left: -10px;            // pull strip flush with form labels
-    padding-bottom: 3px;            // leave space for the pill indicator
-
-    .nav-link, .nav-item .nav-link {
+// Hard rule: every visible element inside the form sheet (tabs,
+// section headers, field labels, inputs) MUST start at the same X.
+// The first tab text is therefore made flush by zeroing its
+// padding-left; all subsequent tabs keep symmetric inner padding.
+.o_form_view .o_notebook {
+    // The tab strip needs real breathing room below it: the active
+    // pill sits at bottom:-3px and the next sibling (.tab-content) is
+    // a list view whose sticky <thead> would otherwise ride up under
+    // the pill. Reserve 12 px of clear space.
+    .nav-tabs {
         border: 0 !important;
-        border-radius: $fluent-radius-md !important;
-        background-color: transparent !important;
-        background-image: none !important;
-        color: $tb-header-fg-muted !important;
-        padding: 6px 10px !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        line-height: 1.4 !important;
+        column-gap: 2px;
+        margin: 0 0 12px 0 !important;
+        padding: 0 0 3px 0 !important;  // 3px reserved for the pill indicator
         position: relative;
-        transition: color 0.12s ease, background-color 0.12s ease;
+        z-index: 1;
 
-        &:hover, &:focus, &:focus-visible {
-            background-color: $tb-brand-soft-08 !important;
-            color: $tb-brand !important;
-            outline: none;
+        .nav-link, .nav-item .nav-link {
+            border: 0 !important;
+            border-radius: $fluent-radius-md !important;
+            background-color: transparent !important;
+            background-image: none !important;
+            color: $tb-header-fg-muted !important;
+            padding: 6px 10px !important;
+            margin: 0 !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            line-height: 1.4 !important;
+            position: relative;
+            transition: color 0.12s ease, background-color 0.12s ease;
             box-shadow: none !important;
+
+            &:hover, &:focus, &:focus-visible {
+                background-color: $tb-brand-soft-08 !important;
+                color: $tb-brand !important;
+                outline: none;
+                box-shadow: none !important;
+            }
+
+            &.active,
+            &.active:focus,
+            &.active:hover {
+                color: $tb-brand !important;
+                background-color: transparent !important;
+                font-weight: 600 !important;
+                box-shadow: none !important;
+                border-radius: $fluent-radius-md !important;
+
+                // Fluent v9 selected indicator: 3 px brand pill, full
+                // radius, ~10 px inset from each edge, sits in the 3 px
+                // gap padded below the label.
+                &::after {
+                    content: "";
+                    position: absolute;
+                    left: 10px;
+                    right: 10px;
+                    bottom: -3px;
+                    height: 3px;
+                    background-color: $tb-brand;
+                    border-radius: 99px;
+                    box-shadow: none;
+                }
+            }
         }
 
-        &.active {
-            color: $tb-brand !important;
-            background-color: transparent !important;
-            font-weight: 600 !important;
-            box-shadow: none !important;     // override any inherited
+        // First tab: zero left padding so its text starts at the
+        // form-sheet content edge — same X as section headers below.
+        .nav-item:first-child .nav-link,
+        > .nav-link:first-child {
+            padding-left: 0 !important;
 
-            // Fluent v9 selected indicator: 3 px brand pill with full
-            // border-radius, ~10 px inset from each edge, sits in the
-            // 3 px gap padded below the label.
-            &::after {
-                content: "";
-                position: absolute;
-                left: 10px;
-                right: 10px;
-                bottom: -3px;
-                height: 3px;
-                background-color: $tb-brand;
-                border-radius: 99px;
+            &.active::after {
+                left: 0;
             }
         }
     }
@@ -760,6 +776,28 @@ $fluent-bg-canvas:   #fafafa;
     .o_field_input_buttons:empty {
         display: none !important;
     }
+
+    // many2many_tags / many2one autocomplete: the wrapper
+    // (.o_field_tags or .o_input_dropdown) already carries the visual
+    // Fluent border; the inner <input> must NOT draw its own — that
+    // produces a nested double-box. Strip border + bg from the inner
+    // input regardless of the .o_input class on it.
+    .o_field_tags input,
+    .o_field_tags .o_input_dropdown > input,
+    .o_field_tags input.o-autocomplete--input,
+    .o_input_dropdown > input.o_input,
+    .o_input_dropdown input.o-autocomplete--input {
+        border-top-width:    0 !important;
+        border-right-width:  0 !important;
+        border-bottom-width: 0 !important;
+        border-left-width:   0 !important;
+        border:              0 !important;
+        padding:             0 !important;
+        background-color:    transparent !important;
+        box-shadow:          none !important;
+        border-radius:       0 !important;
+        min-height:          1.4em;
+    }
 }
 
 // ── Field labels — Fluent body-strong ────────────────────────────
@@ -780,9 +818,314 @@ $fluent-bg-canvas:   #fafafa;
     letter-spacing: 0.06em !important;
     text-transform: uppercase !important;
     border-bottom: 1px solid $fluent-stroke-soft !important;
-    padding-bottom: 6px !important;
-    margin-top: 16px !important;
-    margin-bottom: 12px !important;
+    padding: 0 0 6px 0 !important;
+    margin: 16px 0 12px 0 !important;
+}
+
+// ── Universal flush-left alignment inside the form sheet ─────────
+// The user's complaint: tab text, section headers, field labels and
+// inputs all start at slightly different X positions. Cause: Odoo's
+// inner_group grid + tab pane wrappers each contribute their own
+// padding-left. Solution: zero left padding/margin on every wrapper
+// inside the sheet so everything anchors at the sheet's content edge.
+.o_form_view .o_form_sheet {
+    // Note: .oe_title and its children are intentionally EXCLUDED
+    // from this universal-flush-left rule — the card-header block
+    // below owns .oe_title's padding/margin (incl. the negative
+    // margin that bleeds the strip edge-to-edge of the sheet card).
+    .tab-content,
+    .tab-pane,
+    .o_group,
+    .o_inner_group,
+    .o_horizontal_separator,
+    .o_form_label_cell,
+    > .o_inner_group,
+    > .o_group {
+        padding-left: 0 !important;
+        margin-left: 0 !important;
+    }
+
+    // The title <h1> input must read as plain text on the gray title
+    // band — strip the .o_input Fluent border/background entirely.
+    // Also tighten font: 20px / 700 reads as a Fluent v9 Title2.
+    .oe_title input,
+    .oe_title .o_input,
+    .oe_title input.o_input,
+    .oe_title .o_field_widget input,
+    .oe_title .o_field_widget .o_input,
+    h1 .o_input,
+    h1 input.o_input {
+        border-top-width:    0 !important;
+        border-right-width:  0 !important;
+        border-bottom-width: 0 !important;
+        border-left-width:   0 !important;
+        border:              0 !important;
+        background-color:    transparent !important;
+        background-image:    none !important;
+        box-shadow:          none !important;
+        border-radius:       0 !important;
+        padding:             0 !important;
+        margin:              0 !important;
+        font-weight:         700;
+        font-size:           20px;
+        line-height:         1.15;
+        color:               $tb-header-fg;
+        outline:             none;
+
+        &:focus, &:hover {
+            background-color: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+    }
+
+    // ── Card header (.oe_title) — Fluent v9 card-header pattern ──
+    // Reads as a slim header strip across the top of the form-sheet
+    // card: subtle neutral surface, hairline bottom divider, content
+    // bleeds edge-to-edge using negative margins matching the sheet's
+    // 24 px padding. The body follows below with normal padding.
+    //
+    // Globally reusable — every form view in the Odoo backend uses
+    // .oe_title (or its parent variants) inside .o_form_sheet, so
+    // this card-header chrome applies uniformly across all entities.
+    //
+    // The eyebrow (Odoo's "Product" label) is hidden; breadcrumb's
+    // back-link already conveys model context. Flex `order` is used
+    // to put name first, then gear, then star — see rules below.
+    > .oe_title,
+    .oe_title {
+        display: flex !important;
+        align-items: center;
+        background-color: #fafafa !important;
+        border: 0 !important;
+        border-bottom: 1px solid $fluent-stroke-soft !important;
+        // Header strip bleeds vertically (-24 px top margin pulls it
+        // up to the card's top edge so there's no white gap above)
+        // but content X still aligns with the body's labels/tabs.
+        // Override Odoo's `max-width: 75%` cap so the strip spans
+        // the full sheet content width.
+        max-width: none !important;
+        width: 100% !important;
+        margin: -24px 0 16px 0 !important;
+        padding: 10px 0 10px 0 !important;
+        box-sizing: border-box !important;
+        border-top-left-radius: $fluent-radius-lg;
+        border-top-right-radius: $fluent-radius-lg;
+
+        > div:first-child,
+        > .o_form_label,
+        > label.o_form_label {
+            display: none !important;   // hide eyebrow
+        }
+
+        h1, h2 {
+            margin: 0 !important;
+            line-height: 1.2 !important;
+            font-size: 20px !important;
+            font-weight: 700 !important;
+            color: $tb-header-fg;
+            flex: 0 1 auto;       // shrink-fit; do NOT expand
+            min-width: 0;
+
+            // Inner Odoo flex container holding favorite + name input.
+            // Width is auto (not 100%) so gear+star hug the name.
+            > .d-flex {
+                width: auto !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 2px !important;
+            }
+        }
+
+        // Visual order:  [name]  [gear]  [star]  — close together,
+        // sharing the SAME vertical center. Every leaf element is
+        // forced to height: 28px + display: inline-flex + align-items
+        // center so its content midline matches the others.
+        $titleRowH: 28px;
+
+        // Any non-gear/non-star widget in the title row keeps order 0
+        // so it stays to the left of the gear/star pair. Covers
+        // forms that put extra fields next to the name (e.g. product
+        // default_code, contact phone, etc.).
+        // Any non-gear/non-star widget in the title row keeps order 0
+        // so it stays to the left of the gear/star pair. Name is the
+        // most common; other forms add default_code, etc. — they all
+        // shrink to fit content so the gear/star can hug the text.
+        h1 .d-flex > .o_field_widget:not(.o_field_boolean_favorite):not(.o_priority),
+        h1 .d-flex > [name="name"] {
+            order: 0;
+            flex: 0 0 auto;
+            display: inline-flex !important;
+            align-items: center;
+            height: $titleRowH;
+            min-width: 0;
+            // Shrink the field wrapper to the text it contains. The
+            // inner <textarea> has its own intrinsic 293-px width
+            // (Odoo default), which left a big gap before the gear.
+            width: auto !important;
+            max-width: 100%;
+            // Breathing room between the name text and the gear/star
+            // pair so they don't crowd the title.
+            margin: 0 14px 0 0 !important;
+
+            > div {
+                display: inline-flex !important;
+                align-items: center;
+                width: auto !important;
+                height: $titleRowH !important;
+                margin: 0 !important;
+            }
+            // Force the actual <textarea>/<input> to size to its
+            // content. `field-sizing: content` is supported in modern
+            // browsers; we also set `width: auto` and `min-width: 0`
+            // as a fallback so it doesn't claim a fixed default width.
+            textarea, input {
+                line-height: 1.2 !important;
+                height: $titleRowH !important;
+                min-height: $titleRowH !important;
+                width: auto !important;
+                min-width: 4ch !important;
+                field-sizing: content;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+                padding-left: 0 !important;
+                margin: 0 !important;
+                vertical-align: middle;
+                display: inline-flex;
+                align-items: center;
+                box-sizing: content-box;
+            }
+        }
+
+        h1 .d-flex > .tb-relocated-gear,
+        h1 .d-flex > button.o-dropdown.dropdown-toggle {
+            order: 1;
+            margin: 0 !important;
+            padding: 0 4px !important;
+            min-height: 0 !important;
+            height: $titleRowH;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center;
+            border: 0 !important;
+            background: transparent !important;
+            color: $tb-header-fg-muted !important;
+            line-height: 1 !important;
+            border-radius: $fluent-radius-md !important;
+
+            > i, > .fa, > svg {
+                display: inline-flex;
+                align-items: center;
+                line-height: 1;
+                vertical-align: middle;
+            }
+
+            &:hover, &:focus {
+                background-color: $tb-brand-soft-08 !important;
+                color: $tb-brand !important;
+                border: 0 !important;
+            }
+        }
+
+        // Avatar (relocated by JS into .oe_title) — Odoo's default
+        // .oe_avatar is 90 px square + float-right. Inside our header
+        // it's a medium-sized thumbnail pushed to the right edge,
+        // with a small right padding so it doesn't kiss the card's
+        // inner edge. Upload controls are forced always-visible so
+        // clicking the camera area opens the file picker (default
+        // hover-only reveal is unreliable on the smaller thumbnail).
+        > .tb-relocated-avatar,
+        > .oe_avatar.tb-relocated-avatar {
+            order: 3;                       // after name/gear/star
+            margin: 0 12px 0 auto !important;  // auto-left + 12 px right
+            padding: 0 !important;
+            float: none !important;
+            width: 56px !important;
+            height: 56px !important;
+            min-height: 0 !important;
+            display: inline-flex !important;
+            align-items: center;
+            flex: 0 0 auto;
+
+            img, .o_image {
+                width: 100% !important;
+                height: 100% !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                object-fit: cover;
+                border-radius: $fluent-radius-md;
+            }
+
+            // Always show the upload-button overlay so clicks on the
+            // camera open the file picker without needing to hover.
+            .o_image_uploader_container,
+            .opacity-trigger-hover .opacity-0,
+            .opacity-trigger-hover .o_image_uploader_container {
+                opacity: 1 !important;
+            }
+            // Make the pencil/upload button cover the full thumbnail
+            // so any click on the camera goes to it.
+            .o_select_file_button,
+            button.o_select_file_button {
+                position: absolute !important;
+                inset: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: rgba(0, 0, 0, 0.0) !important;
+                border-radius: $fluent-radius-md !important;
+                z-index: 2;
+            }
+            .o_image_uploader_container {
+                inset: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+        }
+
+        h1 .d-flex > .o_field_boolean_favorite,
+        h1 .d-flex > .o_priority {
+            order: 2;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center;
+            height: $titleRowH;
+            line-height: 1 !important;
+
+            // Walk the wrapper chain (Odoo: .o_favorite > a > i.fa)
+            // and force every level to flex-center, no margins.
+            .o_favorite,
+            .o_favorite > a,
+            .o_favorite > a > i,
+            > a,
+            > a > i,
+            > i {
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center;
+                line-height: 1 !important;
+                height: 100%;
+                margin: 0 !important;
+                padding: 0 !important;
+                vertical-align: middle;
+            }
+        }
+    }
+
+    // Inner group cells: Odoo gives the label cell + value cell each
+    // their own padding. Zero the FIRST column (label cell) so the
+    // label text lines up with section headers above.
+    .o_inner_group > .o_cell:first-child,
+    .o_inner_group > tbody > tr > td:first-child,
+    .o_inner_group .o_wrap_label,
+    .o_inner_group .o_form_label,
+    .o_inner_group label.o_form_label {
+        padding-left: 0 !important;
+        margin-left: 0 !important;
+    }
 }
 
 // ── List view — Fluent Table look ────────────────────────────────
@@ -853,18 +1196,36 @@ $fluent-bg-canvas:   #fafafa;
     }
 }
 
-// ── oe_chatter / mail_thread side panel — Fluent Card ────────────
-// The chatter panel ("Send message / Log note / Activity" + thread)
-// sits to the right of every form view that uses mail.thread. Wrap it
-// in the same Fluent surface so it reads as one card not floating UI.
+// ── oe_chatter / mail_thread side panel ──────────────────────────
+// Per the user's earlier instruction, the chatter pane stays plain
+// (no card chrome) so the form sheet is the single visual focus.
+// Inner Chatter is borderless/padless so its content reads as one
+// flat surface.
 .o_form_view .o-mail-Form-chatter,
+.o_form_view .o-mail-ChatterContainer,
 .o_form_view .o-mail-Chatter,
 .o_form_view .oe_chatter {
-    background-color: #ffffff !important;
-    border: 1px solid $fluent-stroke-1 !important;
-    border-radius: $fluent-radius-lg !important;
-    box-shadow: $fluent-shadow-4 !important;
+    background-color: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+.o_form_view .o-mail-ChatterContainer,
+.o_form_view .o-mail-Form-chatter,
+.o_form_view .oe_chatter {
     padding: 16px !important;
+}
+.o_form_view .o-mail-ChatterContainer .o-mail-Chatter,
+.o_form_view .o-mail-Form-chatter   .o-mail-Chatter,
+.o_form_view .oe_chatter            .o-mail-Chatter {
+    padding: 0 !important;
+}
+
+// Top-align the form-sheet card and the chatter pane: zero the
+// `.o_form_sheet_bg` top padding that was offsetting the sheet 8 px
+// below the chatter. Both flex children now start at the same Y.
+.o_form_view .o_form_sheet_bg {
+    padding-top: 0 !important;
 }
 
 // ── Search view chip — match Fluent pill input ───────────────────
@@ -980,18 +1341,316 @@ $fluent-bg-canvas:   #fafafa;
     }
 }
 
-// ── Notebook tabs — tighter Fluent dimensions ────────────────────
-.o_form_view .o_notebook .nav-tabs .nav-link,
-.o_form_view .o_notebook .nav-tabs .nav-item .nav-link {
-    padding: 8px 14px !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    line-height: 1.4 !important;
+// (Notebook tab dimensions handled in the canonical block above —
+// duplicate rule intentionally removed; the earlier inset box-shadow
+// produced wings/U-shape under the active tab.)
 
-    &.active {
-        font-weight: 600 !important;
-        // Slightly thicker indicator (3 px) for clearer Fluent active state.
-        box-shadow: inset 0 -3px 0 $tb-brand !important;
+// ── Navbar bottom hairline — one continuous 1 px line ────────────
+// Odoo's defaults give the navbar a 0.8 px (sub-pixel) bottom border
+// AND each navbar button has a 0.8 px transparent top/bottom border
+// of its own. At sub-pixel rendering boundaries the two stack and
+// browsers paint them inconsistently, leaving visible gaps under
+// each button. Force a clean 1 px solid border on the navbar and
+// zero the buttons' sub-pixel borders.
+// Borders at sub-pixel zoom (Odoo's default 0.8 px) render as a
+// dashed line on some browsers/zoom levels — gaps appear under each
+// flex-item. Replace the border with a `::after` pseudo-element
+// pinned to the navbar's bottom edge: it's a real 1 px filled DIV,
+// which the browser cannot break into sub-pixel segments.
+.o_navbar nav.o_main_navbar,
+header.o_navbar nav.o_main_navbar,
+.o_web_client header.o_navbar nav.o_main_navbar,
+nav.o_main_navbar.o_main_navbar {
+    border-bottom: 0 !important;
+    background-color: #ffffff !important;
+    position: relative;
+
+    &::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background-color: $fluent-stroke-1;
+        pointer-events: none;
+        z-index: 1;
+    }
+}
+.o_main_navbar .o-dropdown.dropdown-toggle,
+.o_main_navbar button.o-dropdown,
+.o_main_navbar .o-dropdown-item {
+    border-top: 0 !important;
+    border-bottom: 0 !important;
+    box-shadow: none !important;
+}
+
+// ── Hide "+ New" on form views — breadcrumb is the back-nav ──────
+// On a form view the breadcrumb (e.g. "Products / Bulk SMS") is the
+// canonical way to go back to the list — Odoo already tags the
+// parent breadcrumb-item with class `.o_back_button` and links it to
+// the list view. The "+ New" button next to the breadcrumb is
+// redundant clutter when viewing/editing an existing record.
+.o_view_controller.o_form_view .o_form_button_create,
+.o_view_controller.o_form_view .o_control_panel_main_buttons .o_form_button_create,
+.o_view_controller.o_form_view button.o_form_button_create {
+    display: none !important;
+}
+
+// ── Back-link styling — plain text link with a left-arrow ────────
+// Odoo already tags the parent breadcrumb item with `.o_back_button`
+// and links it to the list view. Render it as a plain link (no
+// border, no background) — keeps the header airy. Force transparent
+// background up the parent chain (Bootstrap defaults paint a white
+// surface on .breadcrumb / .breadcrumb-item).
+.o_view_controller.o_form_view .o_breadcrumb,
+.o_view_controller.o_form_view .o_breadcrumb .breadcrumb,
+.o_view_controller.o_form_view .o_breadcrumb .breadcrumb-item,
+.o_view_controller.o_form_view .o_breadcrumb .breadcrumb-item.o_back_button {
+    background-color: transparent !important;
+    background-image: none !important;
+}
+
+.o_view_controller.o_form_view .o_breadcrumb .breadcrumb-item.o_back_button {
+    display: inline-flex !important;
+    align-items: center;
+    align-self: center;     // vertical-center inside the breadcrumbs row
+    margin-right: 12px;
+    padding: 0;
+
+    > a {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 6px;
+        padding: 0 !important;
+        border: 0 !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        color: $tb-brand !important;
+        font-weight: 500 !important;
+        font-size: 13px !important;
+        line-height: 1.2;
+        text-decoration: none !important;
+
+        // Left-arrow chevron — Unicode, no icon-font dependency.
+        // Slightly larger and bolder to read as a clear back affordance.
+        &::before {
+            content: "\2190";   // ←
+            font-size: 18px;
+            line-height: 1;
+            font-weight: 700;
+        }
+
+        &:hover, &:focus {
+            color: $tb-brand-pressed !important;
+            text-decoration: underline !important;
+            background-color: transparent !important;
+        }
+    }
+}
+
+// Vertically center every direct child of the control-panel main row
+// so the back-link sits on the same baseline as the save/discard
+// buttons and stat buttons on the right.
+.o_view_controller.o_form_view .o_control_panel .o_control_panel_main {
+    align-items: center !important;
+}
+// `.o_breadcrumb` is a column-flex container at md+ — when the
+// active-record-name row is hidden, the back-link sits at the top
+// of the column instead of vertically centered, so its Y offset
+// drifts above the save/discard buttons. Force a single-row layout.
+.o_view_controller.o_form_view .o_control_panel .o_breadcrumb {
+    flex-direction: row !important;
+    align-self: center;
+    align-items: center !important;
+    justify-content: center;
+}
+.o_view_controller.o_form_view .o_control_panel .breadcrumb {
+    margin: 0 !important;
+    padding: 0 !important;
+    align-items: center !important;
+    line-height: 1 !important;
+}
+// Make sure the `<a>` itself participates in the vertical centering
+// (its content height is only 16 px while the save buttons are 25 px).
+.o_view_controller.o_form_view .o_control_panel .o_back_button > a {
+    height: 25px;
+    align-self: center;
+}
+
+// ── Status-bar arrows — make them more visible ───────────────────
+// Odoo renders separators between status-bar buttons via a `::before`
+// pseudo-element on every `.o_arrow_button` (except the current one).
+// Default color is #888 (too pale on the gray header surface); bump
+// contrast, size, and weight. The selector is intentionally chained
+// to match Odoo's own rule's specificity (`.o_field_statusbar >
+// .o_statusbar_status > .o_arrow_button:not(.d-none)`) so our
+// values actually win.
+// Match BOTH enabled and :disabled states — preview-only forms
+// (e.g. /odoo/sales/new) render the buttons disabled, and Odoo
+// adds a `:disabled::before` rule with higher specificity that
+// otherwise overrides our color/size.
+.o_field_statusbar > .o_statusbar_status > .o_arrow_button:not(.d-none)::before,
+.o_field_statusbar > .o_statusbar_status > .o_arrow_button:not(.d-none):disabled::before,
+.o_field_statusbar > .o_statusbar_status > .o_arrow_button:not(.d-none).o_arrow_button_current:disabled::before,
+.o_field_statusbar_duration > .o_statusbar_status > .o_arrow_button:not(.d-none)::before,
+.o_field_statusbar_duration > .o_statusbar_status > .o_arrow_button:not(.d-none):disabled::before,
+.o_field_rotting_statusbar_duration > .o_statusbar_status > .o_arrow_button:not(.d-none)::before,
+.o_field_rotting_statusbar_duration > .o_statusbar_status > .o_arrow_button:not(.d-none):disabled::before {
+    color: $tb-header-fg !important;     // #242424
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    opacity: 0.9 !important;
+}
+
+.o_field_statusbar > .o_statusbar_status > .o_arrow_button:not(.d-none):not(:disabled):hover::before,
+.o_field_statusbar > .o_statusbar_status > .o_arrow_button:not(.d-none):not(:disabled):focus::before {
+    color: $tb-brand !important;
+    opacity: 1 !important;
+}
+
+// The breadcrumb separator ("/") between the back-button and the
+// current record name is now visually awkward — hide it.
+.o_view_controller.o_form_view .o_breadcrumb .breadcrumb-item.o_back_button + .breadcrumb-item::before,
+.o_view_controller.o_form_view .o_breadcrumb .breadcrumb-item.o_back_button ~ .breadcrumb-item::before {
+    display: none !important;
+}
+
+// ── Control panel as the page header (form views) ────────────────
+// Light Fluent surface with all items on a single horizontal row:
+//   ← Products    [save/discard chips]            [Documents] [Sold]
+// The record name itself is moved to the form body (inline with the
+// first group) — see .oe_title rules earlier.
+.o_view_controller.o_form_view .o_control_panel {
+    background-color: #f5f5f5 !important;
+    border-bottom: 1px solid $fluent-stroke-soft !important;
+    padding: 8px 4px 8px 4px !important;
+    gap: 8px !important;
+
+    .o_control_panel_main {
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 12px !important;
+    }
+
+    .o_control_panel_breadcrumbs {
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        align-items: center !important;
+    }
+
+    // Hide the duplicate record-name TEXT from the breadcrumb — the
+    // record name is now shown in .oe_title in the form body.
+    .o_breadcrumb .o_last_breadcrumb_item,
+    .o_breadcrumb .breadcrumb-item.active {
+        display: none !important;
+    }
+    // Until JS relocates the gear, hide it in the action-menus area
+    // so we don't briefly double-render. The .tb-relocated-gear class
+    // is added by the JS the moment it moves; once that class is
+    // present, the selector below no longer matches.
+    .o_cp_action_menus button.o-dropdown.dropdown-toggle:not(.tb-relocated-gear) {
+        visibility: hidden;
+    }
+    // Hide the empty action-menus wrapper once the gear has been
+    // moved out — otherwise it leaves a 0-width slot with margins.
+    .o_cp_action_menus:not(:has(button.o-dropdown.dropdown-toggle:not(.tb-relocated-gear))) {
+        // wrapper still has the gear (just relocated) — collapse it
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    // Stat buttons (Documents, Sold, etc.) on the right — keep them
+    // on the same line as the breadcrumb.
+    .o_cp_action_menus,
+    .o-form-buttonbox,
+    .oe_button_box {
+        margin-left: auto !important;
+        align-items: center !important;
+    }
+}
+
+// ── Tab pane content — clear the tab strip ───────────────────────
+// When a list view (.o_list_renderer) lives inside a notebook tab,
+// its sticky <thead> uses `position: sticky; top: 0` which makes the
+// header crash up under the active-tab pill. Push the content region
+// down and bump the sticky header's top offset so it docks BELOW the
+// tab strip rather than under it.
+.o_form_view .o_notebook {
+    > .tab-content,
+    .tab-content {
+        position: relative;
+        padding-top: 4px !important;
+    }
+
+    .tab-pane .o_list_renderer thead,
+    .tab-pane .o_list_table thead {
+        top: 0 !important;
+    }
+
+    // The .o_field_x2many wrapper sits ~8 px inside the tab pane via
+    // a Bootstrap row gutter. Zero its left padding/margin so the
+    // table edge starts at the tab pane's content edge.
+    .tab-pane .o_field_x2many,
+    .tab-pane .o_field_one2many,
+    .tab-pane .o_field_many2many,
+    .tab-pane > .o_field_widget {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    // Embedded x2many list inside a notebook tab: first cell of every
+    // row (header + data + the "Add a product/section/note" controls
+    // row) gets a left padding from Odoo defaults that pushes the
+    // column text inward. Zero the FIRST cell's left padding so the
+    // table aligns flush with the tab text above it.
+    .tab-pane .o_list_renderer,
+    .tab-pane .o_field_x2many_list,
+    .tab-pane .o_field_one2many,
+    .tab-pane .o_field_many2many {
+        .o_list_table {
+            margin-left: 0 !important;
+        }
+        .o_list_table > thead > tr > th:first-child,
+        .o_list_table > tbody > tr > td:first-child,
+        .o_list_table > tfoot > tr > td:first-child {
+            padding-left: 0 !important;
+        }
+        // The "Add a product / section / note" link row Odoo renders
+        // as a single colspan'd cell — strip its left padding too.
+        .o_field_x2many_list_row_add,
+        td.o_field_x2many_list_row_add {
+            padding-left: 0 !important;
+        }
+        // Drag-handle column is the FIRST <th>/<td> of x2many lists
+        // and is empty until rows exist. Even empty it reserves ~29 px
+        // of width, pushing "Product" header (and the "Add a product"
+        // link) inward. Collapse the whole column — Odoo applies the
+        // same class to header AND body cells so this is uniform.
+        .o_handle_cell,
+        th.o_handle_cell,
+        td.o_handle_cell,
+        .o_row_handle {
+            display: none !important;
+        }
+        // Record-selector checkbox column (when present) gets the
+        // same treatment — kill its left padding so it doesn't push
+        // the rest of the row right.
+        .o_list_record_selector,
+        th.o_list_record_selector,
+        td.o_list_record_selector {
+            padding-left: 0 !important;
+            padding-right: 4px !important;
+        }
+    }
+
+    // Belt + suspenders: if a sticky thead is the very first row of
+    // the tab pane, give it a small top margin so its top border
+    // doesn't kiss the bottom of the active-tab pill.
+    .tab-pane > .o_field_x2many,
+    .tab-pane > .o_field_one2many,
+    .tab-pane > .o_field_many2many {
+        margin-top: 0 !important;
     }
 }
 

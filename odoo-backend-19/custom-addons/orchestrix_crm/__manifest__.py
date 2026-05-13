@@ -30,6 +30,11 @@ crm/sale_management/mail modules — it composes on top of them.
         'views/pbx_extension_views.xml',
         'views/menus.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'orchestrix_crm/static/src/scss/search_polish.scss',
+        ],
+    },
     'installable': True,
     'application': False,
     'auto_install': False,

@@ -17,13 +17,16 @@ Source of truth (matches ui/src/theme/fluentTheme.js + webLightTheme defaults):
   - Font:    'Segoe UI Variable','Segoe UI', system fallbacks
   - Font sizes: untouched (Odoo's own ramp preserved)
 ''',
-    'depends': ['web'],
-    'data': [],
+    'depends': ['web', 'sale'],
+    'data': [
+        'data/action_overrides.xml',
+    ],
     'assets': {
         'web.assets_backend': [
             # _config.scss is @imported by theme.scss — do NOT list it
             # separately, or Sass partial change-detection breaks.
             'tb_fluent_theme/static/src/scss/theme.scss',
+            'tb_fluent_theme/static/src/js/move_gear_to_title.js',
         ],
     },
     'installable': True,

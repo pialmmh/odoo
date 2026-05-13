@@ -3,11 +3,9 @@
 // Scoped to .fluent_skin so the standard product views are untouched.
 
 // ── Shared token overrides ──────────────────────────────────────────────
-.fluent_skin, .o_list_view.fluent_skin, .o_kanban_view.fluent_skin {
-    font-family: "Segoe UI Variable Display", "Segoe UI", system-ui,
-        -apple-system, sans-serif;
-    font-size: 14px;
-}
+// Font/size now come from tb_fluent_theme (Inter, global). Leaving this
+// rule empty rather than removing the file so the addon's view-inheritance
+// (OEM No. + Version fields on the form) keeps working.
 
 // ── Control panel (toolbar) ─────────────────────────────────────────────
 // :has() scopes this only when a fluent_skin view is active in the pane.
