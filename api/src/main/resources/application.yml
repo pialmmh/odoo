@@ -3,7 +3,7 @@ server:
 
 odoo:
   url: http://127.0.0.1:7170
-  db: odoo_billing_19
+  db: platform_staging
   username: admin
   password: admin
   # SINGLE = all tenant slugs resolve to `db` (multi-company at app layer).

@@ -18,7 +18,7 @@ killbill:
 
 catalog:
   url: http://127.0.0.1:7170
-  db: odoo_billing_19
+  db: platform_staging
   partner-id: 8
 
 products: {}

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class OdooProperties {
     private String url = "http://127.0.0.1:7170";
     /** Default DB used when no tenant context is supplied (back-compat for non-tenant routes). */
-    private String db = "odoo_billing_19";
+    private String db = "platform_staging";
     /** Prefix applied to the tenant slug to derive a per-tenant DB name (only used in PER_DB mode). */
     private String dbPrefix = "odoo_";
     /**
