@@ -85,6 +85,8 @@ deploy_seed_data() {
             $force_flag"
         echo "Invoking seed-data locally..."
         dry_or_run "$local_cmd"
+
+        _post_seed_cleanup_assets "$pg_host" "$pg_port" "$pg_user" "$db_name"
         return
     fi
 
@@ -100,4 +102,40 @@ deploy_seed_data() {
 
     echo "Invoking seed-data on remote..."
     dry_or_run "ssh_run \"$remote_cmd\""
+
+    _post_seed_cleanup_assets "$pg_host" "$pg_port" "$pg_user" "$db_name"
+}
+
+# After seeding an Odoo DB, drop the `ir_attachment` rows that point at
+# `web.assets_*` bundles. The pristine SQL dump carries those rows but NOT
+# the corresponding files in the filestore — so Odoo serves HTTP 500 for
+# every asset URL until the bundles regenerate.
+#
+# Deleting these rows is the standard Odoo "force asset rebuild" trick:
+# on the next request, Odoo re-bundles, writes fresh files into the
+# filestore with new hashes, and re-creates the ir_attachment rows.
+# Idempotent — running it on a DB with no such rows is a no-op.
+#
+# Odoo-specific. Skipped for non-Odoo seed apps.
+_post_seed_cleanup_assets() {
+    local pg_host="$1" pg_port="$2" pg_user="$3" db_name="$4"
+    local app="${CONF_SEED_APP:-odoo}"
+
+    [ "$app" != "odoo" ] && return 0
+    [ "${DRY_RUN:-false}" = "true" ] && return 0
+
+    local sql="DELETE FROM ir_attachment WHERE name LIKE 'web.assets_%'"
+
+    if [ "${DEPLOY_LOCAL:-false}" = "true" ]; then
+        local pw
+        pw="${CONF_PG_PASSWORD:-}"
+        if [ -z "$pw" ] && [ -n "${CONF_PG_PASSWORD_ENV:-}" ]; then
+            pw="${!CONF_PG_PASSWORD_ENV:-}"
+        fi
+        echo "Post-seed: dropping stale web.assets_% bundle records (forces Odoo to regenerate on first request)"
+        PGPASSWORD="$pw" psql -h "$pg_host" -p "$pg_port" -U "$pg_user" -d "$db_name" -c "$sql" 2>&1 | head -3
+    else
+        echo "Post-seed: dropping stale web.assets_% bundle records on remote"
+        dry_or_run "ssh_run \"psql -h $pg_host -p $pg_port -U $pg_user -d $db_name -c \\\"$sql\\\"\""
+    fi
 }
