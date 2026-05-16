@@ -1,0 +1,7 @@
+{
+  "_comment": "Per-tenant rename overlay. Placeholders: {{tenant}}, {{db_name}}, {{version}}. Schema-qualified because pg_dump empties search_path for the session.",
+  "sql": [
+    "UPDATE public.res_company SET name = '{{tenant}}' WHERE id = 1",
+    "UPDATE public.res_partner SET name = '{{tenant}}' WHERE id = 1"
+  ]
+}

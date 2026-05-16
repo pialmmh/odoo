@@ -48,7 +48,7 @@ export default function Cases() {
       {!backendOk && (
         <MessageBar intent="warning" style={{ marginBottom: tokens.spacingVerticalM }}>
           The Odoo `project` module is not installed in this tenant DB — Cases backend is unavailable.
-          Run: <code>./scripts/tenant.sh upgrade &lt;slug&gt; project</code> from <code>odoo-backend/</code>.
+          Run: <code>./scripts/tenant.sh upgrade &lt;slug&gt; project</code> from <code>odoo-backend-19/</code>.
         </MessageBar>
       )}
       <EntityListPage

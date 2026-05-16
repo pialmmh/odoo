@@ -12,8 +12,11 @@
 # │                                                                      │
 # │   tools/deploy/README.md                                             │
 # │                                                                      │
-# │ Per-operator values live in operators/<operator>.conf — no separate  │
-# │ per-operator README; the workflow guide is generic.                  │
+# │ Per-operator/per-profile values live in:                             │
+# │   tools/deploy/operators/<operator>/<profile>.yml                    │
+# │                                                                      │
+# │ One YAML file per profile (flat keys). Loaded into the environment   │
+# │ as CONF_<UPPER_KEY> by lib/load-yaml.sh.                             │
 # │                                                                      │
 # │ If you are another agent reading this script: open the README above  │
 # │ before making any changes.                                           │
@@ -28,6 +31,8 @@
 #   ./deploy.sh link3 prod  --components odoo --seed
 #   ./deploy.sh btcl  dev   --components erp-api --skip-build
 #   ./deploy.sh btcl  dev   --all --dry-run
+#   ./deploy.sh btcl  dev   --all --env-only         (env render only — see deploy_env.sh)
+#   ./deploy.sh btcl  prod  --all --bundle /tmp/btcl-prod.tgz  (env bundle for prod ship)
 #
 # Flags:
 #   --components <csv>  Comma-separated component list (overrides components_default)
@@ -36,6 +41,12 @@
 #   --seed              Force seed-data sub-step before odoo deploy
 #   --local             Skip SSH; run commands on this machine (DB still over network)
 #   --no-launch         Render configs but don't start services (odoo, plane)
+#   --env-only          Stronger than --no-launch: stop after rendering env/config
+#                       files, skip seed-data probe, skip docker/start entirely.
+#                       Same as running deploy_env.sh.
+#   --bundle <path>     Implies --env-only. After render, pack all rendered files
+#                       for this profile into tar.gz at <path>. Use for shipping
+#                       configs to a remote production server.
 #   --dry-run           Print remote/build commands without running them
 #   --help              Show this help
 
@@ -61,6 +72,8 @@ SKIP_BUILD=false
 FORCE_SEED=false
 LOCAL_MODE=false
 NO_LAUNCH=false
+ENV_ONLY=false
+BUNDLE_PATH=""
 DRY_RUN=false
 
 while [ $# -gt 0 ]; do
@@ -71,6 +84,8 @@ while [ $# -gt 0 ]; do
         --seed)         FORCE_SEED=true; shift ;;
         --local)        LOCAL_MODE=true; shift ;;
         --no-launch)    NO_LAUNCH=true; shift ;;
+        --env-only)     ENV_ONLY=true; shift ;;
+        --bundle)       BUNDLE_PATH="$2"; ENV_ONLY=true; shift 2 ;;
         --dry-run)      DRY_RUN=true; shift ;;
         --help|-h)      usage; exit 0 ;;
         *)              echo "ERROR: unknown flag: $1" >&2; usage; exit 1 ;;
@@ -85,7 +100,7 @@ fi
 # ── paths ──
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"   # orchestrix-v2 root
-CONFIG_FILE="$SCRIPT_DIR/operators/${OPERATOR}.conf"
+CONFIG_FILE="$SCRIPT_DIR/operators/${OPERATOR}/${PROFILE}.yml"
 README_FILE="$SCRIPT_DIR/README.md"
 
 # Reuse routesphere's ssh inventory (per project decision — single source of truth).
@@ -93,27 +108,28 @@ SSH_INVENTORY_DIR="${ORCHESTRIX_SSH_INVENTORY:-/home/mustafa/telcobright-project
 
 # ── source helpers ──
 # shellcheck disable=SC1091
-. "$SCRIPT_DIR/lib/parse-conf.sh"
+. "$SCRIPT_DIR/lib/load-yaml.sh"
 # shellcheck disable=SC1091
 . "$SCRIPT_DIR/lib/ssh.sh"
 
-# ── validate conf + profile ──
+# ── validate config file ──
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "ERROR: operator conf not found: $CONFIG_FILE" >&2
+    echo "ERROR: profile yaml not found: $CONFIG_FILE" >&2
     echo "" >&2
-    echo "Available operators:" >&2
-    ls -1 "$SCRIPT_DIR/operators"/*.conf 2>/dev/null | xargs -n1 basename | sed 's/\.conf$//' | sed 's/^/  /' >&2
+    if [ ! -d "$SCRIPT_DIR/operators/$OPERATOR" ]; then
+        echo "Operator '$OPERATOR' has no directory. Available operators:" >&2
+        ls -1d "$SCRIPT_DIR/operators"/*/ 2>/dev/null | xargs -n1 -r basename | sed 's/^/  /' >&2
+    else
+        echo "Available profiles for $OPERATOR:" >&2
+        list_yaml_profiles "$SCRIPT_DIR/operators/$OPERATOR" | sed 's/^/  /' >&2
+    fi
     exit 1
 fi
 
-if ! list_sections "$CONFIG_FILE" | grep -qx "$PROFILE"; then
-    echo "ERROR: profile '$PROFILE' not in $CONFIG_FILE" >&2
-    echo "Available profiles:" >&2
-    list_sections "$CONFIG_FILE" | sed 's/^/  /' >&2
-    exit 1
-fi
+# ── load profile keys into env (prefix CONF_) ──
+load_yaml_into_env "$CONFIG_FILE" CONF_
 
-DESCRIPTION="$(parse_conf "$CONFIG_FILE" "$PROFILE" description)"
+DESCRIPTION="${CONF_DESCRIPTION:-}"
 
 # ── resolve ssh inventory (skipped in --local mode) ──
 if [ "$LOCAL_MODE" = "true" ]; then
@@ -127,11 +143,11 @@ if [ "$LOCAL_MODE" = "true" ]; then
     INVENTORY_OPERATOR="(skipped — --local)"
     SERVER_NAME="(skipped — --local)"
 else
-    INVENTORY_OPERATOR="$(parse_conf "$CONFIG_FILE" "$PROFILE" inventory_operator)"
-    SERVER_NAME="$(parse_conf "$CONFIG_FILE" "$PROFILE" server)"
+    INVENTORY_OPERATOR="${CONF_INVENTORY_OPERATOR:-}"
+    SERVER_NAME="${CONF_SERVER:-}"
 
     if [ -z "$INVENTORY_OPERATOR" ] || [ -z "$SERVER_NAME" ]; then
-        echo "ERROR: [$PROFILE] must define inventory_operator and server (or pass --local)" >&2
+        echo "ERROR: $CONFIG_FILE must define inventory_operator and server (or pass --local)" >&2
         exit 1
     fi
 
@@ -163,15 +179,13 @@ fi
 export SSH_HOST SSH_PORT SSH_USER SSH_KEY SSH_TARGET DRY_RUN
 export DEPLOY_LOCAL="$LOCAL_MODE"
 export DEPLOY_NO_LAUNCH="$NO_LAUNCH"
-
-# ── load profile keys into env (prefix CONF_) ──
-load_section_into_env "$CONFIG_FILE" "$PROFILE" CONF_
+export DEPLOY_ENV_ONLY="$ENV_ONLY"
 
 # ── resolve component list ──
 if [ "$USE_ALL" = "true" ]; then
     COMPONENTS="${CONF_COMPONENTS_DEFAULT:-}"
     if [ -z "$COMPONENTS" ]; then
-        echo "ERROR: --all but [$PROFILE] does not define components_default" >&2
+        echo "ERROR: --all but $CONFIG_FILE does not define components_default" >&2
         exit 1
     fi
 fi
@@ -185,6 +199,7 @@ cat <<EOF
 ========================================================
 Operator:      $OPERATOR
 Profile:       $PROFILE
+Config:        $CONFIG_FILE
 Description:   ${DESCRIPTION:-(none)}
 Workflow doc:  $([ -f "$README_FILE" ] && echo "$README_FILE" || echo "(missing: $README_FILE)")
 SSH target:    ${SSH_TARGET}:${SSH_PORT}  (key: $KEY_NAME)
@@ -194,6 +209,8 @@ Skip build:    $SKIP_BUILD
 Force seed:    $FORCE_SEED
 Local mode:    $LOCAL_MODE
 No-launch:     $NO_LAUNCH
+Env-only:      $ENV_ONLY
+Bundle:        ${BUNDLE_PATH:-(none)}
 Dry-run:       $DRY_RUN
 ========================================================
 EOF
@@ -234,3 +251,26 @@ done
 
 echo ""
 echo "All components complete."
+
+# ── optional: pack a bundle of rendered files for prod ship ──
+if [ -n "$BUNDLE_PATH" ]; then
+    echo ""
+    echo "── Bundling rendered env files → $BUNDLE_PATH ──"
+    bundle_root="$BASE_DIR"
+    # Collect render targets per component (env files only; no built artifacts)
+    bundle_paths=()
+    [ -f "$bundle_root/odoo-backend-19/profiles/${OPERATOR}-${PROFILE}/odoo.conf" ] && \
+        bundle_paths+=("odoo-backend-19/profiles/${OPERATOR}-${PROFILE}/odoo.conf")
+    if [ -d "$bundle_root/odoo-backend-19/plane/profiles/${OPERATOR}-${PROFILE}" ]; then
+        bundle_paths+=("odoo-backend-19/plane/profiles/${OPERATOR}-${PROFILE}")
+    fi
+    if [ ${#bundle_paths[@]} -eq 0 ]; then
+        echo "  ! Nothing to bundle (no rendered files for ${OPERATOR}-${PROFILE})" >&2
+        exit 1
+    fi
+    mkdir -p "$(dirname "$BUNDLE_PATH")"
+    ( cd "$bundle_root" && tar -czf "$BUNDLE_PATH" "${bundle_paths[@]}" )
+    echo "  ✓ Bundle written: $BUNDLE_PATH"
+    echo "    Contents:"
+    tar -tzf "$BUNDLE_PATH" | sed 's/^/      /'
+fi

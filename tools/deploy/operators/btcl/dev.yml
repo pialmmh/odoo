@@ -1,0 +1,68 @@
+# BTCL — Dev profile (local Odoo + remote Postgres)
+#
+# Profile model: local codebase + remote Postgres on the overlay network
+# (10.10.0.0/16, WireGuard-tunneled). Odoo runs natively, Plane API as docker
+# containers, Plane web via pnpm/turbo. Plane shares the same DB as Odoo.
+#
+# Server connection (only when --local is NOT passed) resolves from:
+#   /home/mustafa/telcobright-projects/routesphere/routesphere-core/tools/ssh-automation/servers/<inventory_operator>/
+
+inventory_operator: btcl
+server: dell-sms-master
+description: BTCL Orchestrix Dev — local Odoo+Plane against remote Postgres
+
+# ── Postgres (shared catalog DB; same as Odoo) ──
+# 2026-05-16: dev now points at platform_staging — the freshly seeded DB.
+# The legacy `platform` DB is unused going forward.
+pg_host: 10.10.199.41
+pg_port: 5432
+pg_admin_db: postgres
+pg_user: admin
+pg_password: cHrZCGZZJtenNpg9TwREvpIbT2AwVQh
+odoo_db_name: platform_staging
+
+# ── Odoo ──
+odoo_http_port: 7170
+odoo_workers: 0
+odoo_log_level: info
+odoo_proxy_mode: True
+odoo_admin_passwd: $pbkdf2-sha512$600000$KsXYu7d2bi3F.D9nzJlzzg$819lanbp8il1zAayaAB98v2U.xjn3mt/QJbkDLl0lMLN..qMNUznV.L0CJ5uPP0/4BWktNOyZpbVlID0iaN0JA
+
+# Remote-deploy targets (unused in --local mode; kept for future)
+odoo_home: /opt/orchestrix/odoo-19
+odoo_service: orchestrix-odoo
+
+# ── Plane API (Dockerized; shares Postgres with Odoo) ──
+plane_compose_project: plane-btcl-dev
+plane_api_port: 7110
+plane_secret_key: 7wmow7lt2b0sefygnbfvvfzf16hagrbj9u364r9ct1ghw2zdud
+plane_redis_host: plane-redis
+plane_redis_port: 6379
+plane_mq_host: plane-mq
+plane_mq_port: 5672
+plane_mq_user: plane
+plane_mq_password: plane
+plane_mq_vhost: plane
+plane_minio_access: access-key
+plane_minio_secret: secret-key
+plane_minio_bucket: uploads
+
+# ── Plane web (native pnpm/turbo on host; see tools/deploy/components/plane.sh) ──
+plane_web_port: 7100
+plane_admin_port: 7101
+plane_space_port: 7102
+plane_live_port: 7103
+
+# ── seed-data sub-step ──
+seed_app: odoo
+seed_version: v19
+seed_tenant: btcl
+
+# ── erp-api / ui (remote-deploy targets, unused locally) ──
+erp_api_home: /opt/orchestrix/erp-api
+erp_api_service: orchestrix-erp-api
+erp_api_http_port: 7180
+ui_nginx_root: /var/www/orchestrix
+ui_service: nginx
+
+components_default: odoo,plane

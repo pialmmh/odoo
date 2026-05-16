@@ -15,18 +15,17 @@
 #   DEPLOY_FORCE_SEED  (true → pass --force-recreate)
 #   DEPLOY_SKIP_BUILD  (true → don't rebuild jar)
 #
-# Convention: the jar lives in routesphere; we treat it as a shared platform
-# tool, not an orchestrix-v2 artifact. ORCHESTRIX_SEED_DATA_HOME overrides the
-# default path.
+# Lives in-tree at tools/deploy/seed-data/. Override with ORCHESTRIX_SEED_DATA_HOME
+# if you ever need to point at an external checkout.
 
 deploy_seed_data() {
-    local seed_home="${ORCHESTRIX_SEED_DATA_HOME:-/home/mustafa/telcobright-projects/routesphere/routesphere-core/tools/deploy/seed-data}"
+    local seed_home="${ORCHESTRIX_SEED_DATA_HOME:-$DEPLOY_SCRIPT_DIR/seed-data}"
     local jar="$seed_home/target/seed-data.jar"
     local data_dir="$seed_home/data"
 
     if [ ! -d "$seed_home" ]; then
         echo "ERROR: seed-data tool not found at $seed_home" >&2
-        echo "Set ORCHESTRIX_SEED_DATA_HOME or check out routesphere alongside orchestrix-v2." >&2
+        echo "Set ORCHESTRIX_SEED_DATA_HOME if you've relocated it." >&2
         exit 1
     fi
 

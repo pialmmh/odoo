@@ -1,0 +1,10 @@
+target/
+*.class
+.idea/
+*.iml
+.vscode/
+.DS_Store
+data/**/*.sql.gz
+data/**/*.sql
+!data/**/tenant-overlay.json.tmpl
+!data/**/manifest.json

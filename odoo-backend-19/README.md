@@ -1,15 +1,15 @@
-# Odoo 19 — parallel install
+# Odoo 19
 
-Runs alongside the legacy Odoo 17 instance (under `../odoo-backend/`) so both
-stay reachable during the migration.
+The active Odoo install. Legacy Odoo 17 (`../odoo-backend/`) was removed
+after the v19 migration completed.
 
-| Layer | This (19) | Legacy (17) |
-|-------|-----------|-------------|
-| Source | `odoo-src/` (cloned `19.0` branch, gitignored) | `../odoo-backend/odoo-src/` |
-| Custom addons | `custom-addons/` (ported, committed) | `../odoo-backend/custom-addons/` |
-| Database | `odoo_billing_19` | `odoo_billing` |
-| Port | **7170** | 7169 |
-| Python venv | `venv/` (gitignored) | `../odoo-backend/venv/` |
+| Layer | Path |
+|-------|------|
+| Source | `odoo-src/` (cloned `19.0` branch, gitignored) |
+| Custom addons | `custom-addons/` (committed) |
+| Database | `platform` (remote pg via deploy framework) or `odoo_billing_19` (legacy local) |
+| Port | **7170** (btcl-dev profile) |
+| Python venv | `venv/` (gitignored) |
 
 ## First-time bootstrap (already done — recipe for reproducibility)
 

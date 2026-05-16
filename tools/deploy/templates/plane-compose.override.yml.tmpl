@@ -1,0 +1,23 @@
+# Per-profile compose override for Plane.
+# Rendered to: odoo-backend-19/plane/profiles/<op>-<profile>/compose.override.yml
+#
+# Why: the upstream docker-compose-local.yml binds plane-minio, plane-redis,
+# plane-db, and api to fixed host ports (9000, 9090, 6379, 5432, 8000).
+# When we run alongside other things on the same box (APISIX wants 9090,
+# native redis wants 6379, etc.) those bindings collide. Plane's own
+# containers reach minio/redis/mq/db via the Docker bridge network — host
+# port exposure is unnecessary for those, so we clear it.
+#
+# The api container is remapped to {{plane_api_port}} (per-profile) so
+# btcl-dev / btcl-staging / btcl-prod can run side-by-side.
+
+services:
+  plane-minio:
+    ports: !reset []
+  plane-redis:
+    ports: !reset []
+  plane-db:
+    ports: !reset []
+  api:
+    ports: !override
+      - "{{plane_api_port}}:8000"

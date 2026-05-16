@@ -103,18 +103,58 @@ else
     fi
 fi
 
-# ── 4. Odoo (port 7169) ──
-echo "Odoo (:7169)"
-CODE=$(check_port 7169 "/web/login")
+# ── 4. Odoo 19 — btcl-dev profile (port 7170, remote pg) ──
+# Started via the deploy framework: ./tools/deploy/deploy.sh btcl dev --components odoo --local
+echo "Odoo (:7170 — btcl-dev)"
+CODE=$(check_port 7170 "/web/login")
 if [ "$CODE" != "000" ]; then
     ok "Running (HTTP $CODE)"
 else
     if [ "$STATUS_ONLY" = true ]; then
         fail "Not running"
     else
-        warn "Starting Odoo..."
-        nohup "$SCRIPT_DIR/odoo-backend/start-odoo.sh" > /tmp/odoo.log 2>&1 &
-        wait_for 7169 "/web/login" 15 "Odoo"
+        warn "Starting Odoo btcl-dev via deploy script..."
+        ( cd "$SCRIPT_DIR" && ./tools/deploy/deploy.sh btcl dev --components odoo --local --skip-build > /tmp/odoo.log 2>&1 )
+        wait_for 7170 "/web/login" 30 "Odoo btcl-dev"
+    fi
+fi
+
+# ── 4b. Plane API — btcl-dev profile (port 7110, docker compose) ──
+# Started via the deploy framework. Plane shares Postgres with Odoo (platform_staging DB).
+echo "Plane API (:7110 — btcl-dev)"
+CODE=$(check_port 7110 "/")
+if [ "$CODE" != "000" ]; then
+    ok "Running (HTTP $CODE)"
+else
+    if [ "$STATUS_ONLY" = true ]; then
+        fail "Not running"
+    else
+        warn "Starting Plane API btcl-dev via deploy script (docker)..."
+        ( cd "$SCRIPT_DIR" && ./tools/deploy/deploy.sh btcl dev --components plane --local --skip-build > /tmp/plane-api.log 2>&1 )
+        # First start needs 60-90s for migrations + bucket setup + instance register
+        wait_for 7110 "/" 120 "Plane API btcl-dev"
+    fi
+fi
+
+# ── 4c. Plane Web — apps/web on :7100 via turbo (~3-5 min cold start) ──
+# Plane's React frontend (the new prod UI). Cold start compiles ~10 @plane/* workspace
+# packages via tsdown --watch, then react-router boots. Subsequent starts hit turbo cache.
+echo "Plane Web (:7100 — plane apps/web)"
+CODE=$(check_port 7100 "/")
+if [ "$CODE" != "000" ]; then
+    ok "Running (HTTP $CODE)"
+else
+    if [ "$STATUS_ONLY" = true ]; then
+        fail "Not running"
+    else
+        PLANE_ROOT="$SCRIPT_DIR/odoo-backend-19/plane"
+        if [ ! -d "$PLANE_ROOT/node_modules" ]; then
+            warn "Plane node_modules missing — run 'cd $PLANE_ROOT && pnpm install' first"
+        else
+            warn "Starting Plane web (cold start ~3-5 min for turbo to build deps)..."
+            ( cd "$PLANE_ROOT" && nohup pnpm turbo run dev --filter=web... --concurrency=18 -- --port 7100 > /tmp/plane-web.log 2>&1 & )
+            wait_for 7100 "/" 360 "Plane web"
+        fi
     fi
 fi
 
@@ -231,13 +271,15 @@ echo "════════════════════════�
 echo "  URLs"
 echo "═══════════════════════════════════════════"
 echo ""
-echo "  React UI:      http://localhost:5180"
-echo "  APISIX Gateway: http://localhost:9081"
-echo "  APISIX Admin:  http://localhost:9180"
-echo "  Odoo Admin:    http://localhost:7169"
-echo "  Keycloak:      http://localhost:7104/admin/"
-echo "  Spring Boot:   http://localhost:8180/api/odoo/health"
-echo "  Kill Bill:     http://localhost:18080"
-echo "  Vault UI:      http://localhost:8200/ui"
-echo "  Kafka:         localhost:9092"
+echo "  Plane Web (new UI):  http://localhost:7100/btcl/crm/leads"
+echo "  Old React UI:        http://localhost:5180"
+echo "  Plane API:           http://localhost:7110/"
+echo "  Odoo Admin:          http://localhost:7170  (btcl-dev)"
+echo "  APISIX Gateway:      http://localhost:9081"
+echo "  APISIX Admin:        http://localhost:9180"
+echo "  Keycloak:            http://localhost:7104/admin/"
+echo "  Spring Boot:         http://localhost:8180/api/odoo/health"
+echo "  Kill Bill:           http://localhost:18080"
+echo "  Vault UI:            http://localhost:8200/ui"
+echo "  Kafka:               localhost:9092"
 echo ""

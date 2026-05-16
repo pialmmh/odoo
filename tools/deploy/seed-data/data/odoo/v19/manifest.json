@@ -1,0 +1,18 @@
+{
+  "app": "odoo",
+  "version": "v19",
+  "appVersion": "Odoo 19.0",
+  "includes": ["plane"],
+  "modules": [
+    "base", "web", "crm", "sale_management", "account", "account_payment",
+    "stock", "auth_totp",
+    "artifact_management", "infra_management", "kb_integration", "orchestrix_crm",
+    "platform_config", "product_fluent_view", "rbac_management", "tb_fluent_theme"
+  ],
+  "withDemoFlagAtInit": false,
+  "artifacts": {
+    "pristine.sql.gz": { "sha256": null, "generatedAt": null },
+    "seed.sql.gz":     { "sha256": null, "generatedAt": null },
+    "demo.sql.gz":     { "sha256": null, "generatedAt": null }
+  }
+}

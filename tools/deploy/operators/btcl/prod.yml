@@ -1,0 +1,60 @@
+# BTCL — Production profile (local Odoo + remote Postgres)
+#
+# Same shape as dev; distinct DB name + ports.
+
+inventory_operator: btcl
+server: dell-sms-master
+description: BTCL Orchestrix Prod — local Odoo+Plane against remote Postgres
+
+# ── Postgres ──
+pg_host: 10.10.199.41
+pg_port: 5432
+pg_admin_db: postgres
+pg_user: admin
+pg_password: cHrZCGZZJtenNpg9TwREvpIbT2AwVQh
+odoo_db_name: platform_prod
+
+# ── Odoo ──
+odoo_http_port: 7172
+odoo_workers: 0
+odoo_log_level: info
+odoo_proxy_mode: True
+odoo_admin_passwd: $pbkdf2-sha512$600000$KsXYu7d2bi3F.D9nzJlzzg$819lanbp8il1zAayaAB98v2U.xjn3mt/QJbkDLl0lMLN..qMNUznV.L0CJ5uPP0/4BWktNOyZpbVlID0iaN0JA
+
+odoo_home: /opt/orchestrix/odoo-19
+odoo_service: orchestrix-odoo
+
+# ── Plane API ──
+plane_compose_project: plane-btcl-prod
+plane_api_port: 7112
+plane_secret_key: 7wmow7lt2b0sefygnbfvvfzf16hagrbj9u364r9ct1ghw2zdud
+plane_redis_host: plane-redis
+plane_redis_port: 6379
+plane_mq_host: plane-mq
+plane_mq_port: 5672
+plane_mq_user: plane
+plane_mq_password: plane
+plane_mq_vhost: plane
+plane_minio_access: access-key
+plane_minio_secret: secret-key
+plane_minio_bucket: uploads
+
+# ── Plane web ──
+plane_web_port: 7108
+plane_admin_port: 7109
+plane_space_port: 7113
+plane_live_port: 7114
+
+# ── seed-data ──
+seed_app: odoo
+seed_version: v19
+seed_tenant: btcl
+
+# ── erp-api / ui ──
+erp_api_home: /opt/orchestrix/erp-api
+erp_api_service: orchestrix-erp-api
+erp_api_http_port: 7182
+ui_nginx_root: /var/www/orchestrix
+ui_service: nginx
+
+components_default: odoo,plane
